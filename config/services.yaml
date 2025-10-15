@@ -1,0 +1,51 @@
+# config/services.yaml
+parameters:
+    # Configuration JWT
+    upload_dir: "%kernel.project_dir%/public/uploads"
+    jwt.secret: '%env(JWT_SECRET)%'
+    jwt.ttl: '%env(JWT_TTL)%'
+    app.jwt.secret: '%env(string:JWT_SECRET)%'
+    app.jwt.ttl: '%env(int:JWT_TTL)%'
+    mail_dsn: '%env(MAILER_DSN)%'
+    API_KEY: '%env(API_KEY)%'
+    MERCHANT_ID: '%env(MERCHANT_ID)%'
+    PAIEMENT_URL: '%env(PAIEMENT_URL)%'
+    SEND_MAIL: '%env(SEND_MAIL)%'
+    SUPER_ADMIN: '%env(SUPER_ADMIN)%'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        bind:
+            string $jwtSecret: '%app.jwt.secret%'
+            int $jwtTtl: '%app.jwt.ttl%'
+
+
+    App\Service\PaiementService:
+        arguments:
+            $merchantId: '%env(PAIEMENT_MERCHANT_ID)%'
+            $apiKey: '%env(PAIEMENT_API_KEY)%'
+            $paiementUrl: '%env(PAIEMENT_URL)%'
+            $sendMail: '%env(SEND_MAIL)%'
+            $superAdmin: '%env(SUPER_ADMIN)%'
+
+    App\Controller\Apis\Config\ApiInterface:
+        arguments:
+            $sendMail: '%send_mail%'
+            $superAdmin: '%super_admin%'
+
+    App\helpers\laravel_helper: ~
+    # Déclaration ABSOLUMENT EXPLICITE
+    App\Service\JwtService:
+        arguments:
+            $secret: '%jwt.secret%'
+            $ttl: '%jwt.ttl%'
+        autowire: false  # Important pour forcer l'utilisation des arguments
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'

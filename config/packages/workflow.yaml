@@ -1,0 +1,106 @@
+framework:
+    workflows:
+        validation_compte:
+            type: 'state_machine'
+            audit_trail:
+              enabled: true
+            marking_store:
+              type: 'method'
+              property: 'status'
+            supports:
+                - App\Entity\Professionnel
+            initial_marking: attente
+            places:
+                - attente
+                - rejete
+                - accepte
+                - valide
+                - refuse
+                - renouvellement
+                - a_jour
+            transitions:
+                acceptation:
+                    from: attente
+                    to: accepte
+                rejet:
+                    from: attente
+                    to: rejete
+                refuse:
+                    from: accepte
+                    to: refuse
+                validation:
+                    from: accepte 
+                    to: valide
+                renouvellement:
+                    from: valide
+                    to: renouvellement
+                mis_a_jour:
+                    from: renouvellement 
+                    to: a_jour
+
+        validation_etablissement:
+            type: 'state_machine'
+            audit_trail:
+                enabled: true
+            marking_store:
+                type: 'method'
+                property: 'status'
+            supports:
+                - App\Entity\Etablissement
+            initial_marking: acp_attente_dossier_depot_service_courrier
+            places:
+                - acp_attente_dossier_depot_service_courrier
+                - acp_dossier_attente_validation_directrice
+                - acp_dossier_valide_directrice
+                - oep_demande_initie
+                - oep_dossier_imputer
+                - oep_dossier_imputer_conforme_attente_planification_visite
+                - oep_dossier_imputer_non_conforme
+                - oep_dossier_visite_programme
+                - oep_visite_effectue_attente_validation_directrice
+                - oep_dossier_conforme
+                - oep_dossier_non_conforme
+            transitions:
+                soumission_validation:
+                    from: acp_attente_dossier_depot_service_courrier
+                    to: acp_dossier_attente_validation_directrice
+
+                validation_directrice:
+                    from: acp_dossier_attente_validation_directrice
+                    to: acp_dossier_valide_directrice
+
+                rejet_directrice:
+                    from: acp_dossier_attente_validation_directrice
+                    to: acp_attente_dossier_depot_service_courrier
+
+                initiation_demande_exploitation:
+                    from: acp_dossier_valide_directrice
+                    to: oep_demande_initie
+
+                imputation_dossier:
+                    from: oep_demande_initie
+                    to: oep_dossier_imputer
+
+                imputation_conforme:
+                    from: oep_dossier_imputer
+                    to: oep_dossier_imputer_conforme_attente_planification_visite
+
+                imputation_non_conforme:
+                    from: oep_dossier_imputer
+                    to: oep_dossier_imputer_non_conforme
+
+                programmation_visite:
+                    from: oep_dossier_imputer_conforme_attente_planification_visite
+                    to: oep_dossier_visite_programme
+
+                visite_effectuee:
+                    from: oep_dossier_visite_programme
+                    to: oep_visite_effectue_attente_validation_directrice
+
+                validation_finale:
+                    from: oep_visite_effectue_attente_validation_directrice
+                    to: oep_dossier_conforme
+
+                rejet_final:
+                    from: oep_visite_effectue_attente_validation_directrice
+                    to: oep_dossier_non_conforme

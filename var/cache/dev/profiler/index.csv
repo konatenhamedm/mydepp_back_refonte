@@ -1,0 +1,12 @@
+bf3d14,127.0.0.1,POST,http://127.0.0.1:8000/api/login,1760554070,,200,request
+d392b6,127.0.0.1,GET,http://127.0.0.1:8000/api/adminDocument/,1760554100,,200,request
+f17746,127.0.0.1,GET,http://127.0.0.1:8000/api/adminDocument/,1760554108,,401,request
+45e4d6,127.0.0.1,GET,http://localhost:8000/,1760567335,,200,request
+fa7323,127.0.0.1,GET,http://localhost:8000/favicon.ico,1760567337,cf2a78,404,request
+cf2a78,127.0.0.1,GET,http://localhost:8000/favicon.ico,1760567337,,404,request
+dcab0f,127.0.0.1,OPTIONS,http://127.0.0.1:8000/api/login,1760567968,,200,request
+3c0371,127.0.0.1,POST,http://127.0.0.1:8000/api/login,1760567968,,401,request
+fb462e,127.0.0.1,GET,http://localhost:8000/,1760567980,,200,request
+b8462e,127.0.0.1,POST,http://127.0.0.1:8000/api/login,1760568007,,401,request
+d0d530,127.0.0.1,POST,http://127.0.0.1:8000/api/login,1760568011,,401,request
+4ebe3a,127.0.0.1,POST,http://127.0.0.1:8000/api/login,1760568415,,401,request
