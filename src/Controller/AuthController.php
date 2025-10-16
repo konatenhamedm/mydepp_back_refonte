@@ -63,7 +63,7 @@ class AuthController extends ApiInterface
         $data = json_decode($request->getContent(), true);
         $email = $data['email'] ?? null;
 
-           //dd($data['email']);
+        //dd($data['email']);
         $user = $userRepo->findOneBy(['email' => $data['email']]);
 
 
@@ -73,14 +73,14 @@ class AuthController extends ApiInterface
 
             return $this->errorResponse($user, 'User is not active');
         }
-
         if ($data['plateforme'] == "backoffice" && $user->getTypeUser() != "ADMINISTRATEUR") {
-            return $this->json(['error' => 'Invalid car vous devez etre un administrateur'], Response::HTTP_UNAUTHORIZED);
+            return $this->json(['error' => 'Invalid car vous devez être un administrateur'], Response::HTTP_UNAUTHORIZED);
         } elseif ($data['plateforme'] == "front") {
-            if ($user->getTypeUser() != "PROFESSIONNEL" || $user->getTypeUser() != "ETABLISSEMENT") {
-                return $this->json(['error' => 'Invalid car vous devez etre un professionnel ou un etablissement'], Response::HTTP_UNAUTHORIZED);
+            if ($user->getTypeUser() != "PROFESSIONNEL" && $user->getTypeUser() != "ETABLISSEMENT") {
+                return $this->json(['error' => 'Invalid car vous devez être un professionnel ou un établissement'], Response::HTTP_UNAUTHORIZED);
             }
         }
+
 
         $token = $jwtService->generateToken([
             'id' => $user->getId(),
