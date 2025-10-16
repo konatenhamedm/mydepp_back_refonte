@@ -12,7 +12,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class HomeController extends AbstractController
 {
     #[Route('/home/api')]
-    public function index(ProfessionnelRepository $professionnelRepository,ProfessionRepository $professionneRepository): JsonResponse
+    public function index(ProfessionnelRepository $professionnelRepository,ProfessionRepository $professionRepository): JsonResponse
     {
 
         $membresProfessionnels = [
@@ -57,7 +57,9 @@ class HomeController extends AbstractController
        foreach ($membresProfessionnels as $key => $value) {
 
         $professionnel = $professionnelRepository->findOneBy(['id' => $value['id']]);
-        $professionnel->setProfession($professionneRepository->findOneBy(['code' => $value['profession']]) ? $professionneRepository->findOneBy(['code' => $value['profession']])->getId() : null);
+        if($professionRepository->findOneBy(['code' => $value['profession']])){
+            $professionnel->setProfession($professionRepository->findOneBy(['code' => $value['profession']]));
+        }
         $professionnelRepository->add($professionnel, true);
         
        }
