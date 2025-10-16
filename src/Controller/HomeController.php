@@ -17,7 +17,7 @@ class HomeController extends AbstractController
         $professionnel = $professionnelRepository->findAll();
 
         foreach ($professionnel as $key => $value) {
-            $value->setProfession($professionneRepository->findOneBy(['code' => $value->getProfession()]));
+            $value->setProfession($professionneRepository->findOneBy(['code' => $value->getProfession()])->getId());
             $professionnelRepository->add($value,true);
         }
 
