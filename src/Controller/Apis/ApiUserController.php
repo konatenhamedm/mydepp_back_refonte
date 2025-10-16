@@ -428,7 +428,7 @@ class ApiUserController extends ApiInterface
         Request $request,
         UserRepository $userRepository,
         UserPasswordHasherInterface $passwordHasher
-    ): Response {
+    ) {
         try {
             $data = json_decode($request->getContent(), true);
 
@@ -438,33 +438,32 @@ class ApiUserController extends ApiInterface
                 empty($data['nouveau_mot_de_passe']) ||
                 empty($data['confirmer_mot_de_passe'])
             ) {
-                return $this->errorResponse(null, "Champs manquants");
+                return $this->setStatusCode(400)->setMessage("Champs manquants")->response('[]');
             }
 
             $user = $userRepository->findOneBy(['username' => $data['username']]);
 
             if (!$user) {
-                return $this->errorResponse(null, "Utilisateur non trouvé");
+                return $this->setStatusCode(404)->setMessage("Utilisateur non trouvé")->response('[]');
             }
 
             // Vérifier l'ancien mot de passe
             if (!$passwordHasher->isPasswordValid($user, $data['ancien_mot_de_passe'])) {
-                return $this->errorResponse($user, "L'ancien mot de passe est incorrect");
+                return $this->setStatusCode(401)->setMessage("L'ancien mot de passe est incorrect")->response('[]');
             }
 
             if ($data['nouveau_mot_de_passe'] !== $data['confirmer_mot_de_passe']) {
-                return $this->errorResponse($user, "Les mots de passe ne sont pas identiques");
+                return $this->setStatusCode(400)->setMessage("Les mots de passe ne sont pas identiques")->response('[]');
             }
 
             // Mise à jour du mot de passe
-            //$hashedPassword = $passwordHasher->hashPassword($user, $data['nouveau_mot_de_passe']);
-            $user->setPassword($this->hasher->hashPassword($user,  $data['nouveau_mot_de_passe']));
-
+            $user->setPassword($this->hasher->hashPassword($user, $data['nouveau_mot_de_passe']));
             $userRepository->add($user, true);
 
-            return $this->responseData($user, 'group_user', ['Content-Type' => 'application/json']);
+            return $this->setStatusCode(200)->setMessage("Mot de passe mis à jour avec succès")->responseData($user, 'group_user');
+            
         } catch (\Throwable $th) {
-            return $this->response('[]');
+            return $this->setStatusCode(500)->setMessage("Une erreur est survenue")->response('[]');
         }
     }
 

@@ -3,15 +3,9 @@
 namespace App\Controller\Apis\Config;
 
 use App\Controller\FileTrait;
-use App\Entity\Boutique;
-use App\Repository\BoutiqueRepository;
-use App\Repository\SettingRepository;
-use App\Repository\SurccursaleRepository;
 use App\Repository\UserRepository;
-use App\Service\Menu;
 use App\Service\PaginationService;
 use App\Service\SendMailService;
-use App\Service\SubscriptionChecker;
 use App\Service\Utils;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\Pagination\PaginationInterface;
