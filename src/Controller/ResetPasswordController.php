@@ -84,7 +84,7 @@ class ResetPasswordController extends AbstractController
             $this->entityManager->flush();
 
             $sendMailService->send(
-                "depps@myonmci.ci",
+                "depps@leadagro.net",
                 $data['email'],
                 "Réinitialisation du mot de passe",
                 "otp",
