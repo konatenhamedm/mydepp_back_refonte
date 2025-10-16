@@ -64,7 +64,7 @@ class ResetPasswordController extends AbstractController
             );
         }
 
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['login' => $email]);
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $email]);
 
         if (!$user) {
             return $this->json(
@@ -163,7 +163,7 @@ class ResetPasswordController extends AbstractController
             );
         }
 
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['login' => $email]);
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $email]);
 
         if (!$user) {
             return $this->json(
@@ -257,7 +257,7 @@ class ResetPasswordController extends AbstractController
             );
         }
 
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['login' => $email]);
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $email]);
 
         if (!$user) {
             return $this->json(
