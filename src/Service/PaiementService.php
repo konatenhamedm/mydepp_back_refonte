@@ -584,7 +584,7 @@ class PaiementService
 
         // TO DO
         $this->sendMailService->send(
-            'depps@myonmci.ci',
+            'depps@leadagro.net',
             $dataTemp->getEmail(),
             'Informations',
             'content_mail',
@@ -675,7 +675,7 @@ class PaiementService
 
         $context = compact('info_user');
         $this->sendMailService->send(
-            'depps@myonmci.ci',
+            'depps@leadagro.net',
             $dataTemp->getEmail(),
             'Informations',
             'content_mail',

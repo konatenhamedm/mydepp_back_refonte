@@ -111,7 +111,7 @@ class ApiEtablissementController extends ApiInterface
                      $context = compact('info_user');
 
             $sendMailService->send(
-                'depps@myonmci.ci',
+                'depps@leadagro.net',
                 $etablissement->getEmail(),
                 'Imputation',
                 'content_validation',
@@ -328,7 +328,7 @@ class ApiEtablissementController extends ApiInterface
             $context = compact('info_user');
 
             $sendMailService->send(
-                'depps@myonmci.ci',
+                'depps@leadagro.net',
                 $request->request->get('email'),
                 'Validation du dossier - Étape: ' . $dto->status,
                 'content_validation',
@@ -525,7 +525,7 @@ class ApiEtablissementController extends ApiInterface
 
                 // TO DO
                 $sendMailService->send(
-                    'depps@myonmci.ci',
+                    'depps@leadagro.net',
                     $request->request->get('email'),
                     'Informations',
                     'content_mail',

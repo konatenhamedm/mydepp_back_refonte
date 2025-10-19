@@ -250,14 +250,13 @@ class ApiUserController extends ApiInterface
                 schema: new OA\Schema(
                     properties: [
 
-                       
+
                         new OA\Property(property: "nom", type: "string"),
                         new OA\Property(property: "prenoms", type: "string"),
                         new OA\Property(property: "password", type: "string"),
                         new OA\Property(property: "confirmPassword", type: "string"),
                         new OA\Property(property: "email", type: "string"),
                         new OA\Property(property: "typeUser", type: "string"),
-                        
                         new OA\Property(property: "avatar", type: "string", format: "binary"),
 
                     ],
@@ -270,7 +269,7 @@ class ApiUserController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'user')]
-    public function create(Request $request, UserRepository $userRepository,SendMailService $sendMailService): Response
+    public function create(Request $request, UserRepository $userRepository, SendMailService $sendMailService): Response
     {
 
         $names = 'document_' . '01';
@@ -305,7 +304,7 @@ class ApiUserController extends ApiInterface
             $user->setUpdatedBy($this->getUser());
             $user->setUpdatedAt(new \DateTime());
             $user->setCreatedAtValue(new \DateTime());
-           // $user->setCreatedBy($this->getUser());
+            // $user->setCreatedBy($this->getUser());
 
             /* if ($uploadedFile) {
                 $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH);
@@ -324,14 +323,14 @@ class ApiUserController extends ApiInterface
             }
 
             $sendMailService->send(
-                "admin@mydepps.net",
+                "depps@leadagro.net",
                 $user->getEmail(),
                 "Nouvelle inscription",
                 "new",
                 [
-                    "user" =>[
-                        "nom"=> $user->getPersonne()->getNom(),
-                        "prenoms"=>$user->getPersonne()->getPrenoms()
+                    "user" => [
+                        "nom" => $user->getPersonne()->getNom(),
+                        "prenoms" => $user->getPersonne()->getPrenoms()
                     ],
                     "password" => $request->request->get('password'),
                     "login_url" => "https://mydepps.net/login"
@@ -461,7 +460,6 @@ class ApiUserController extends ApiInterface
             $userRepository->add($user, true);
 
             return $this->setStatusCode(200)->setMessage("Mot de passe mis à jour avec succès")->responseData($user, 'group_user');
-            
         } catch (\Throwable $th) {
             return $this->setStatusCode(500)->setMessage("Une erreur est survenue")->response('[]');
         }
@@ -495,12 +493,12 @@ class ApiUserController extends ApiInterface
                 schema: new OA\Schema(
                     properties: [
 
-                        new OA\Property(property: "username", type: "string"),
+                        new OA\Property(property: "nom", type: "string"),
+                        new OA\Property(property: "prenoms", type: "string"),
                         new OA\Property(property: "password", type: "string"),
+                        new OA\Property(property: "typeUser", type: "string"),
 
-                        new OA\Property(property: "email", type: "string"),
-                        new OA\Property(property: "avatar", type: "string", format: "binary"),
-                        
+
 
                     ],
                     type: "object"
@@ -514,7 +512,7 @@ class ApiUserController extends ApiInterface
     )]
     #[OA\Tag(name: 'user')]
 
-    public function update(Request $request, User $user, UserRepository $userRepository, AdministrateurRepository $administrateurRepository): Response
+    public function update(Request $request, SendMailService $sendMailService, User $user, UserRepository $userRepository, AdministrateurRepository $administrateurRepository): Response
     {
         try {
             $data = json_decode($request->getContent());
@@ -527,7 +525,7 @@ class ApiUserController extends ApiInterface
                 $personne = $administrateurRepository->find($user->getPersonne()->getId());
                 $personne->setNom($request->request->get('nom'));
                 $personne->setPrenoms($request->request->get('prenoms'));
-               
+
 
                 $personne->setUpdatedBy($this->getUser());
                 $personne->setUpdatedAt(new \DateTime());
@@ -555,6 +553,23 @@ class ApiUserController extends ApiInterface
                     $userRepository->add($user, true);
                 }
 
+                if ($request->request->get('password') != "") {
+                    $sendMailService->send(
+                        "depps@leadagro.net",
+                        $user->getEmail(),
+                        "Modification du mot de passe",
+                        "edit",
+                        [
+                            "user" => [
+                                "nom" => $user->getPersonne()->getNom(),
+                                "prenoms" => $user->getPersonne()->getPrenoms(),
+                                "email" => $user->getEmail(),
+                            ],
+                            "password" => $request->request->get('password'),
+
+                        ]
+                    );
+                }
 
 
                 // On retourne la confirmation
@@ -583,7 +598,7 @@ class ApiUserController extends ApiInterface
                     properties: [
                         new OA\Property(property: "password", type: "string"),
                         new OA\Property(property: "newPassword", type: "string"),
-                        
+
                         new OA\Property(property: "email", type: "string"),
                         new OA\Property(property: "avatar", type: "string", format: "binary"),
                         new OA\Property(property: "username", type: "string"),

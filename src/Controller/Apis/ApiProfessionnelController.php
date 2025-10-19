@@ -668,7 +668,7 @@ class ApiProfessionnelController extends ApiInterface
 
 
             $sendMailService->send(
-                'depps@myonmci.ci',
+                'depps@leadagro.net',
                 $data['email'],
                 'Validaton du dossier',
                 'content_validation',
@@ -1099,7 +1099,7 @@ class ApiProfessionnelController extends ApiInterface
 
                 // TO DO
                 $sendMailService->send(
-                    'depps@myonmci.ci',
+                    'depps@leadagro.net',
                     $request->request->get('email'),
                     'Informations',
                     'content_mail',

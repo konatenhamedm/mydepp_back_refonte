@@ -42,7 +42,7 @@ class ResetPasswordService
 
         $this->sendMailService->send(
             //'konatefvaly@gmail.com',
-            'depps@myonmci.ci',
+            'depps@leadagro.net',
             $user->getEmail(),
             'reinitialisation',
             'password_reset',
@@ -72,7 +72,7 @@ class ResetPasswordService
 
         $this->sendMailService->send(
             //'konatefvaly@gmail.com',
-            'depps@myonmci.ci',
+            'depps@leadagro.net',
             $user->getEmail(),
             'reinitialisation',
             'password_reset',
