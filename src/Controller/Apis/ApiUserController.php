@@ -525,17 +525,17 @@ class ApiUserController extends ApiInterface
 
             if ($user != null) {
                 $personne = $administrateurRepository->find($user->getPersonne()->getId());
-                $personne->setNom($request->request->get('nom'));
-                $personne->setPrenoms($request->request->get('prenoms'));
+                $personne->setNom($request->get('nom'));
+                $personne->setPrenoms($request->get('prenoms'));
 
 
                 $personne->setUpdatedBy($this->getUser());
                 $personne->setUpdatedAt(new \DateTime());
                 $personne->setCreatedBy($this->getUser());
-                $user->setTypeUser($request->request->get('typeUser'));
+                $user->setTypeUser($request->get('typeUser'));
                 /* $user->setEmail($request->request->get('email')); */
-                if ($request->request->get('password') != "")
-                    $user->setPassword($this->hasher->hashPassword($user,  $request->request->get('password')));
+                if ($request->get('password') != "")
+                    $user->setPassword($this->hasher->hashPassword($user,  $request->get('password')));
 
                 $user->setUpdatedBy($this->getUser());
                 $user->setUpdatedAt(new \DateTime());
