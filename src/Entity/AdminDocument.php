@@ -4,7 +4,7 @@ namespace App\Entity;
 
 use App\Repository\AdminDocumentRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups as Group;
+use Symfony\Component\Serializer\Attribute\Groups as Group;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: AdminDocumentRepository::class)]

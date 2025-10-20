@@ -4,7 +4,7 @@ namespace App\Entity;
 
 use App\Repository\NotificationRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups as Group;
+use Symfony\Component\Serializer\Attribute\Groups as Group;
 
 
 #[ORM\Entity(repositoryClass: NotificationRepository::class)]

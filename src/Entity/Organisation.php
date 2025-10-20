@@ -4,7 +4,7 @@ namespace App\Entity;
 
 use App\Repository\OrganisationRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups as Group;
+use Symfony\Component\Serializer\Attribute\Groups as Group;
 use Symfony\Component\Validator\Constraints as Assert;
 
 

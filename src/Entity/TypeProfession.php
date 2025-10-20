@@ -6,7 +6,7 @@ use App\Repository\TypeProfessionRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups as Group;
+use Symfony\Component\Serializer\Attribute\Groups as Group;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: TypeProfessionRepository::class)]

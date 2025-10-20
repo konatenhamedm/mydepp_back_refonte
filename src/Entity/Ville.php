@@ -6,7 +6,7 @@ use App\Repository\VilleRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups as Group;
+use Symfony\Component\Serializer\Attribute\Groups as Group;
 
 
 #[ORM\Entity(repositoryClass: VilleRepository::class)]
@@ -27,7 +27,6 @@ class Ville
 
     #[ORM\Column(length: 255)]
     #[Group(["group1","group_pro"])]
-
     private ?string $libelle = null;
 
     /**
@@ -37,6 +36,7 @@ class Ville
     private Collection $professionnels;
 
     #[ORM\ManyToOne(inversedBy: 'villes')]
+    #[Group(["group1","group_pro"])]
     private ?District $district = null;
 
     /**

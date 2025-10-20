@@ -3,7 +3,7 @@
 namespace App\DTO;
 
 use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\Serializer\Annotation\Groups as Group;
+use Symfony\Component\Serializer\Attribute\Groups as Group;
 
 
 class PaysDTO

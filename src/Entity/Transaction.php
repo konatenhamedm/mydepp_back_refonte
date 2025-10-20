@@ -5,7 +5,7 @@ namespace App\Entity;
 use App\Repository\TransactionRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups as Group;
+use Symfony\Component\Serializer\Attribute\Groups as Group;
 
 #[ORM\Entity(repositoryClass: TransactionRepository::class)]
 class Transaction
