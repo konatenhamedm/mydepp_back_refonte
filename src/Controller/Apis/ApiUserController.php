@@ -482,7 +482,7 @@ class ApiUserController extends ApiInterface
         return str_pad($nb, 3, '0', STR_PAD_LEFT);
     }
 
-    #[Route('/admin/update/{id}', methods: ['POST','PUT'])]
+    #[Route('/admin/update/{id}', methods: ['POST', 'PUT'])]
     #[OA\Post(
         summary: "Modification user admin",
         description: "Permet de créer un user.",
@@ -514,44 +514,44 @@ class ApiUserController extends ApiInterface
     public function update(Request $request, SendMailService $sendMailService, User $user, UserRepository $userRepository, AdministrateurRepository $administrateurRepository): Response
     {
         try {
-     
+
             $names = 'document_' . '01';
             $filePrefix  = str_slug($names);
             $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
             // $uploadedFile = $request->files->get('avatar');
 
-            
+
             if ($user) {
                 $personne = $administrateurRepository->find($user->getPersonne()->getId());
                 $personne->setNom($request->request->get('nom'));
                 $personne->setPrenoms($request->request->get('prenoms'));
-                
-                
+
+
                 $personne->setUpdatedBy($this->getUser());
                 $personne->setUpdatedAt(new \DateTime());
                 $personne->setCreatedBy($this->getUser());
                 $user->setTypeUser($request->request->get('typeUser'));
                 /* $user->setEmail($request->request->get('email')); */
                 if ($request->request->get('password') != "")
-                $user->setPassword($this->hasher->hashPassword($user,  $request->request->get('password')));
-            
-            $user->setUpdatedBy($this->getUser());
-            $user->setUpdatedAt(new \DateTime());
-            
-            /*   if ($uploadedFile) {
+                    $user->setPassword($this->hasher->hashPassword($user,  $request->request->get('password')));
+
+                $user->setUpdatedBy($this->getUser());
+                $user->setUpdatedAt(new \DateTime());
+
+                /*   if ($uploadedFile) {
                 $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH);
                 if ($fichier) {
                     $user->setAvatar($fichier);
                     }
                     } */
-                   
-                   $errorResponse = $this->errorResponse($user);
-                  // dd($user,$errorResponse);
+
+                $errorResponse = $this->errorResponse($user);
+                // dd($user,$errorResponse);
 
                 if ($errorResponse !== null) {
                     return $errorResponse; // Retourne la réponse d'erreur si des erreurs sont présentes
                 } else {
-                   // dd($personne,$user);
+                    // dd($personne,$user);
                     $administrateurRepository->add($personne, true);
                     $userRepository->add($user, true);
                 }
@@ -576,14 +576,21 @@ class ApiUserController extends ApiInterface
 
 
                 // On retourne la confirmation
-                $response = $this->responseData($user, 'group_user', ['Content-Type' => 'application/json']);
+                $response = $this->responseData([
+                    "message" => "Utilisateur modifié avec succès",
+                    "id" => $user->getId(),
+                    "nom" => $user->getPersonne()->getNom(),
+                    "prenoms" => $user->getPersonne()->getPrenoms(),
+                    "email" => $user->getEmail(),
+                ], 'group_user', ['Content-Type' => 'application/json']);
             } else {
                 $this->setMessage("Cette ressource est inexsitante");
                 $this->setStatusCode(300);
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage($exception->getMessage());
+            $this->setStatusCode(500);
             $response = $this->response('[]');
         }
         return $response;
