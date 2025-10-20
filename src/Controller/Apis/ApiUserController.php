@@ -546,7 +546,7 @@ class ApiUserController extends ApiInterface
                     } */
                    
                    $errorResponse = $this->errorResponse($user);
-                   dd($user,$errorResponse);
+                  // dd($user,$errorResponse);
 
                 if ($errorResponse !== null) {
                     return $errorResponse; // Retourne la réponse d'erreur si des erreurs sont présentes
