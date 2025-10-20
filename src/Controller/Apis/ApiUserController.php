@@ -531,13 +531,13 @@ class ApiUserController extends ApiInterface
                 $personne->setUpdatedAt(new \DateTime());
                 $personne->setCreatedBy($this->getUser());
                 $user->setTypeUser($request->request->get('typeUser'));
-                dd($user,$request->request->get('nom'),$this->getUser(),$request->request->get('typeUser'),$request->request->get('password'));
                 /* $user->setEmail($request->request->get('email')); */
                 if ($request->request->get('password') != "")
-                    $user->setPassword($this->hasher->hashPassword($user,  $request->request->get('password')));
-
-                $user->setUpdatedBy($this->getUser());
-                $user->setUpdatedAt(new \DateTime());
+                $user->setPassword($this->hasher->hashPassword($user,  $request->request->get('password')));
+            
+            $user->setUpdatedBy($this->getUser());
+            $user->setUpdatedAt(new \DateTime());
+            dd($user,$request->request->get('nom'),$this->getUser(),$request->request->get('typeUser'),$request->request->get('password'),$request->request->get('prenoms'),$request->request->get('nom'));
 
                 /*   if ($uploadedFile) {
                     $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH);
