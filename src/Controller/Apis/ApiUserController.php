@@ -517,7 +517,7 @@ class ApiUserController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
 
-            dd($request);
+           // dd($request);
             $names = 'document_' . '01';
             $filePrefix  = str_slug($names);
             $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
