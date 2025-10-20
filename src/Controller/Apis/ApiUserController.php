@@ -551,6 +551,7 @@ class ApiUserController extends ApiInterface
                 if ($errorResponse !== null) {
                     return $errorResponse; // Retourne la réponse d'erreur si des erreurs sont présentes
                 } else {
+                    dd($personne,$user);
                     $administrateurRepository->add($personne, true);
                     $userRepository->add($user, true);
                 }
