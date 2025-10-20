@@ -284,10 +284,10 @@ class ApiUserController extends ApiInterface
             $personne->setNom($request->request->get('nom'));
             $personne->setPrenoms($request->request->get('prenoms'));
 
-            $personne->setUpdatedBy($this->getUser());
+
             $personne->setUpdatedAt(new \DateTime());
             $personne->setCreatedAtValue(new \DateTime());
-            $personne->setCreatedBy($this->getUser());
+
 
             $this->em->persist($personne);
             $this->em->flush();
@@ -320,6 +320,12 @@ class ApiUserController extends ApiInterface
                 return $errorResponse; // Retourne la réponse d'erreur si des erreurs sont présentes
             } else {
                 $userRepository->add($user, true);
+
+                
+                $personne->setUpdatedBy($user);
+                $personne->setCreatedBy($user);
+                $this->em->persist($personne);
+                $this->em->flush();
             }
 
             $sendMailService->send(
@@ -545,7 +551,7 @@ class ApiUserController extends ApiInterface
 
             $personne->setNom($nom);
             $personne->setPrenoms($prenoms);
-           // $personne->setUpdatedBy($this->getUser());
+            // $personne->setUpdatedBy($this->getUser());
             $personne->setUpdatedAt(new \DateTimeImmutable());
 
             $user->setTypeUser($typeUser);
