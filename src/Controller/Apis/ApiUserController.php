@@ -511,82 +511,81 @@ class ApiUserController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'user')]
-    #[Route('/api/user/admin/update/{id}', name: 'api_user_admin_update', methods: ['POST', 'PUT'])]
-    public function update(
-        Request $request,
-        SendMailService $sendMailService,
-        User $user,
-        UserRepository $userRepository,
-        AdministrateurRepository $administrateurRepository
-    ): Response {
+    public function update(Request $request, SendMailService $sendMailService, User $user, UserRepository $userRepository, AdministrateurRepository $administrateurRepository): Response
+    {
         try {
-            // ⚠️ Ne pas décoder le contenu (ce n’est pas du JSON)
-            // $data = json_decode($request->getContent());
+            $data = json_decode($request->getContent());
 
-            dd($request->request->all(), $request->files->all(),$request->request->get('nom'));
-
-            if (!$user) {
-                $this->setMessage("Cette ressource est inexistante");
-                $this->setStatusCode(404);
-                return $this->response('[]');
-            }
-
-            // 🔍 Récupération des champs FormData
-            $nom = $request->request->get('nom');
-            $prenoms = $request->request->get('prenoms');
-            $typeUser = $request->request->get('typeUser');
-            $password = $request->request->get('password');
-
-            // 📂 Exemple si tu veux aussi gérer un fichier
+           // dd($request);
+            $names = 'document_' . '01';
+            $filePrefix  = str_slug($names);
+            $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
             // $uploadedFile = $request->files->get('avatar');
 
-            // ⚙️ Mise à jour
-            $personne = $administrateurRepository->find($user->getPersonne()->getId());
-            if ($personne) {
-                $personne->setNom($nom);
-                $personne->setPrenoms($prenoms);
+            if ($user != null) {
+                $personne = $administrateurRepository->find($user->getPersonne()->getId());
+                $personne->setNom($request->request->get('nom'));
+                $personne->setPrenoms($request->request->get('prenoms'));
+
+
                 $personne->setUpdatedBy($this->getUser());
-                $personne->setUpdatedAt(new \DateTimeImmutable());
+                $personne->setUpdatedAt(new \DateTime());
+                $personne->setCreatedBy($this->getUser());
+                $user->setTypeUser($request->request->get('typeUser'));
+                /* $user->setEmail($request->request->get('email')); */
+                if ($request->request->get('password') != "")
+                    $user->setPassword($this->hasher->hashPassword($user,  $request->request->get('password')));
+
+                $user->setUpdatedBy($this->getUser());
+                $user->setUpdatedAt(new \DateTime());
+
+                /*   if ($uploadedFile) {
+                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH);
+                    if ($fichier) {
+                        $user->setAvatar($fichier);
+                    }
+                } */
+
+                $errorResponse = $this->errorResponse($user);
+
+                if ($errorResponse !== null) {
+                    return $errorResponse; // Retourne la réponse d'erreur si des erreurs sont présentes
+                } else {
+                    $userRepository->add($user, true);
+                }
+
+                if ($request->request->get('password') != "") {
+                    $sendMailService->send(
+                        "depps@leadagro.net",
+                        $user->getEmail(),
+                        "Modification du mot de passe",
+                        "edit",
+                        [
+                            "user" => [
+                                "nom" => $user->getPersonne()->getNom(),
+                                "prenoms" => $user->getPersonne()->getPrenoms(),
+                                "email" => $user->getEmail(),
+                            ],
+                            "password" => $request->request->get('password'),
+
+                        ]
+                    );
+                }
+
+
+                // On retourne la confirmation
+                $response = $this->responseData($user, 'group_user', ['Content-Type' => 'application/json']);
+            } else {
+                $this->setMessage("Cette ressource est inexsitante");
+                $this->setStatusCode(300);
+                $response = $this->response('[]');
             }
-
-            $user->setTypeUser($typeUser);
-            if (!empty($password)) {
-                $user->setPassword($this->hasher->hashPassword($user, $password));
-            }
-            $user->setUpdatedBy($this->getUser());
-            $user->setUpdatedAt(new \DateTimeImmutable());
-
-            $userRepository->add($user, true);
-
-            // ✉️ Envoi du mail si mot de passe modifié
-            if (!empty($password)) {
-                $sendMailService->send(
-                    "depps@leadagro.net",
-                    $user->getEmail(),
-                    "Modification du mot de passe",
-                    "edit",
-                    [
-                        "user" => [
-                            "nom" => $user->getPersonne()->getNom(),
-                            "prenoms" => $user->getPersonne()->getPrenoms(),
-                            "email" => $user->getEmail(),
-                        ],
-                        "password" => $password,
-                    ]
-                );
-            }
-
-            $response = $this->responseData($user, 'group_user', [
-                'Content-Type' => 'application/json'
-            ]);
         } catch (\Exception $exception) {
-            $this->setMessage($exception->getMessage());
-            $response = $this->response('[]', 500);
+            $this->setMessage("");
+            $response = $this->response('[]');
         }
-
         return $response;
     }
-
 
     #[Route('/profil/update/{id}', methods: ['PUT', 'POST'])]
     #[OA\Post(
