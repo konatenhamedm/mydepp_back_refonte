@@ -514,15 +514,13 @@ class ApiUserController extends ApiInterface
     public function update(Request $request, SendMailService $sendMailService, User $user, UserRepository $userRepository, AdministrateurRepository $administrateurRepository): Response
     {
         try {
-            $data = json_decode($request->getContent());
-
-           // dd($request);
+     
             $names = 'document_' . '01';
             $filePrefix  = str_slug($names);
             $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
             // $uploadedFile = $request->files->get('avatar');
 
-            if ($user != null) {
+            if ($user) {
                 $personne = $administrateurRepository->find($user->getPersonne()->getId());
                 $personne->setNom($request->request->get('nom'));
                 $personne->setPrenoms($request->request->get('prenoms'));
