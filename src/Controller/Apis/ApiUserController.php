@@ -523,7 +523,7 @@ class ApiUserController extends ApiInterface
             // ⚠️ Ne pas décoder le contenu (ce n’est pas du JSON)
             // $data = json_decode($request->getContent());
 
-            dd($request->request->all(), $request->files->all());
+            dd($request->request->all(), $request->files->all(),$request->request->get('nom'));
 
             if (!$user) {
                 $this->setMessage("Cette ressource est inexistante");
