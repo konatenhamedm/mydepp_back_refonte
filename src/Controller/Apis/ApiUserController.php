@@ -482,7 +482,7 @@ class ApiUserController extends ApiInterface
         return str_pad($nb, 3, '0', STR_PAD_LEFT);
     }
 
-    #[Route('/admin/update/{id}', methods: ['PUT', 'POST'])]
+    #[Route('/admin/update/{id}', methods: ['POST','PUT'])]
     #[OA\Post(
         summary: "Modification user admin",
         description: "Permet de créer un user.",
