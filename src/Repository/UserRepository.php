@@ -174,7 +174,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->andWhere('u.deleteAt IS  NULL')
             ->setParameter('role', '%"ROLE_ADMIN"%')
             /*  ->setParameter('typeUser', 'ADMINISTRATEUR') */
-            ->orderBy("u.id","DESC")
+            ->orderBy("u.id","ASC")
             ->getQuery()
             ->getResult();
     }
@@ -186,7 +186,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             // ->andWhere('u.typeUser = :typeUser') // si besoin
             ->setParameter('role', '%"ROLE_ADMIN"%')
             // ->setParameter('typeUser', 'ADMINISTRATEUR')
-            ->orderBy("u.id","DESC")
+            ->orderBy("u.id","ASC")
             ->getQuery()
             ->getResult();
     }
