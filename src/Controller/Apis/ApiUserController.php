@@ -537,20 +537,21 @@ class ApiUserController extends ApiInterface
             
             $user->setUpdatedBy($this->getUser());
             $user->setUpdatedAt(new \DateTime());
-            dd($user,$request->request->get('nom'),$this->getUser(),$request->request->get('typeUser'),$request->request->get('password'),$request->request->get('prenoms'),$request->request->get('nom'));
-
-                /*   if ($uploadedFile) {
-                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH);
-                    if ($fichier) {
-                        $user->setAvatar($fichier);
+            
+            /*   if ($uploadedFile) {
+                $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH);
+                if ($fichier) {
+                    $user->setAvatar($fichier);
                     }
-                } */
-
-                $errorResponse = $this->errorResponse($user);
+                    } */
+                   
+                   $errorResponse = $this->errorResponse($user);
+                   dd($user,$errorResponse);
 
                 if ($errorResponse !== null) {
                     return $errorResponse; // Retourne la réponse d'erreur si des erreurs sont présentes
                 } else {
+                    $administrateurRepository->add($personne, true);
                     $userRepository->add($user, true);
                 }
 
