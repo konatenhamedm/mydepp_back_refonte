@@ -520,9 +520,9 @@ class ApiUserController extends ApiInterface
             $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
             // $uploadedFile = $request->files->get('avatar');
 
-            dd($user);
-
+            
             if ($user) {
+                dd($user,$request->request->get('nom'));
                 $personne = $administrateurRepository->find($user->getPersonne()->getId());
                 $personne->setNom($request->request->get('nom'));
                 $personne->setPrenoms($request->request->get('prenoms'));
