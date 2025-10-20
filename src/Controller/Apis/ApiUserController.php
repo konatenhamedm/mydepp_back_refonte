@@ -517,7 +517,7 @@ class ApiUserController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
 
-            dd($request->request->get('prenoms'));
+           // dd($request->request->get('prenoms'));
             $names = 'document_' . '01';
             $filePrefix  = str_slug($names);
             $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
@@ -533,7 +533,7 @@ class ApiUserController extends ApiInterface
                 $personne->setUpdatedAt(new \DateTime());
                 $personne->setCreatedBy($this->getUser());
                 $user->setTypeUser($request->request->get('typeUser'));
-                $user->setEmail($request->request->get('email'));
+                /* $user->setEmail($request->request->get('email')); */
                 if ($request->request->get('password') != "")
                     $user->setPassword($this->hasher->hashPassword($user,  $request->request->get('password')));
 
