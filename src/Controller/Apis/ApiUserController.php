@@ -545,14 +545,14 @@ class ApiUserController extends ApiInterface
 
             $personne->setNom($nom);
             $personne->setPrenoms($prenoms);
-            $personne->setUpdatedBy($this->getUser());
+           // $personne->setUpdatedBy($this->getUser());
             $personne->setUpdatedAt(new \DateTimeImmutable());
 
             $user->setTypeUser($typeUser);
             if ($password !== '') {
                 $user->setPassword($this->hasher->hashPassword($user, $password));
             }
-            $user->setUpdatedBy($this->getUser());
+            //$user->setUpdatedBy($this->getUser());
             $user->setUpdatedAt(new \DateTimeImmutable());
 
             $errorResponse = $this->errorResponse($user);
