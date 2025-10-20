@@ -526,12 +526,12 @@ class ApiUserController extends ApiInterface
                 $personne->setNom($request->request->get('nom'));
                 $personne->setPrenoms($request->request->get('prenoms'));
                 
-                dd($user,$request->request->get('nom'),$this->getUser());
-
+                
                 $personne->setUpdatedBy($this->getUser());
                 $personne->setUpdatedAt(new \DateTime());
                 $personne->setCreatedBy($this->getUser());
                 $user->setTypeUser($request->request->get('typeUser'));
+                dd($user,$request->request->get('nom'),$this->getUser(),$request->request->get('typeUser'),$request->request->get('password'));
                 /* $user->setEmail($request->request->get('email')); */
                 if ($request->request->get('password') != "")
                     $user->setPassword($this->hasher->hashPassword($user,  $request->request->get('password')));
