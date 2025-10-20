@@ -47,11 +47,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: "integer")]
+    #[Group(["group_user"])]
     private ?int $id = null;
 
 
     #[OA\Property(description: 'Statut actif de l’utilisateur', type: 'boolean', example: true)]
     #[ORM\Column(type: "boolean")]
+    #[Group(["group_user"])]
     private bool $isActive = true;
 
 
