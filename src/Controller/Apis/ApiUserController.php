@@ -522,11 +522,11 @@ class ApiUserController extends ApiInterface
 
             
             if ($user) {
-                dd($user,$request->request->get('nom'));
                 $personne = $administrateurRepository->find($user->getPersonne()->getId());
                 $personne->setNom($request->request->get('nom'));
                 $personne->setPrenoms($request->request->get('prenoms'));
-
+                
+                dd($user,$request->request->get('nom'),$this->getUser());
 
                 $personne->setUpdatedBy($this->getUser());
                 $personne->setUpdatedAt(new \DateTime());
