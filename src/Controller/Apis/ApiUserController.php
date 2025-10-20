@@ -8,6 +8,8 @@ use App\Entity\Administrateur;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\User;
 use App\Repository\AdministrateurRepository;
+use App\Repository\ProfessionnelRepository;
+use App\Repository\ProfessionRepository;
 use App\Repository\ResetPasswordTokenRepository;
 use App\Repository\UserRepository;
 use App\Service\ResetPasswordService;
@@ -321,7 +323,7 @@ class ApiUserController extends ApiInterface
             } else {
                 $userRepository->add($user, true);
 
-                
+
                 $personne->setUpdatedBy($user);
                 $personne->setCreatedBy($user);
                 $this->em->persist($personne);
@@ -884,5 +886,82 @@ class ApiUserController extends ApiInterface
         $em->flush();
 
         return $this->json(['message' => 'Mot de passe mis à jour avec succès']);
+    }
+
+
+    #[Route('/api/create-new-user', methods: ['POST'])]
+    #[OA\Post(
+        summary: "Creation user admin",
+        description: "Génère un token JWT pour les administrateurs.",
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: "multipart/form-data",
+                schema: new OA\Schema(
+                    properties: [
+                        new OA\Property(property: "email", type: "string"),
+                        new OA\Property(property: "password", type: "string"),
+                        new OA\Property(property: "confirmPassword", type: "string"),
+                        new OA\Property(property: "code", type: "string"),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Utilisateur créé avec succès',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: new Model(type: User::class, groups: ['full']))
+                )
+            )
+        ]
+    )]
+    public function  createNewUser(Request $request, SendMailService $sendMailService, UserRepository $userRepo, UserPasswordHasherInterface $passwordHasher, EntityManagerInterface $em, ProfessionnelRepository $professionnelRepository): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $email = $data['email'] ?? '';
+        $password = $data['password'] ?? '';
+        $confirmPassword = $data['confirmPassword'] ?? '';
+
+        $professionnel = $professionnelRepository->findOneBy(['code' => $data['code']]);
+
+        if ($professionnel == null) {
+            return $this->json(['message' => 'Professionnel non trouvée'], 400);
+        }
+
+        if ($password !== $confirmPassword) {
+            return $this->json(['message' => 'Les mots de passe ne correspondent pas'], 400);
+        }
+
+        $user = new User();
+        $user->setEmail($email);
+        $user->setPassword($passwordHasher->hashPassword($user, $password));
+        $user->setRoles(['ROLE_MEMBRE']);
+        $user->setTypeUser("PROFESSIONNEL");
+        $user->setPersonne($professionnel);
+
+        $em->persist($user);
+        $em->flush();
+
+
+        $sendMailService->send(
+            "depps@leadagro.net",
+            $user->getEmail(),
+            "Nouvelle inscription",
+            "new_professionnel",
+            [
+                "user" => [
+                    "email" => $email,
+                    "password" => $password,
+                ],
+                "login_url" => "https://mydepps.net/login"
+            ]
+        );
+
+
+
+        return $this->json(['message' => 'Utilisateur créé avec succès']);
     }
 }
