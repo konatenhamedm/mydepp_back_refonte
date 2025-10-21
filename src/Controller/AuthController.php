@@ -73,7 +73,7 @@ class AuthController extends ApiInterface
 
             return $this->errorResponse($user, 'User is not active');
         }
-        if ($data['plateforme'] == "backoffice" && ($user->getTypeUser() != "ADMINISTRATEUR" || $user->getTypeUser() != "ETABLISSEMENT" || $user->getTypeUser() != "PROFESSIONNEL")) {
+        if ($data['plateforme'] == "backoffice" && ($user->getTypeUser() == "ETABLISSEMENT" || $user->getTypeUser() == "PROFESSIONNEL")) {
             return $this->json(['error' => 'Invalid car vous devez être un administrateur'], Response::HTTP_UNAUTHORIZED);
         } elseif ($data['plateforme'] == "front") {
             if ($user->getTypeUser() != "PROFESSIONNEL" && $user->getTypeUser() != "ETABLISSEMENT") {
