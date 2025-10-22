@@ -211,7 +211,6 @@ class ApiAdminDocumentController extends ApiInterface
                 if ($uploadedFile) {
                     $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH);
                     if ($fichier) {
-
                         $adminDocument->setPath($fichier);
                     }
                 }
