@@ -84,7 +84,7 @@ class ApiUserController extends ApiInterface
     {
         try {
 
-            $users = $userRepository->findBy(['typeUser' => 'INSTRUCTEUR']);
+            $users = $userRepository->findUserByTypeCode();
 
             $response = $this->responseData($users, 'group_user', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
