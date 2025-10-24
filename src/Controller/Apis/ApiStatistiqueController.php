@@ -236,6 +236,7 @@ class ApiStatistiqueController extends ApiInterface
             $dataPays = $professionnelRepository->countProByPays((int)$annee, $periode, (int)$mois, (int)$tranche);
             $isFirst = true; // Pour le premier élément sélectionné dans le Pie Chart
 
+            dd($stats,$dataTrancheAge,$dataGenre,$dataAnnee,$dataVille,$dataRegion,$dataPays,$stats2);
 
             // Préchargement des professions
             $codes = array_column($stats, 'libelle');
