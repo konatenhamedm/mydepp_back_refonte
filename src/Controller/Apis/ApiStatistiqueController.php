@@ -289,8 +289,8 @@ class ApiStatistiqueController extends ApiInterface
                 'tranches_age' => $statsTrancheAge,
                 'all_annees' => $statsYear,
                 'dates' => [
-                    'debut' => $startDate->format('Y-m-d'),
-                    'fin' => $endDate->format('Y-m-d')
+                    'debut' => $startDate,
+                    'fin' => $endDate
                 ],
                 'statistiques' => $stats2
             ];
