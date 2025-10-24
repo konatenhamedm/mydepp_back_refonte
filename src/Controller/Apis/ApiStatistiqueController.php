@@ -251,7 +251,7 @@ class ApiStatistiqueController extends ApiInterface
             foreach ($stats as $stat) {
                 if ($stat['nombre'] > 0) {
                     $statsProfession[] = [
-                        'name' => $stat['libelle'],
+                        'name' => $stat['libelle'] ?? 'Inconnu',
                         'y' => (int) $stat['nombre'],
                         'sliced' => $isFirst,
                         'selected' => $isFirst
