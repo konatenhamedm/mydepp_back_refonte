@@ -213,7 +213,7 @@ class ApiStatistiqueController extends ApiInterface
             // Calcul de la plage de dates
             [$startDate, $endDate] = $this->getDateRangeFromPeriode((int)$annee, $periode, (int)$mois, (int)$tranche);
 
-          //  dd($startDate,$endDate);
+            dd($startDate,$endDate);
            // dd($startDate,$endDate,$annee,$mois,$tranche);
 
             // Requête optimisée sans filtres supplémentaires
@@ -348,7 +348,7 @@ class ApiStatistiqueController extends ApiInterface
         }
 
         
-        return [new \DateTime($start->format('Y-m-d')) , new \DateTime($end->format('Y-m-d'))];
+        return [ $start->format('Y-m-d'), $end->format('Y-m-d')];
     }
 
     private function formatStats(array $data, string $labelKey = 'libelle', bool $markFirst = false): array
