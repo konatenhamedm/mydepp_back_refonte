@@ -130,7 +130,7 @@ class ProfessionnelRepository extends ServiceEntityRepository
             ->groupBy('c.id');
 
         if ($annee != "null" && $periode != "null") {
-            [$start, $end] = $this->getDateRangeFromPeriode($annee, $periode,$mois,$tranche);
+            [$start, $end] = $this->getDateRangeFromPeriode($annee, $periode, $mois, $tranche);
             $qb->andWhere("DATE_FORMAT(e.createdAt, '%Y-%m-%d') BETWEEN :start AND :end")
                 ->setParameter('start', $start)
                 ->setParameter('end', $end);
@@ -145,7 +145,7 @@ class ProfessionnelRepository extends ServiceEntityRepository
             ->groupBy('libelle');
 
         if ($annee != "null" && $periode != "null") {
-            [$start, $end] = $this->getDateRangeFromPeriode($annee, $periode,$mois,$tranche);
+            [$start, $end] = $this->getDateRangeFromPeriode($annee, $periode, $mois, $tranche);
             $qb->where("DATE_FORMAT(p.createdAt, '%Y-%m-%d') BETWEEN :start AND :end")
                 ->setParameter('start', $start->format('Y-m-d'))
                 ->setParameter('end', $end->format('Y-m-d'));
@@ -173,7 +173,7 @@ class ProfessionnelRepository extends ServiceEntityRepository
             ->groupBy('c.id');
 
         if ($annee != "null" && $periode != "null") {
-            [$start, $end] = $this->getDateRangeFromPeriode($annee, $periode,$mois,$tranche);
+            [$start, $end] = $this->getDateRangeFromPeriode($annee, $periode, $mois, $tranche);
             $qb->andWhere("DATE_FORMAT(e.createdAt, '%Y-%m-%d') BETWEEN :start AND :end")
                 ->setParameter('start', $start)
                 ->setParameter('end', $end);
@@ -191,7 +191,7 @@ class ProfessionnelRepository extends ServiceEntityRepository
             ->groupBy('c.id');
 
         if ($annee != "null" && $periode != "null") {
-            [$start, $end] = $this->getDateRangeFromPeriode($annee, $periode,$mois,$tranche);
+            [$start, $end] = $this->getDateRangeFromPeriode($annee, $periode, $mois, $tranche);
             $qb->andWhere("DATE_FORMAT(e.createdAt, '%Y-%m-%d') BETWEEN :start AND :end")
                 ->setParameter('start', $start)
                 ->setParameter('end', $end);
@@ -209,7 +209,7 @@ class ProfessionnelRepository extends ServiceEntityRepository
             ->groupBy('c.id');
 
         if ($annee != "null" && $periode != "null") {
-            [$start, $end] = $this->getDateRangeFromPeriode($annee, $periode,$mois,$tranche);
+            [$start, $end] = $this->getDateRangeFromPeriode($annee, $periode, $mois, $tranche);
             $qb->andWhere("DATE_FORMAT(e.createdAt, '%Y-%m-%d') BETWEEN :start AND :end")
                 ->setParameter('start', $start)
                 ->setParameter('end', $end);
@@ -235,7 +235,7 @@ class ProfessionnelRepository extends ServiceEntityRepository
             ->groupBy('tranche');
 
         if ($annee != "null" && $periode != "null") {
-            [$start, $end] = $this->getDateRangeFromPeriode($annee, $periode,$mois,$tranche);
+            [$start, $end] = $this->getDateRangeFromPeriode($annee, $periode, $mois, $tranche);
             $qb->andWhere("DATE_FORMAT(p.createdAt, '%Y-%m-%d') BETWEEN :start AND :end")
                 ->setParameter('start', $start)
                 ->setParameter('end', $end);
@@ -245,7 +245,7 @@ class ProfessionnelRepository extends ServiceEntityRepository
     }
 
 
-   
+
     public function findDiplomeStats(\DateTimeInterface $startDate, \DateTimeInterface $endDate): array
     {
         $qb = $this->createQueryBuilder('p')
@@ -265,18 +265,29 @@ class ProfessionnelRepository extends ServiceEntityRepository
 
         $results = $qb->getQuery()->getArrayResult();
 
-        // Grouper et calculer les tranches d'âge en PHP
+        // Grouper et calculer les tranches d'âge
         $grouped = [];
-        foreach ($results as $row) {
-            $age = (new \DateTime())->diff(new \DateTime($row['dateNaissance']))->y;
 
+        foreach ($results as $row) {
+            // Sécuriser la conversion de dateNaissance
+            if (empty($row['dateNaissance'])) {
+                continue; // ignorer si pas de date de naissance
+            }
+
+            $dateNaissance = $row['dateNaissance'] instanceof \DateTimeInterface
+                ? $row['dateNaissance']
+                : new \DateTime($row['dateNaissance']);
+
+            $age = (new \DateTime())->diff($dateNaissance)->y;
+
+            // Déterminer la tranche d'âge
             if ($age < 25) {
                 $trancheAge = '< 25 ans';
-            } elseif ($age >= 25 && $age <= 34) {
+            } elseif ($age <= 34) {
                 $trancheAge = '25-34 ans';
-            } elseif ($age >= 35 && $age <= 44) {
+            } elseif ($age <= 44) {
                 $trancheAge = '35-44 ans';
-            } elseif ($age >= 45 && $age <= 54) {
+            } elseif ($age <= 54) {
                 $trancheAge = '45-54 ans';
             } else {
                 $trancheAge = '55 ans et plus';
@@ -300,6 +311,7 @@ class ProfessionnelRepository extends ServiceEntityRepository
 
         return $this->formatStats(array_values($grouped));
     }
+
 
     private function formatStats(array $results): array
     {
