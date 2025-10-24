@@ -296,7 +296,7 @@ class ApiStatistiqueController extends ApiInterface
 
             return $this->responseData($result, 'group_user', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            return $this->response('[]');
+            return $this->response($exception->getMessage());
         }
     }
 
