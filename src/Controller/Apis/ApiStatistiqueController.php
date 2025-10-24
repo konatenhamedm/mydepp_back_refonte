@@ -217,7 +217,7 @@ class ApiStatistiqueController extends ApiInterface
            // dd($startDate,$endDate,$annee,$mois,$tranche);
 
             // Requête optimisée sans filtres supplémentaires
-            $stats2 = $professionnelRepository->findDiplomeStats($startDate, $endDate);
+            $stats2 = $professionnelRepository->findDiplomeStats(new \DateTime($startDate), new \DateTime($endDate));
             dd($stats2);
             //dd($startDate,$endDate,$annee);
 
