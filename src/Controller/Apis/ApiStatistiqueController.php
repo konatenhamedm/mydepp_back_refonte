@@ -239,19 +239,19 @@ class ApiStatistiqueController extends ApiInterface
             //dd($stats,$dataTrancheAge,$dataGenre,$dataAnnee,$dataVille,$dataRegion,$dataPays,$stats2);
 
             // Préchargement des professions
-            $codes = array_column($stats, 'libelle');
-            $professions = $professionRepository->findBy(['code' => $codes]);
+            //$codes = array_column($stats, 'libelle');
+          /*   $professions = $professionRepository->findBy(['code' => $codes]);
             $professionMap = [];
             foreach ($professions as $profession) {
                 $professionMap[$profession->getCode()] = $profession->getLibelle();
-            }
+            } */
 
             $statsProfession = [];
             $statsYear = [];
             foreach ($stats as $stat) {
                 if ($stat['nombre'] > 0) {
                     $statsProfession[] = [
-                        'name' => $professionMap[$stat['libelle']] ?? 'Inconnu',
+                        'name' => $stat['libelle'],
                         'y' => (int) $stat['nombre'],
                         'sliced' => $isFirst,
                         'selected' => $isFirst
