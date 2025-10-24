@@ -17,6 +17,26 @@ doctrine:
         identity_generation_preferences:
             Doctrine\DBAL\Platforms\PostgreSQLPlatform: identity
         auto_mapping: true
+        dql:
+            numeric_functions:
+                json_contains: DoctrineExtensions\Query\Mysql\JsonContains
+            datetime_functions:
+                year:  DoctrineExtensions\Query\Mysql\Year
+                month:  DoctrineExtensions\Query\Mysql\Month
+                date: DoctrineExtensions\Query\Mysql\Date
+                date_add: DoctrineExtensions\Query\Mysql\DateAdd
+                date_diff: DoctrineExtensions\Query\Mysql\DateDiff
+                date_format: DoctrineExtensions\Query\Mysql\DateFormat
+                last_day:  DoctrineExtensions\Query\Mysql\LastDay
+                timestampdiff: DoctrineExtensions\Query\Mysql\TimestampDiff
+            string_functions:
+                char_length: DoctrineExtensions\Query\Mysql\CharLength
+                group_concat: DoctrineExtensions\Query\Mysql\GroupConcat
+                concat_ws: DoctrineExtensions\Query\Mysql\ConcatWs
+                cast: DoctrineExtensions\Query\Mysql\Cast
+                nullif: DoctrineExtensions\Query\Mysql\NullIf
+                replace: DoctrineExtensions\Query\Mysql\Replace
+               
         mappings:
             App:
                 type: attribute
@@ -52,3 +72,74 @@ when@prod:
                     adapter: cache.app
                 doctrine.system_cache_pool:
                     adapter: cache.system
+        dql:
+            datetime_functions:
+                addtime: DoctrineExtensions\Query\Mysql\AddTime
+                convert_tz: DoctrineExtensions\Query\Mysql\ConvertTz
+                date: DoctrineExtensions\Query\Mysql\Date
+                date_format: DoctrineExtensions\Query\Mysql\DateFormat
+                dateadd: DoctrineExtensions\Query\Mysql\DateAdd
+                datesub: DoctrineExtensions\Query\Mysql\DateSub
+                datediff: DoctrineExtensions\Query\Mysql\DateDiff
+                day: DoctrineExtensions\Query\Mysql\Day
+                dayname: DoctrineExtensions\Query\Mysql\DayName
+                dayofweek: DoctrineExtensions\Query\Mysql\DayOfWeek
+                dayofyear: DoctrineExtensions\Query\Mysql\DayOfYear
+                div: DoctrineExtensions\Query\Mysql\Div
+                from_unixtime: DoctrineExtensions\Query\Mysql\FromUnixtime
+                hour: DoctrineExtensions\Query\Mysql\Hour
+                last_day: DoctrineExtensions\Query\Mysql\LastDay
+                makedate: DoctrineExtensions\Query\Mysql\MakeDate
+                minute: DoctrineExtensions\Query\Mysql\Minute
+                now: DoctrineExtensions\Query\Mysql\Now
+                month: DoctrineExtensions\Query\Mysql\Month
+                monthname: DoctrineExtensions\Query\Mysql\MonthName
+                period_diff: DoctrineExtensions\Query\Mysql\PeriodDiff
+                second: DoctrineExtensions\Query\Mysql\Second
+                sectotime: DoctrineExtensions\Query\Mysql\SecToTime
+                strtodate: DoctrineExtensions\Query\Mysql\StrToDate
+                time: DoctrineExtensions\Query\Mysql\Time
+                timediff: DoctrineExtensions\Query\Mysql\TimeDiff
+                timestampadd: DoctrineExtensions\Query\Mysql\TimestampAdd
+                timestampdiff: DoctrineExtensions\Query\Mysql\TimestampDiff
+                timetosec: DoctrineExtensions\Query\Mysql\TimeToSec
+                truncate: DoctrineExtensions\Query\Mysql\Truncate
+                week: DoctrineExtensions\Query\Mysql\Week
+                weekday: DoctrineExtensions\Query\Mysql\WeekDay
+                year: DoctrineExtensions\Query\Mysql\Year
+                yearmonth: DoctrineExtensions\Query\Mysql\YearMonth
+                yearweek: DoctrineExtensions\Query\Mysql\YearWeek
+                unix_timestamp: DoctrineExtensions\Query\Mysql\UnixTimestamp
+                utc_timestamp: DoctrineExtensions\Query\Mysql\UtcTimestamp
+                extract: DoctrineExtensions\Query\Mysql\Extract
+
+            numeric_functions:
+                acos: DoctrineExtensions\Query\Mysql\Acos
+                asin: DoctrineExtensions\Query\Mysql\Asin
+                atan2: DoctrineExtensions\Query\Mysql\Atan2
+                atan: DoctrineExtensions\Query\Mysql\Atan
+                bit_count: DoctrineExtensions\Query\Mysql\BitCount
+                bit_xor: DoctrineExtensions\Query\Mysql\BitXor
+                ceil: DoctrineExtensions\Query\Mysql\Ceil
+                cos: DoctrineExtensions\Query\Mysql\Cos
+                cot: DoctrineExtensions\Query\Mysql\Cot
+                degrees: DoctrineExtensions\Query\Mysql\Degrees
+                exp: DoctrineExtensions\Query\Mysql\Exp
+                floor: DoctrineExtensions\Query\Mysql\Floor
+                json_contains: DoctrineExtensions\Query\Mysql\JsonContains
+                json_depth: DoctrineExtensions\Query\Mysql\JsonDepth
+                json_length: DoctrineExtensions\Query\Mysql\JsonLength
+                log: DoctrineExtensions\Query\Mysql\Log
+                log10: DoctrineExtensions\Query\Mysql\Log10
+                log2: DoctrineExtensions\Query\Mysql\Log2
+                pi: DoctrineExtensions\Query\Mysql\Pi
+                power: DoctrineExtensions\Query\Mysql\Power
+                quarter: DoctrineExtensions\Query\Mysql\Quarter
+                radians: DoctrineExtensions\Query\Mysql\Radians
+                rand: DoctrineExtensions\Query\Mysql\Rand
+                round: DoctrineExtensions\Query\Mysql\Round
+                stddev: DoctrineExtensions\Query\Mysql\StdDev
+                sin: DoctrineExtensions\Query\Mysql\Sin
+                std: DoctrineExtensions\Query\Mysql\Std
+                tan: DoctrineExtensions\Query\Mysql\Tan
+                variance: DoctrineExtensions\Query\Mysql\Variance
