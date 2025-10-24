@@ -59,7 +59,7 @@ class ApiStatistiqueController extends ApiInterface
         // On envoie la réponse
         return $response;
     }
-    
+
 
     #[Route('/info-dashboard/by/typeuser/{type}/{idUser}', methods: ['GET'])]
     /**
@@ -209,28 +209,29 @@ class ApiStatistiqueController extends ApiInterface
             $annee = $request->query->get('annee');
             $mois = $request->query->get('mois');
             $tranche = $request->query->get('tranche');
-           // dd($mois,$periode,$annee,$tranche);
+            // dd($mois,$periode,$annee,$tranche);
             // Calcul de la plage de dates
-            [$startDate, $endDate] = $this->getDateRangeFromPeriode((int)$annee, $periode,(int)$mois,(int)$tranche);
-            
-          
+            [$startDate, $endDate] = $this->getDateRangeFromPeriode((int)$annee, $periode, (int)$mois, (int)$tranche);
+
+
 
             // Requête optimisée sans filtres supplémentaires
             $stats2 = $professionnelRepository->findDiplomeStats($startDate, $endDate);
-           //dd($startDate,$endDate,$annee);
-             
-        
+            //dd($startDate,$endDate,$annee);
+
+
+
             //dd($periode, $annee);
-            $stats = $professionnelRepository->countProByProfession((int)$annee, $periode,(int)$mois,(int)$tranche);
-            $dataTrancheAge = $professionnelRepository->countProByTrancheAge((int)$annee, $periode,(int)$mois,(int)$tranche);
-            $dataGenre = $professionnelRepository->countProByCiviliteGeneral((int)$annee, $periode,(int)$mois,(int)$tranche);
+            $stats = $professionnelRepository->countProByProfession((int)$annee, $periode, (int)$mois, (int)$tranche);
+            $dataTrancheAge = $professionnelRepository->countProByTrancheAge((int)$annee, $periode, (int)$mois, (int)$tranche);
+            $dataGenre = $professionnelRepository->countProByCiviliteGeneral((int)$annee, $periode, (int)$mois, (int)$tranche);
             $dataAnnee = $professionnelRepository->countProByAnnee();
 
             //dd($dataAnnee);
 
-            $dataVille = $professionnelRepository->countProByVille((int)$annee, $periode,(int)$mois,(int)$tranche);
-            $dataRegion = $professionnelRepository->countProByRegion((int)$annee, $periode,(int)$mois,(int)$tranche);
-            $dataPays = $professionnelRepository->countProByPays((int)$annee, $periode,(int)$mois,(int)$tranche);
+            $dataVille = $professionnelRepository->countProByVille((int)$annee, $periode, (int)$mois, (int)$tranche);
+            $dataRegion = $professionnelRepository->countProByRegion((int)$annee, $periode, (int)$mois, (int)$tranche);
+            $dataPays = $professionnelRepository->countProByPays((int)$annee, $periode, (int)$mois, (int)$tranche);
             $isFirst = true; // Pour le premier élément sélectionné dans le Pie Chart
 
 
@@ -258,11 +259,11 @@ class ApiStatistiqueController extends ApiInterface
             }
 
             foreach ($dataAnnee as $key => $value) {
-               
+
                 $statsYear[] = [
                     'libelle' => $value['libelle'],
                     'id' => (int) $value['libelle'],
-                    
+
                 ];
             }
 
@@ -283,7 +284,7 @@ class ApiStatistiqueController extends ApiInterface
                 'regions' => array_reverse($statsRegions),
                 'genres' => array_reverse($statsGenre),
                 'tranches_age' => $statsTrancheAge,
-                'all_annees'=>$statsYear,
+                'all_annees' => $statsYear,
                 'dates' => [
                     'debut' => $startDate->format('Y-m-d'),
                     'fin' => $endDate->format('Y-m-d')
@@ -344,7 +345,8 @@ class ApiStatistiqueController extends ApiInterface
                 break;
         }
 
-        return [$start, $end];
+        // Convertir les DateTime en chaînes de caractères (format Y-m-d)
+        return [$start->format('Y-m-d'), $end->format('Y-m-d')];
     }
 
     private function formatStats(array $data, string $labelKey = 'libelle', bool $markFirst = false): array
