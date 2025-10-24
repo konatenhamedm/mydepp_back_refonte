@@ -1339,13 +1339,23 @@
     </service>
     <service id="App\Controller\FichierController" class="App\Controller\FichierController" public="true" autowire="true" autoconfigure="true">
       <tag name="controller.service_arguments"/>
+      <tag name="routing.controller"/>
       <tag name="container.service_subscriber"/>
       <call method="setContainer">
         <argument type="service" id=".service_locator.Xgm7k44.App\Controller\FichierController"/>
       </call>
     </service>
+    <service id="App\Controller\HomeController" class="App\Controller\HomeController" public="true" autowire="true" autoconfigure="true">
+      <tag name="controller.service_arguments"/>
+      <tag name="routing.controller"/>
+      <tag name="container.service_subscriber"/>
+      <call method="setContainer">
+        <argument type="service" id=".service_locator.Xgm7k44.App\Controller\HomeController"/>
+      </call>
+    </service>
     <service id="App\Controller\ResetPasswordController" class="App\Controller\ResetPasswordController" public="true" autowire="true" autoconfigure="true">
       <tag name="controller.service_arguments"/>
+      <tag name="routing.controller"/>
       <tag name="container.service_subscriber"/>
       <argument type="service" id="symfonycasts.reset_password.helper"/>
       <argument type="service" id="doctrine.orm.default_entity_manager"/>
@@ -1356,6 +1366,7 @@
     </service>
     <service id="App\Controller\UserController" class="App\Controller\UserController" public="true" autowire="true" autoconfigure="true">
       <tag name="controller.service_arguments"/>
+      <tag name="routing.controller"/>
       <tag name="container.service_subscriber"/>
       <call method="setContainer">
         <argument type="service" id=".service_locator.Xgm7k44.App\Controller\UserController"/>
@@ -1623,7 +1634,7 @@
     </service>
     <service id="argument_resolver.service" class="Symfony\Component\HttpKernel\Controller\ArgumentResolver\ServiceValueResolver">
       <tag name="Symfony\Component\HttpKernel\Controller\ArgumentResolver\ServiceValueResolver" priority="-50">controller.argument_value_resolver</tag>
-      <argument type="service" id=".service_locator.pdqEv6N"/>
+      <argument type="service" id=".service_locator.zDZV3UV"/>
     </service>
     <service id="argument_resolver.default" class="Symfony\Component\HttpKernel\Controller\ArgumentResolver\DefaultValueResolver">
       <tag name="Symfony\Component\HttpKernel\Controller\ArgumentResolver\DefaultValueResolver" priority="-100">controller.argument_value_resolver</tag>
@@ -2578,7 +2589,7 @@
     <service id="console.command.workflow_dump" class="Symfony\Component\Workflow\Command\WorkflowDumpCommand">
       <tag name="console.command"/>
       <tag name="container.no_preload"/>
-      <argument type="service" id=".service_locator.dpiLQ5O"/>
+      <argument type="service" id=".service_locator.G0l8bSN"/>
       <call method="setName">
         <argument>workflow:dump</argument>
       </call>
@@ -4145,8 +4156,431 @@
       <argument type="abstract">events to dispatch</argument>
     </service>
     <service id="workflow.marking_store.method" class="Symfony\Component\Workflow\MarkingStore\MethodMarkingStore" abstract="true"/>
-    <service id="workflow.registry" class="Symfony\Component\Workflow\Registry"/>
+    <service id="workflow.registry" class="Symfony\Component\Workflow\Registry">
+      <call method="addWorkflow">
+        <argument type="service" id="debug.state_machine.validation_compte"/>
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\SupportStrategy\InstanceOfSupportStrategy">
+            <argument>App\Entity\Professionnel</argument>
+          </service>
+        </argument>
+      </call>
+      <call method="addWorkflow">
+        <argument type="service" id="debug.state_machine.validation_etablissement"/>
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\SupportStrategy\InstanceOfSupportStrategy">
+            <argument>App\Entity\Etablissement</argument>
+          </service>
+        </argument>
+      </call>
+    </service>
     <service id="workflow.security.expression_language" class="Symfony\Component\Workflow\EventListener\ExpressionLanguage"/>
+    <service id=".state_machine.validation_compte.transition.0" class="Symfony\Component\Workflow\Transition">
+      <argument>acceptation</argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>attente</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>accepte</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+    </service>
+    <service id=".state_machine.validation_compte.transition.1" class="Symfony\Component\Workflow\Transition">
+      <argument>rejet</argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>attente</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>rejete</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+    </service>
+    <service id=".state_machine.validation_compte.transition.2" class="Symfony\Component\Workflow\Transition">
+      <argument>refuse</argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>accepte</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>refuse</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+    </service>
+    <service id=".state_machine.validation_compte.transition.3" class="Symfony\Component\Workflow\Transition">
+      <argument>validation</argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>accepte</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>valide</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+    </service>
+    <service id=".state_machine.validation_compte.transition.4" class="Symfony\Component\Workflow\Transition">
+      <argument>renouvellement</argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>valide</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>renouvellement</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+    </service>
+    <service id=".state_machine.validation_compte.transition.5" class="Symfony\Component\Workflow\Transition">
+      <argument>mis_a_jour</argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>renouvellement</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>a_jour</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+    </service>
+    <service id="state_machine.validation_compte.metadata_store" class="Symfony\Component\Workflow\Metadata\InMemoryMetadataStore">
+      <argument type="collection"/>
+      <argument type="collection"/>
+      <argument type="service">
+        <service class="SplObjectStorage"/>
+      </argument>
+    </service>
+    <service id="state_machine.validation_compte.definition" class="Symfony\Component\Workflow\Definition">
+      <argument type="collection">
+        <argument>attente</argument>
+        <argument>rejete</argument>
+        <argument>accepte</argument>
+        <argument>valide</argument>
+        <argument>refuse</argument>
+        <argument>renouvellement</argument>
+        <argument>a_jour</argument>
+      </argument>
+      <argument type="collection">
+        <argument type="service" id=".state_machine.validation_compte.transition.0"/>
+        <argument type="service" id=".state_machine.validation_compte.transition.1"/>
+        <argument type="service" id=".state_machine.validation_compte.transition.2"/>
+        <argument type="service" id=".state_machine.validation_compte.transition.3"/>
+        <argument type="service" id=".state_machine.validation_compte.transition.4"/>
+        <argument type="service" id=".state_machine.validation_compte.transition.5"/>
+      </argument>
+      <argument type="collection">
+        <argument>attente</argument>
+      </argument>
+      <argument type="service" id="state_machine.validation_compte.metadata_store"/>
+    </service>
+    <service id=".state_machine.validation_compte.listener.audit_trail" class="Symfony\Component\Workflow\EventListener\AuditTrailListener">
+      <tag name="monolog.logger" channel="workflow"/>
+      <tag name="kernel.event_listener" event="workflow.validation_compte.leave" method="onLeave"/>
+      <tag name="kernel.event_listener" event="workflow.validation_compte.transition" method="onTransition"/>
+      <tag name="kernel.event_listener" event="workflow.validation_compte.enter" method="onEnter"/>
+      <argument type="service" id="monolog.logger.workflow"/>
+    </service>
+    <service id=".state_machine.validation_etablissement.transition.0" class="Symfony\Component\Workflow\Transition">
+      <argument>soumission_validation</argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>acp_attente_dossier_depot_service_courrier</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>acp_dossier_attente_validation_directrice</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+    </service>
+    <service id=".state_machine.validation_etablissement.transition.1" class="Symfony\Component\Workflow\Transition">
+      <argument>validation_directrice</argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>acp_dossier_attente_validation_directrice</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>acp_dossier_valide_directrice</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+    </service>
+    <service id=".state_machine.validation_etablissement.transition.2" class="Symfony\Component\Workflow\Transition">
+      <argument>rejet_directrice</argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>acp_dossier_attente_validation_directrice</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>acp_attente_dossier_depot_service_courrier</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+    </service>
+    <service id=".state_machine.validation_etablissement.transition.3" class="Symfony\Component\Workflow\Transition">
+      <argument>initiation_demande_exploitation</argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>acp_dossier_valide_directrice</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>oep_demande_initie</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+    </service>
+    <service id=".state_machine.validation_etablissement.transition.4" class="Symfony\Component\Workflow\Transition">
+      <argument>imputation_dossier</argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>oep_demande_initie</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>oep_dossier_imputer</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+    </service>
+    <service id=".state_machine.validation_etablissement.transition.5" class="Symfony\Component\Workflow\Transition">
+      <argument>imputation_conforme</argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>oep_dossier_imputer</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>oep_dossier_imputer_conforme_attente_planification_visite</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+    </service>
+    <service id=".state_machine.validation_etablissement.transition.6" class="Symfony\Component\Workflow\Transition">
+      <argument>imputation_non_conforme</argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>oep_dossier_imputer</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>oep_dossier_imputer_non_conforme</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+    </service>
+    <service id=".state_machine.validation_etablissement.transition.7" class="Symfony\Component\Workflow\Transition">
+      <argument>programmation_visite</argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>oep_dossier_imputer_conforme_attente_planification_visite</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>oep_dossier_visite_programme</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+    </service>
+    <service id=".state_machine.validation_etablissement.transition.8" class="Symfony\Component\Workflow\Transition">
+      <argument>visite_effectuee</argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>oep_dossier_visite_programme</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>oep_visite_effectue_attente_validation_directrice</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+    </service>
+    <service id=".state_machine.validation_etablissement.transition.9" class="Symfony\Component\Workflow\Transition">
+      <argument>validation_finale</argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>oep_visite_effectue_attente_validation_directrice</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>oep_dossier_conforme</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+    </service>
+    <service id=".state_machine.validation_etablissement.transition.10" class="Symfony\Component\Workflow\Transition">
+      <argument>rejet_final</argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>oep_visite_effectue_attente_validation_directrice</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+      <argument type="collection">
+        <argument type="service">
+          <service class="Symfony\Component\Workflow\Arc">
+            <argument>oep_dossier_non_conforme</argument>
+            <argument>1</argument>
+          </service>
+        </argument>
+      </argument>
+    </service>
+    <service id="state_machine.validation_etablissement.metadata_store" class="Symfony\Component\Workflow\Metadata\InMemoryMetadataStore">
+      <argument type="collection"/>
+      <argument type="collection"/>
+      <argument type="service">
+        <service class="SplObjectStorage"/>
+      </argument>
+    </service>
+    <service id="state_machine.validation_etablissement.definition" class="Symfony\Component\Workflow\Definition">
+      <argument type="collection">
+        <argument>acp_attente_dossier_depot_service_courrier</argument>
+        <argument>acp_dossier_attente_validation_directrice</argument>
+        <argument>acp_dossier_valide_directrice</argument>
+        <argument>oep_demande_initie</argument>
+        <argument>oep_dossier_imputer</argument>
+        <argument>oep_dossier_imputer_conforme_attente_planification_visite</argument>
+        <argument>oep_dossier_imputer_non_conforme</argument>
+        <argument>oep_dossier_visite_programme</argument>
+        <argument>oep_visite_effectue_attente_validation_directrice</argument>
+        <argument>oep_dossier_conforme</argument>
+        <argument>oep_dossier_non_conforme</argument>
+      </argument>
+      <argument type="collection">
+        <argument type="service" id=".state_machine.validation_etablissement.transition.0"/>
+        <argument type="service" id=".state_machine.validation_etablissement.transition.1"/>
+        <argument type="service" id=".state_machine.validation_etablissement.transition.2"/>
+        <argument type="service" id=".state_machine.validation_etablissement.transition.3"/>
+        <argument type="service" id=".state_machine.validation_etablissement.transition.4"/>
+        <argument type="service" id=".state_machine.validation_etablissement.transition.5"/>
+        <argument type="service" id=".state_machine.validation_etablissement.transition.6"/>
+        <argument type="service" id=".state_machine.validation_etablissement.transition.7"/>
+        <argument type="service" id=".state_machine.validation_etablissement.transition.8"/>
+        <argument type="service" id=".state_machine.validation_etablissement.transition.9"/>
+        <argument type="service" id=".state_machine.validation_etablissement.transition.10"/>
+      </argument>
+      <argument type="collection">
+        <argument>acp_attente_dossier_depot_service_courrier</argument>
+      </argument>
+      <argument type="service" id="state_machine.validation_etablissement.metadata_store"/>
+    </service>
+    <service id=".state_machine.validation_etablissement.listener.audit_trail" class="Symfony\Component\Workflow\EventListener\AuditTrailListener">
+      <tag name="monolog.logger" channel="workflow"/>
+      <tag name="kernel.event_listener" event="workflow.validation_etablissement.leave" method="onLeave"/>
+      <tag name="kernel.event_listener" event="workflow.validation_etablissement.transition" method="onTransition"/>
+      <tag name="kernel.event_listener" event="workflow.validation_etablissement.enter" method="onEnter"/>
+      <argument type="service" id="monolog.logger.workflow"/>
+    </service>
     <service id="debug.error_handler_configurator" class="Symfony\Component\HttpKernel\Debug\ErrorHandlerConfigurator" public="true">
       <tag name="monolog.logger" channel="php"/>
       <argument type="service" id="monolog.logger.php"/>
@@ -4183,6 +4617,54 @@
       <argument type="service" id="monolog.logger.event" on-invalid="null"/>
       <argument type="service" id=".virtual_request_stack" on-invalid="null"/>
       <argument type="service" id="profiler.is_disabled_state_checker" on-invalid="null"/>
+      <call method="addListener">
+        <argument>workflow.validation_compte.leave</argument>
+        <argument type="collection">
+          <argument type="service_closure" id=".state_machine.validation_compte.listener.audit_trail"/>
+          <argument>onLeave</argument>
+        </argument>
+        <argument>0</argument>
+      </call>
+      <call method="addListener">
+        <argument>workflow.validation_compte.transition</argument>
+        <argument type="collection">
+          <argument type="service_closure" id=".state_machine.validation_compte.listener.audit_trail"/>
+          <argument>onTransition</argument>
+        </argument>
+        <argument>0</argument>
+      </call>
+      <call method="addListener">
+        <argument>workflow.validation_compte.enter</argument>
+        <argument type="collection">
+          <argument type="service_closure" id=".state_machine.validation_compte.listener.audit_trail"/>
+          <argument>onEnter</argument>
+        </argument>
+        <argument>0</argument>
+      </call>
+      <call method="addListener">
+        <argument>workflow.validation_etablissement.leave</argument>
+        <argument type="collection">
+          <argument type="service_closure" id=".state_machine.validation_etablissement.listener.audit_trail"/>
+          <argument>onLeave</argument>
+        </argument>
+        <argument>0</argument>
+      </call>
+      <call method="addListener">
+        <argument>workflow.validation_etablissement.transition</argument>
+        <argument type="collection">
+          <argument type="service_closure" id=".state_machine.validation_etablissement.listener.audit_trail"/>
+          <argument>onTransition</argument>
+        </argument>
+        <argument>0</argument>
+      </call>
+      <call method="addListener">
+        <argument>workflow.validation_etablissement.enter</argument>
+        <argument type="collection">
+          <argument type="service_closure" id=".state_machine.validation_etablissement.listener.audit_trail"/>
+          <argument>onEnter</argument>
+        </argument>
+        <argument>0</argument>
+      </call>
       <call method="addListener">
         <argument>kernel.response</argument>
         <argument type="collection">
@@ -4893,7 +5375,7 @@
     </service>
     <service id="argument_resolver.not_tagged_controller" class="Symfony\Component\HttpKernel\Controller\ArgumentResolver\NotTaggedControllerValueResolver">
       <tag name="controller.argument_value_resolver" priority="-200"/>
-      <argument type="service" id=".service_locator.pdqEv6N"/>
+      <argument type="service" id=".service_locator.zDZV3UV"/>
     </service>
     <service id="debug.log_processor" class="Symfony\Bridge\Monolog\Processor\DebugProcessor">
       <tag name="kernel.reset" method="reset"/>
@@ -5014,6 +5496,10 @@
         <argument>App\Controller\Apis\ApiValidationWorkflowController</argument>
         <argument>App\Controller\Apis\ApiVilleController</argument>
         <argument>App\Controller\AuthController</argument>
+        <argument>App\Controller\FichierController</argument>
+        <argument>App\Controller\HomeController</argument>
+        <argument>App\Controller\ResetPasswordController</argument>
+        <argument>App\Controller\UserController</argument>
       </argument>
     </service>
     <service id="routing.loader.attribute.directory" class="Symfony\Component\Routing\Loader\AttributeDirectoryLoader">
@@ -5040,7 +5526,7 @@
     <service id="router.default" class="Symfony\Bundle\FrameworkBundle\Routing\Router">
       <tag name="monolog.logger" channel="router"/>
       <tag name="container.service_subscriber" id="routing.loader"/>
-      <argument type="service" id=".service_locator.s8nLSlz.router.default"/>
+      <argument type="service" id=".service_locator.yWPg3oY.router.default"/>
       <argument>kernel::loadRoutes</argument>
       <argument type="collection">
         <argument key="cache_dir">/Volumes/konate/ANVOH/mydeep_admin/backend/var/cache/dev</argument>
@@ -7171,6 +7657,66 @@
       <call method="setRepositoryFactory">
         <argument type="service" id="doctrine.orm.container_repository_factory"/>
       </call>
+      <call method="addCustomStringFunction">
+        <argument>char_length</argument>
+        <argument>DoctrineExtensions\Query\Mysql\CharLength</argument>
+      </call>
+      <call method="addCustomStringFunction">
+        <argument>group_concat</argument>
+        <argument>DoctrineExtensions\Query\Mysql\GroupConcat</argument>
+      </call>
+      <call method="addCustomStringFunction">
+        <argument>concat_ws</argument>
+        <argument>DoctrineExtensions\Query\Mysql\ConcatWs</argument>
+      </call>
+      <call method="addCustomStringFunction">
+        <argument>cast</argument>
+        <argument>DoctrineExtensions\Query\Mysql\Cast</argument>
+      </call>
+      <call method="addCustomStringFunction">
+        <argument>nullif</argument>
+        <argument>DoctrineExtensions\Query\Mysql\NullIf</argument>
+      </call>
+      <call method="addCustomStringFunction">
+        <argument>replace</argument>
+        <argument>DoctrineExtensions\Query\Mysql\Replace</argument>
+      </call>
+      <call method="addCustomNumericFunction">
+        <argument>json_contains</argument>
+        <argument>DoctrineExtensions\Query\Mysql\JsonContains</argument>
+      </call>
+      <call method="addCustomDatetimeFunction">
+        <argument>year</argument>
+        <argument>DoctrineExtensions\Query\Mysql\Year</argument>
+      </call>
+      <call method="addCustomDatetimeFunction">
+        <argument>month</argument>
+        <argument>DoctrineExtensions\Query\Mysql\Month</argument>
+      </call>
+      <call method="addCustomDatetimeFunction">
+        <argument>date</argument>
+        <argument>DoctrineExtensions\Query\Mysql\Date</argument>
+      </call>
+      <call method="addCustomDatetimeFunction">
+        <argument>date_add</argument>
+        <argument>DoctrineExtensions\Query\Mysql\DateAdd</argument>
+      </call>
+      <call method="addCustomDatetimeFunction">
+        <argument>date_diff</argument>
+        <argument>DoctrineExtensions\Query\Mysql\DateDiff</argument>
+      </call>
+      <call method="addCustomDatetimeFunction">
+        <argument>date_format</argument>
+        <argument>DoctrineExtensions\Query\Mysql\DateFormat</argument>
+      </call>
+      <call method="addCustomDatetimeFunction">
+        <argument>last_day</argument>
+        <argument>DoctrineExtensions\Query\Mysql\LastDay</argument>
+      </call>
+      <call method="addCustomDatetimeFunction">
+        <argument>timestampdiff</argument>
+        <argument>DoctrineExtensions\Query\Mysql\TimestampDiff</argument>
+      </call>
     </service>
     <service id="doctrine.orm.default_attribute_metadata_driver" class="Doctrine\ORM\Mapping\Driver\AttributeDriver">
       <argument type="collection">
@@ -8404,13 +8950,6 @@
         <argument>null</argument>
       </call>
       <call method="add">
-        <argument type="service" id=".security.request_matcher.0tMb.ud"/>
-        <argument type="collection">
-          <argument>IS_AUTHENTICATED_FULLY</argument>
-        </argument>
-        <argument>null</argument>
-      </call>
-      <call method="add">
         <argument type="service" id=".security.request_matcher.CUDSgej"/>
         <argument type="collection">
           <argument>PUBLIC_ACCESS</argument>
@@ -9045,11 +9584,6 @@
         <argument type="service" id=".security.request_matcher.pqyCXG8"/>
       </argument>
     </service>
-    <service id=".security.request_matcher.0tMb.ud" class="Symfony\Component\HttpFoundation\ChainRequestMatcher">
-      <argument type="collection">
-        <argument type="service" id=".security.request_matcher.3qgJVJN"/>
-      </argument>
-    </service>
     <service id=".security.request_matcher.SbN0Tkg" class="Symfony\Component\HttpFoundation\RequestMatcher\PathRequestMatcher">
       <argument>^/</argument>
     </service>
@@ -9398,7 +9932,7 @@
       <argument type="collection">
         <argument key="servers" type="collection">
           <argument type="collection">
-            <argument key="url">http://127.0.0.1:8000</argument>
+            <argument key="url">http://backend.leadagro.net/</argument>
           </argument>
         </argument>
         <argument key="info" type="collection">
@@ -9980,12 +10514,19 @@
     <service id=".abstract.instanceof.App\Controller\AuthController" class="App\Controller\AuthController" autowire="true" autoconfigure="true" abstract="true"/>
     <service id=".instanceof.Symfony\Contracts\Service\ServiceSubscriberInterface.0.App\Controller\FichierController" class="App\Controller\FichierController" autowire="true" abstract="true"/>
     <service id=".instanceof.Symfony\Bundle\FrameworkBundle\Controller\AbstractController.0.App\Controller\FichierController" class="App\Controller\FichierController" autowire="true" abstract="true"/>
+    <service id=".instanceof.App\Controller\FichierController.0.App\Controller\FichierController" class="App\Controller\FichierController" autowire="true" abstract="true"/>
     <service id=".abstract.instanceof.App\Controller\FichierController" class="App\Controller\FichierController" autowire="true" autoconfigure="true" abstract="true"/>
+    <service id=".instanceof.Symfony\Contracts\Service\ServiceSubscriberInterface.0.App\Controller\HomeController" class="App\Controller\HomeController" autowire="true" abstract="true"/>
+    <service id=".instanceof.Symfony\Bundle\FrameworkBundle\Controller\AbstractController.0.App\Controller\HomeController" class="App\Controller\HomeController" autowire="true" abstract="true"/>
+    <service id=".instanceof.App\Controller\HomeController.0.App\Controller\HomeController" class="App\Controller\HomeController" autowire="true" abstract="true"/>
+    <service id=".abstract.instanceof.App\Controller\HomeController" class="App\Controller\HomeController" autowire="true" autoconfigure="true" abstract="true"/>
     <service id=".instanceof.Symfony\Contracts\Service\ServiceSubscriberInterface.0.App\Controller\ResetPasswordController" class="App\Controller\ResetPasswordController" autowire="true" abstract="true"/>
     <service id=".instanceof.Symfony\Bundle\FrameworkBundle\Controller\AbstractController.0.App\Controller\ResetPasswordController" class="App\Controller\ResetPasswordController" autowire="true" abstract="true"/>
+    <service id=".instanceof.App\Controller\ResetPasswordController.0.App\Controller\ResetPasswordController" class="App\Controller\ResetPasswordController" autowire="true" abstract="true"/>
     <service id=".abstract.instanceof.App\Controller\ResetPasswordController" class="App\Controller\ResetPasswordController" autowire="true" autoconfigure="true" abstract="true"/>
     <service id=".instanceof.Symfony\Contracts\Service\ServiceSubscriberInterface.0.App\Controller\UserController" class="App\Controller\UserController" autowire="true" abstract="true"/>
     <service id=".instanceof.Symfony\Bundle\FrameworkBundle\Controller\AbstractController.0.App\Controller\UserController" class="App\Controller\UserController" autowire="true" abstract="true"/>
+    <service id=".instanceof.App\Controller\UserController.0.App\Controller\UserController" class="App\Controller\UserController" autowire="true" abstract="true"/>
     <service id=".abstract.instanceof.App\Controller\UserController" class="App\Controller\UserController" autowire="true" autoconfigure="true" abstract="true"/>
     <service id=".instanceof.Symfony\Component\Form\FormTypeInterface.0.App\Form\ChangePasswordFormType" class="App\Form\ChangePasswordFormType" autowire="true" abstract="true"/>
     <service id=".abstract.instanceof.App\Form\ChangePasswordFormType" class="App\Form\ChangePasswordFormType" autowire="true" autoconfigure="true" abstract="true"/>
@@ -13381,19 +13922,20 @@
       <argument type="service" id="service_container"/>
       <factory service=".service_locator.p66hxK8" method="withContext"/>
     </service>
-    <service id=".service_locator.D0iGBCI" class="Symfony\Component\DependencyInjection\ServiceLocator">
+    <service id=".service_locator.SoCY2bj" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator"/>
       <argument type="collection">
-        <argument key="user" type="service_closure" id=".errored..service_locator.D0iGBCI.App\Entity\User"/>
+        <argument key="sendMailService" type="service_closure" id="App\Service\SendMailService"/>
+        <argument key="user" type="service_closure" id=".errored..service_locator.SoCY2bj.App\Entity\User"/>
         <argument key="userRepository" type="service_closure" id="App\Repository\UserRepository"/>
         <argument key="administrateurRepository" type="service_closure" id="App\Repository\AdministrateurRepository"/>
       </argument>
     </service>
-    <service id=".service_locator.D0iGBCI.App\Controller\Apis\ApiUserController::update()" class="Symfony\Component\DependencyInjection\ServiceLocator">
+    <service id=".service_locator.SoCY2bj.App\Controller\Apis\ApiUserController::update()" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator_context" id="App\Controller\Apis\ApiUserController::update()"/>
       <argument>App\Controller\Apis\ApiUserController::update()</argument>
       <argument type="service" id="service_container"/>
-      <factory service=".service_locator.D0iGBCI" method="withContext"/>
+      <factory service=".service_locator.SoCY2bj" method="withContext"/>
     </service>
     <service id=".service_locator.uTkqXqk" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator"/>
@@ -13464,6 +14006,22 @@
       <argument>App\Controller\Apis\ApiUserController::resetPassword()</argument>
       <argument type="service" id="service_container"/>
       <factory service=".service_locator.QrATXQA" method="withContext"/>
+    </service>
+    <service id=".service_locator.hnJebnj" class="Symfony\Component\DependencyInjection\ServiceLocator">
+      <tag name="container.service_locator"/>
+      <argument type="collection">
+        <argument key="sendMailService" type="service_closure" id="App\Service\SendMailService"/>
+        <argument key="userRepo" type="service_closure" id="App\Repository\UserRepository"/>
+        <argument key="passwordHasher" type="service_closure" id="security.user_password_hasher"/>
+        <argument key="em" type="service_closure" id="doctrine.orm.default_entity_manager"/>
+        <argument key="professionnelRepository" type="service_closure" id="App\Repository\ProfessionnelRepository"/>
+      </argument>
+    </service>
+    <service id=".service_locator.hnJebnj.App\Controller\Apis\ApiUserController::createNewUser()" class="Symfony\Component\DependencyInjection\ServiceLocator">
+      <tag name="container.service_locator_context" id="App\Controller\Apis\ApiUserController::createNewUser()"/>
+      <argument>App\Controller\Apis\ApiUserController::createNewUser()</argument>
+      <argument type="service" id="service_container"/>
+      <factory service=".service_locator.hnJebnj" method="withContext"/>
     </service>
     <service id=".service_locator.jGT2YJ9" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator"/>
@@ -13643,6 +14201,19 @@
       <argument type="service" id="service_container"/>
       <factory service=".service_locator.MvetcdK" method="withContext"/>
     </service>
+    <service id=".service_locator.P0zxPQi" class="Symfony\Component\DependencyInjection\ServiceLocator">
+      <tag name="container.service_locator"/>
+      <argument type="collection">
+        <argument key="professionnelRepository" type="service_closure" id="App\Repository\ProfessionnelRepository"/>
+        <argument key="professionRepository" type="service_closure" id="App\Repository\ProfessionRepository"/>
+      </argument>
+    </service>
+    <service id=".service_locator.P0zxPQi.App\Controller\HomeController::index()" class="Symfony\Component\DependencyInjection\ServiceLocator">
+      <tag name="container.service_locator_context" id="App\Controller\HomeController::index()"/>
+      <argument>App\Controller\HomeController::index()</argument>
+      <argument type="service" id="service_container"/>
+      <factory service=".service_locator.P0zxPQi" method="withContext"/>
+    </service>
     <service id=".service_locator.GCFxFMD" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator"/>
       <argument type="collection">
@@ -13680,7 +14251,7 @@
       <argument type="service" id="service_container"/>
       <factory service=".service_locator.YlAh0cN" method="withContext"/>
     </service>
-    <service id=".service_locator.pdqEv6N" class="Symfony\Component\DependencyInjection\ServiceLocator">
+    <service id=".service_locator.zDZV3UV" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator"/>
       <argument type="collection">
         <argument key="kernel::registerContainerConfiguration" type="service_closure" id=".service_locator.1vYpZ1B.kernel::registerContainerConfiguration()"/>
@@ -13907,7 +14478,7 @@
         <argument key="App\Controller\Apis\ApiUserController::create" type="service_closure" id=".service_locator.OZAhiMp.App\Controller\Apis\ApiUserController::create()"/>
         <argument key="App\Controller\Apis\ApiUserController::createMembre" type="service_closure" id=".service_locator.PtMLGj3.App\Controller\Apis\ApiUserController::createMembre()"/>
         <argument key="App\Controller\Apis\ApiUserController::ModificationMotPasse" type="service_closure" id=".service_locator.p66hxK8.App\Controller\Apis\ApiUserController::ModificationMotPasse()"/>
-        <argument key="App\Controller\Apis\ApiUserController::update" type="service_closure" id=".service_locator.D0iGBCI.App\Controller\Apis\ApiUserController::update()"/>
+        <argument key="App\Controller\Apis\ApiUserController::update" type="service_closure" id=".service_locator.SoCY2bj.App\Controller\Apis\ApiUserController::update()"/>
         <argument key="App\Controller\Apis\ApiUserController::updateMembre" type="service_closure" id=".service_locator.uTkqXqk.App\Controller\Apis\ApiUserController::updateMembre()"/>
         <argument key="App\Controller\Apis\ApiUserController::motPasseOublie" type="service_closure" id=".service_locator.PtMLGj3.App\Controller\Apis\ApiUserController::motPasseOublie()"/>
         <argument key="App\Controller\Apis\ApiUserController::delete" type="service_closure" id=".service_locator.uTkqXqk.App\Controller\Apis\ApiUserController::delete()"/>
@@ -13915,6 +14486,7 @@
         <argument key="App\Controller\Apis\ApiUserController::deleteAll" type="service_closure" id=".service_locator.Q.v01gO.App\Controller\Apis\ApiUserController::deleteAll()"/>
         <argument key="App\Controller\Apis\ApiUserController::requestResetPassword" type="service_closure" id=".service_locator.qgrb8rg.App\Controller\Apis\ApiUserController::requestResetPassword()"/>
         <argument key="App\Controller\Apis\ApiUserController::resetPassword" type="service_closure" id=".service_locator.QrATXQA.App\Controller\Apis\ApiUserController::resetPassword()"/>
+        <argument key="App\Controller\Apis\ApiUserController::createNewUser" type="service_closure" id=".service_locator.hnJebnj.App\Controller\Apis\ApiUserController::createNewUser()"/>
         <argument key="App\Controller\Apis\ApiValidationWorkflowController::index" type="service_closure" id=".service_locator.jGT2YJ9.App\Controller\Apis\ApiValidationWorkflowController::index()"/>
         <argument key="App\Controller\Apis\ApiValidationWorkflowController::suiviByUser" type="service_closure" id=".service_locator.WPmbfTg.App\Controller\Apis\ApiValidationWorkflowController::suiviByUser()"/>
         <argument key="App\Controller\Apis\ApiValidationWorkflowController::create" type="service_closure" id=".service_locator.jGT2YJ9.App\Controller\Apis\ApiValidationWorkflowController::create()"/>
@@ -13929,6 +14501,7 @@
         <argument key="App\Controller\Apis\ApiVilleController::deleteAll" type="service_closure" id=".service_locator.85AZGMq.App\Controller\Apis\ApiVilleController::deleteAll()"/>
         <argument key="App\Controller\AuthController::login" type="service_closure" id=".service_locator.byvly3F.App\Controller\AuthController::login()"/>
         <argument key="App\Controller\FichierController::show" type="service_closure" id=".service_locator.MvetcdK.App\Controller\FichierController::show()"/>
+        <argument key="App\Controller\HomeController::index" type="service_closure" id=".service_locator.P0zxPQi.App\Controller\HomeController::index()"/>
         <argument key="App\Controller\ResetPasswordController::request" type="service_closure" id=".service_locator.GCFxFMD.App\Controller\ResetPasswordController::request()"/>
         <argument key="App\Controller\ResetPasswordController::resetPassword" type="service_closure" id=".service_locator.R21nC86.App\Controller\ResetPasswordController::resetPassword()"/>
         <argument key="App\Controller\UserController::toggleActive" type="service_closure" id=".service_locator.YlAh0cN.App\Controller\UserController::toggleActive()"/>
@@ -14154,7 +14727,7 @@
         <argument key="App\Controller\Apis\ApiUserController:create" type="service_closure" id=".service_locator.OZAhiMp.App\Controller\Apis\ApiUserController::create()"/>
         <argument key="App\Controller\Apis\ApiUserController:createMembre" type="service_closure" id=".service_locator.PtMLGj3.App\Controller\Apis\ApiUserController::createMembre()"/>
         <argument key="App\Controller\Apis\ApiUserController:ModificationMotPasse" type="service_closure" id=".service_locator.p66hxK8.App\Controller\Apis\ApiUserController::ModificationMotPasse()"/>
-        <argument key="App\Controller\Apis\ApiUserController:update" type="service_closure" id=".service_locator.D0iGBCI.App\Controller\Apis\ApiUserController::update()"/>
+        <argument key="App\Controller\Apis\ApiUserController:update" type="service_closure" id=".service_locator.SoCY2bj.App\Controller\Apis\ApiUserController::update()"/>
         <argument key="App\Controller\Apis\ApiUserController:updateMembre" type="service_closure" id=".service_locator.uTkqXqk.App\Controller\Apis\ApiUserController::updateMembre()"/>
         <argument key="App\Controller\Apis\ApiUserController:motPasseOublie" type="service_closure" id=".service_locator.PtMLGj3.App\Controller\Apis\ApiUserController::motPasseOublie()"/>
         <argument key="App\Controller\Apis\ApiUserController:delete" type="service_closure" id=".service_locator.uTkqXqk.App\Controller\Apis\ApiUserController::delete()"/>
@@ -14162,6 +14735,7 @@
         <argument key="App\Controller\Apis\ApiUserController:deleteAll" type="service_closure" id=".service_locator.Q.v01gO.App\Controller\Apis\ApiUserController::deleteAll()"/>
         <argument key="App\Controller\Apis\ApiUserController:requestResetPassword" type="service_closure" id=".service_locator.qgrb8rg.App\Controller\Apis\ApiUserController::requestResetPassword()"/>
         <argument key="App\Controller\Apis\ApiUserController:resetPassword" type="service_closure" id=".service_locator.QrATXQA.App\Controller\Apis\ApiUserController::resetPassword()"/>
+        <argument key="App\Controller\Apis\ApiUserController:createNewUser" type="service_closure" id=".service_locator.hnJebnj.App\Controller\Apis\ApiUserController::createNewUser()"/>
         <argument key="App\Controller\Apis\ApiValidationWorkflowController:index" type="service_closure" id=".service_locator.jGT2YJ9.App\Controller\Apis\ApiValidationWorkflowController::index()"/>
         <argument key="App\Controller\Apis\ApiValidationWorkflowController:suiviByUser" type="service_closure" id=".service_locator.WPmbfTg.App\Controller\Apis\ApiValidationWorkflowController::suiviByUser()"/>
         <argument key="App\Controller\Apis\ApiValidationWorkflowController:create" type="service_closure" id=".service_locator.jGT2YJ9.App\Controller\Apis\ApiValidationWorkflowController::create()"/>
@@ -14176,6 +14750,7 @@
         <argument key="App\Controller\Apis\ApiVilleController:deleteAll" type="service_closure" id=".service_locator.85AZGMq.App\Controller\Apis\ApiVilleController::deleteAll()"/>
         <argument key="App\Controller\AuthController:login" type="service_closure" id=".service_locator.byvly3F.App\Controller\AuthController::login()"/>
         <argument key="App\Controller\FichierController:show" type="service_closure" id=".service_locator.MvetcdK.App\Controller\FichierController::show()"/>
+        <argument key="App\Controller\HomeController:index" type="service_closure" id=".service_locator.P0zxPQi.App\Controller\HomeController::index()"/>
         <argument key="App\Controller\ResetPasswordController:request" type="service_closure" id=".service_locator.GCFxFMD.App\Controller\ResetPasswordController::request()"/>
         <argument key="App\Controller\ResetPasswordController:resetPassword" type="service_closure" id=".service_locator.R21nC86.App\Controller\ResetPasswordController::resetPassword()"/>
         <argument key="App\Controller\UserController:toggleActive" type="service_closure" id=".service_locator.YlAh0cN.App\Controller\UserController::toggleActive()"/>
@@ -14491,6 +15066,38 @@
       <argument type="service" id="debug.stopwatch" on-invalid="ignore"/>
       <argument type="service" id="profiler.is_disabled_state_checker" on-invalid="ignore"/>
     </service>
+    <service id="debug.state_machine.validation_compte" class="Symfony\Component\Workflow\Debug\TraceableWorkflow">
+      <tag name="workflow">
+        <attribute name="name">validation_compte</attribute>
+        <attribute name="metadata">
+        </attribute>
+        <attribute name="definition_validators">
+          <attribute name="0">Symfony\Component\Workflow\Validator\StateMachineValidator</attribute>
+        </attribute>
+        <attribute name="definition_id">state_machine.validation_compte.definition</attribute>
+      </tag>
+      <tag name="validation_compte">workflow.state_machine</tag>
+      <tag name="container.decorator" id="state_machine.validation_compte" inner="debug.state_machine.validation_compte.inner"/>
+      <argument type="service" id="debug.state_machine.validation_compte.inner"/>
+      <argument type="service" id="debug.stopwatch"/>
+      <argument type="service" id="profiler.is_disabled_state_checker" on-invalid="ignore"/>
+    </service>
+    <service id="debug.state_machine.validation_etablissement" class="Symfony\Component\Workflow\Debug\TraceableWorkflow">
+      <tag name="workflow">
+        <attribute name="name">validation_etablissement</attribute>
+        <attribute name="metadata">
+        </attribute>
+        <attribute name="definition_validators">
+          <attribute name="0">Symfony\Component\Workflow\Validator\StateMachineValidator</attribute>
+        </attribute>
+        <attribute name="definition_id">state_machine.validation_etablissement.definition</attribute>
+      </tag>
+      <tag name="validation_etablissement">workflow.state_machine</tag>
+      <tag name="container.decorator" id="state_machine.validation_etablissement" inner="debug.state_machine.validation_etablissement.inner"/>
+      <argument type="service" id="debug.state_machine.validation_etablissement.inner"/>
+      <argument type="service" id="debug.stopwatch"/>
+      <argument type="service" id="profiler.is_disabled_state_checker" on-invalid="ignore"/>
+    </service>
     <service id=".service_locator.fipAWQf" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator"/>
       <argument type="collection">
@@ -14695,6 +15302,16 @@
     </service>
     <service id="monolog.logger.translation" class="Monolog\Logger">
       <argument>translation</argument>
+      <call method="pushHandler">
+        <argument type="service" id="monolog.handler.console"/>
+      </call>
+      <call method="pushHandler">
+        <argument type="service" id="monolog.handler.main"/>
+      </call>
+      <configurator service="debug.debug_logger_configurator" method="pushDebugLogger"/>
+    </service>
+    <service id="monolog.logger.workflow" class="Monolog\Logger">
+      <argument>workflow</argument>
       <call method="pushHandler">
         <argument type="service" id="monolog.handler.console"/>
       </call>
@@ -15075,6 +15692,12 @@
       <argument type="service" id="service_container"/>
       <factory service=".service_locator.Xgm7k44" method="withContext"/>
     </service>
+    <service id=".service_locator.Xgm7k44.App\Controller\HomeController" class="Symfony\Component\DependencyInjection\ServiceLocator">
+      <tag name="container.service_locator_context" id="App\Controller\HomeController"/>
+      <argument>App\Controller\HomeController</argument>
+      <argument type="service" id="service_container"/>
+      <factory service=".service_locator.Xgm7k44" method="withContext"/>
+    </service>
     <service id=".service_locator.Xgm7k44.App\Controller\ResetPasswordController" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator_context" id="App\Controller\ResetPasswordController"/>
       <argument>App\Controller\ResetPasswordController</argument>
@@ -15121,17 +15744,17 @@
       <argument type="service" id="service_container"/>
       <factory service=".service_locator.kvOAK9B" method="withContext"/>
     </service>
-    <service id=".service_locator.s8nLSlz" class="Symfony\Component\DependencyInjection\ServiceLocator">
+    <service id=".service_locator.yWPg3oY" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator"/>
       <argument type="collection">
         <argument key="routing.loader" type="service_closure" id="routing.loader"/>
       </argument>
     </service>
-    <service id=".service_locator.s8nLSlz.router.default" class="Symfony\Component\DependencyInjection\ServiceLocator">
+    <service id=".service_locator.yWPg3oY.router.default" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator_context" id="router.default"/>
       <argument>router.default</argument>
       <argument type="service" id="service_container"/>
-      <factory service=".service_locator.s8nLSlz" method="withContext"/>
+      <factory service=".service_locator.yWPg3oY" method="withContext"/>
     </service>
     <service id=".service_locator.mFBT25N" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator"/>
@@ -15198,6 +15821,13 @@
       <argument type="collection">
         <argument key="event_dispatcher" type="service_closure" id="debug.event_dispatcher"/>
         <argument key="security.event_dispatcher.api" type="service_closure" id="debug.security.event_dispatcher.api"/>
+      </argument>
+    </service>
+    <service id=".service_locator.G0l8bSN" class="Symfony\Component\DependencyInjection\ServiceLocator">
+      <tag name="container.service_locator"/>
+      <argument type="collection">
+        <argument key="validation_compte" type="service_closure" id="debug.state_machine.validation_compte"/>
+        <argument key="validation_etablissement" type="service_closure" id="debug.state_machine.validation_etablissement"/>
       </argument>
     </service>
     <service id=".service_locator.pKCuUXf" class="Symfony\Component\DependencyInjection\ServiceLocator">
@@ -15343,6 +15973,7 @@
           <argument>App\Controller\Apis\ApiVilleController</argument>
           <argument>App\Controller\AuthController</argument>
           <argument>App\Controller\FichierController</argument>
+          <argument>App\Controller\HomeController</argument>
           <argument>App\Controller\ResetPasswordController</argument>
           <argument>App\Controller\UserController</argument>
           <argument>Doctrine\Bundle\DoctrineBundle\Controller\ProfilerController</argument>
@@ -15569,6 +16200,30 @@
         <argument type="service" id="messenger.bus.default.middleware.handle_message"/>
       </argument>
     </service>
+    <service id="debug.state_machine.validation_compte.inner" class="Symfony\Component\Workflow\StateMachine">
+      <argument type="service" id="state_machine.validation_compte.definition"/>
+      <argument type="service">
+        <service class="Symfony\Component\Workflow\MarkingStore\MethodMarkingStore">
+          <argument>true</argument>
+          <argument>status</argument>
+        </service>
+      </argument>
+      <argument type="service" id="debug.event_dispatcher" on-invalid="ignore"/>
+      <argument>validation_compte</argument>
+      <argument>null</argument>
+    </service>
+    <service id="debug.state_machine.validation_etablissement.inner" class="Symfony\Component\Workflow\StateMachine">
+      <argument type="service" id="state_machine.validation_etablissement.definition"/>
+      <argument type="service">
+        <service class="Symfony\Component\Workflow\MarkingStore\MethodMarkingStore">
+          <argument>true</argument>
+          <argument>status</argument>
+        </service>
+      </argument>
+      <argument type="service" id="debug.event_dispatcher" on-invalid="ignore"/>
+      <argument>validation_etablissement</argument>
+      <argument>null</argument>
+    </service>
     <service id=".doctrine.orm.default_metadata_driver.inner" class="Doctrine\Persistence\Mapping\Driver\MappingDriverChain">
       <call method="addDriver">
         <argument type="service" id="doctrine.orm.default_attribute_metadata_driver"/>
@@ -15782,8 +16437,8 @@
     <service id=".errored..service_locator.fGpcnva.App\Entity\TypeProfession" class="App\Entity\TypeProfession">
       <tag name="container.error" message="Cannot autowire service &quot;.service_locator.fGpcnva&quot;: it needs an instance of &quot;App\Entity\TypeProfession&quot; but this type has been excluded in &quot;config/services.yaml&quot;."/>
     </service>
-    <service id=".errored..service_locator.D0iGBCI.App\Entity\User" class="App\Entity\User">
-      <tag name="container.error" message="Cannot autowire service &quot;.service_locator.D0iGBCI&quot;: it needs an instance of &quot;App\Entity\User&quot; but this type has been excluded in &quot;config/services.yaml&quot;."/>
+    <service id=".errored..service_locator.SoCY2bj.App\Entity\User" class="App\Entity\User">
+      <tag name="container.error" message="Cannot autowire service &quot;.service_locator.SoCY2bj&quot;: it needs an instance of &quot;App\Entity\User&quot; but this type has been excluded in &quot;config/services.yaml&quot;."/>
     </service>
     <service id=".errored..service_locator.uTkqXqk.App\Entity\User" class="App\Entity\User">
       <tag name="container.error" message="Cannot autowire service &quot;.service_locator.uTkqXqk&quot;: it needs an instance of &quot;App\Entity\User&quot; but this type has been excluded in &quot;config/services.yaml&quot;."/>
@@ -16958,6 +17613,10 @@
     <service id="translator" alias="translator.data_collector" public="true"/>
     <service id="translator.formatter" alias="translator.formatter.default"/>
     <service id="Symfony\Component\Workflow\Registry" alias="workflow.registry"/>
+    <service id=".Symfony\Component\Workflow\WorkflowInterface $validation_compte" alias="debug.state_machine.validation_compte"/>
+    <service id="Symfony\Component\Workflow\WorkflowInterface $validationCompteStateMachine" alias="debug.state_machine.validation_compte"/>
+    <service id=".Symfony\Component\Workflow\WorkflowInterface $validation_etablissement" alias="debug.state_machine.validation_etablissement"/>
+    <service id="Symfony\Component\Workflow\WorkflowInterface $validationEtablissementStateMachine" alias="debug.state_machine.validation_etablissement"/>
     <service id="Symfony\Component\ErrorHandler\ErrorRenderer\FileLinkFormatter" alias="debug.file_link_formatter"/>
     <service id="Symfony\Component\Stopwatch\Stopwatch" alias="debug.stopwatch"/>
     <service id="router" alias="router.default" public="true"/>
@@ -17064,7 +17723,7 @@
     <service id="Endroid\QrCode\Builder\BuilderInterface $defaultQrCodeBuilder" alias="endroid_qr_code.default_builder"/>
     <service id="container.env_var_processors_locator" alias=".service_locator.ryAvHi4" public="true"/>
     <service id="twig.loader.filesystem" alias="twig.loader.native_filesystem"/>
-    <service id="argument_resolver.controller_locator" alias=".service_locator.pdqEv6N"/>
+    <service id="argument_resolver.controller_locator" alias=".service_locator.zDZV3UV"/>
     <service id="doctrine.id_generator_locator" alias=".service_locator.W55Po6X"/>
     <service id="twig.loader" alias="twig.loader.native_filesystem"/>
     <service id="Psr\Log\LoggerInterface $requestLogger" alias="monolog.logger.request"/>
@@ -17077,6 +17736,7 @@
     <service id="Psr\Log\LoggerInterface $httpClientLogger" alias="monolog.logger.http_client"/>
     <service id="Psr\Log\LoggerInterface $mailerLogger" alias="monolog.logger.mailer"/>
     <service id="Psr\Log\LoggerInterface $translationLogger" alias="monolog.logger.translation"/>
+    <service id="Psr\Log\LoggerInterface $workflowLogger" alias="monolog.logger.workflow"/>
     <service id="Psr\Log\LoggerInterface $phpLogger" alias="monolog.logger.php"/>
     <service id="Psr\Log\LoggerInterface $eventLogger" alias="monolog.logger.event"/>
     <service id="Psr\Log\LoggerInterface $routerLogger" alias="monolog.logger.router"/>
@@ -17110,6 +17770,8 @@
     <service id="security.firewall.authenticator.api" alias="debug.security.firewall.authenticator.api"/>
     <service id="security.event_dispatcher.api" alias="debug.security.event_dispatcher.api"/>
     <service id="messenger.bus.default" alias="debug.traced.messenger.bus.default"/>
+    <service id="state_machine.validation_compte" alias="debug.state_machine.validation_compte"/>
+    <service id="state_machine.validation_etablissement" alias="debug.state_machine.validation_etablissement"/>
     <service id="doctrine.orm.default_metadata_driver" alias=".doctrine.orm.default_metadata_driver"/>
     <service id=".service_locator.c0wzfI4" alias=".service_locator.1vYpZ1B"/>
     <service id=".service_locator.olaxbKr" alias=".service_locator.udLrYBI"/>
@@ -17275,11 +17937,12 @@
     <service id=".service_locator.yZty4YD" alias=".service_locator.PtMLGj3"/>
     <service id=".service_locator.nm1e5G." alias=".service_locator.OZAhiMp"/>
     <service id=".service_locator.TOoI9LJ" alias=".service_locator.p66hxK8"/>
-    <service id=".service_locator.x9T7MJ5" alias=".service_locator.D0iGBCI"/>
+    <service id=".service_locator.yC4wy03" alias=".service_locator.SoCY2bj"/>
     <service id=".service_locator.PVqDS.9" alias=".service_locator.uTkqXqk"/>
     <service id=".service_locator.BqY3qKG" alias=".service_locator.Q.v01gO"/>
     <service id=".service_locator.TB6Zjtf" alias=".service_locator.qgrb8rg"/>
     <service id=".service_locator.wInVC0f" alias=".service_locator.QrATXQA"/>
+    <service id=".service_locator.mQSYypP" alias=".service_locator.hnJebnj"/>
     <service id=".service_locator.KCepfEi" alias=".service_locator.jGT2YJ9"/>
     <service id=".service_locator.7Khbc0K" alias=".service_locator.WPmbfTg"/>
     <service id=".service_locator.gGwbH4B" alias=".service_locator.oViNYI3"/>
@@ -17291,6 +17954,7 @@
     <service id=".service_locator.3xZKpBG" alias=".service_locator.PwpX3fN"/>
     <service id=".service_locator.SlVaV_E" alias=".service_locator.byvly3F"/>
     <service id=".service_locator.5Wtnx_0" alias=".service_locator.MvetcdK"/>
+    <service id=".service_locator.Ssu5_jL" alias=".service_locator.P0zxPQi"/>
     <service id=".service_locator.5J6RFsi" alias=".service_locator.GCFxFMD"/>
     <service id=".service_locator.WuMf4rk" alias=".service_locator.R21nC86"/>
     <service id=".service_locator.uOhIFw6" alias=".service_locator.YlAh0cN"/>

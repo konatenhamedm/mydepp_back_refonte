@@ -157,6 +157,7 @@ return array(
     'Doctrine\\Common\\' => array($vendorDir . '/doctrine/event-manager/src'),
     'Doctrine\\Bundle\\MigrationsBundle\\' => array($vendorDir . '/doctrine/doctrine-migrations-bundle/src'),
     'Doctrine\\Bundle\\DoctrineBundle\\' => array($vendorDir . '/doctrine/doctrine-bundle/src'),
+    'DoctrineExtensions\\' => array($vendorDir . '/beberlei/doctrineextensions/src'),
     'DeepCopy\\' => array($vendorDir . '/myclabs/deep-copy/src/DeepCopy'),
     'DASPRiD\\Enum\\' => array($vendorDir . '/dasprid/enum/src'),
     'CuyZ\\Valinor\\' => array($vendorDir . '/cuyz/valinor/src'),

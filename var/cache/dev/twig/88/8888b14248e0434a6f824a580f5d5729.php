@@ -145,7 +145,7 @@ class __TwigTemplate_18baff3f41ff56eba91525dab2c44c9b extends Template
   <div class=\"container\">
     <!-- HEADER -->
     <div class=\"header\">
-      <h1>ATELIYA</h1>
+      <h1>DEPPS</h1>
       <small>Sécurité avant tout</small>
     </div>
 
@@ -316,7 +316,7 @@ class __TwigTemplate_18baff3f41ff56eba91525dab2c44c9b extends Template
   <div class=\"container\">
     <!-- HEADER -->
     <div class=\"header\">
-      <h1>ATELIYA</h1>
+      <h1>DEPPS</h1>
       <small>Sécurité avant tout</small>
     </div>
 
