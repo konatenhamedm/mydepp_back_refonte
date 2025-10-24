@@ -245,6 +245,7 @@ class ProfessionnelRepository extends ServiceEntityRepository
     }
 
 
+   
     public function findDiplomeStats(\DateTimeInterface $startDate, \DateTimeInterface $endDate): array
     {
         $qb = $this->createQueryBuilder('p')
@@ -253,25 +254,51 @@ class ProfessionnelRepository extends ServiceEntityRepository
                 'l.libelle as lieu_nom',
                 'IDENTITY(p.civilite) as civilite_id',
                 'c.libelle as civilite_libelle',
-                'CASE 
-                    WHEN TIMESTAMPDIFF(YEAR, p.dateNaissance, CURRENT_DATE()) < 25 THEN \'< 25 ans\'
-                    WHEN TIMESTAMPDIFF(YEAR, p.dateNaissance, CURRENT_DATE()) BETWEEN 25 AND 34 THEN \'25-34 ans\'
-                    WHEN TIMESTAMPDIFF(YEAR, p.dateNaissance, CURRENT_DATE()) BETWEEN 35 AND 44 THEN \'35-44 ans\'
-                    WHEN TIMESTAMPDIFF(YEAR, p.dateNaissance, CURRENT_DATE()) BETWEEN 45 AND 54 THEN \'45-54 ans\'
-                    ELSE \'55 ans et plus\'
-                 END as tranche_age',
-                'COUNT(p.id) as count'
+                'p.dateNaissance',
+                'p.id'
             ])
             ->leftJoin('p.lieuObtentionDiplome', 'l')
             ->leftJoin('p.civilite', 'c')
             ->where('p.createdAt BETWEEN :start AND :end')
             ->setParameter('start', $startDate)
-            ->setParameter('end', $endDate)
-            ->groupBy('lieu_id, civilite_id, tranche_age');
+            ->setParameter('end', $endDate);
 
         $results = $qb->getQuery()->getArrayResult();
 
-        return $this->formatStats($results);
+        // Grouper et calculer les tranches d'âge en PHP
+        $grouped = [];
+        foreach ($results as $row) {
+            $age = (new \DateTime())->diff(new \DateTime($row['dateNaissance']))->y;
+
+            if ($age < 25) {
+                $trancheAge = '< 25 ans';
+            } elseif ($age >= 25 && $age <= 34) {
+                $trancheAge = '25-34 ans';
+            } elseif ($age >= 35 && $age <= 44) {
+                $trancheAge = '35-44 ans';
+            } elseif ($age >= 45 && $age <= 54) {
+                $trancheAge = '45-54 ans';
+            } else {
+                $trancheAge = '55 ans et plus';
+            }
+
+            $key = $row['lieu_id'] . '|' . $row['civilite_id'] . '|' . $trancheAge;
+
+            if (!isset($grouped[$key])) {
+                $grouped[$key] = [
+                    'lieu_id' => $row['lieu_id'],
+                    'lieu_nom' => $row['lieu_nom'],
+                    'civilite_id' => $row['civilite_id'],
+                    'civilite_libelle' => $row['civilite_libelle'],
+                    'tranche_age' => $trancheAge,
+                    'count' => 0
+                ];
+            }
+
+            $grouped[$key]['count']++;
+        }
+
+        return $this->formatStats(array_values($grouped));
     }
 
     private function formatStats(array $results): array
