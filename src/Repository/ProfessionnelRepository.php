@@ -220,30 +220,79 @@ class ProfessionnelRepository extends ServiceEntityRepository
     }
 
 
-    public function countProByTrancheAge(?int $annee = null, ?string $periode = null, ?int $mois = null, ?int $tranche = null): array
-    {
+    public function countProByTrancheAge(
+        ?int $annee = null,
+        ?string $periode = null,
+        ?int $mois = null,
+        ?int $tranche = null
+    ): array {
         $qb = $this->createQueryBuilder('p')
-            ->select(
-                "CASE 
-                    WHEN TIMESTAMPDIFF(YEAR, p.dateNaissance, CURRENT_DATE()) < 25 THEN '< 25 ans'
-                    WHEN TIMESTAMPDIFF(YEAR, p.dateNaissance, CURRENT_DATE()) BETWEEN 25 AND 34 THEN '25–34 ans'
-                    WHEN TIMESTAMPDIFF(YEAR, p.dateNaissance, CURRENT_DATE()) BETWEEN 35 AND 44 THEN '35–44 ans'
-                    WHEN TIMESTAMPDIFF(YEAR, p.dateNaissance, CURRENT_DATE()) BETWEEN 45 AND 54 THEN '45–54 ans'
-                    ELSE '55 ans et plus'
-                 END AS tranche",
-                'COUNT(p.id) as nombre'
-            )
-            ->groupBy('tranche');
+            ->select('p.id, p.dateNaissance, p.createdAt');
 
-        if ($annee != "null" && $periode != "null") {
+        // Si une période est fournie → on filtre par date de création
+        if ($annee !== null && $periode !== null && $annee !== "null" && $periode !== "null") {
             [$start, $end] = $this->getDateRangeFromPeriode($annee, $periode, $mois, $tranche);
-            $qb->andWhere("DATE_FORMAT(p.createdAt, '%Y-%m-%d') BETWEEN :start AND :end")
+
+            // On force des DateTime (si strings)
+            if (!$start instanceof \DateTimeInterface) {
+                $start = new \DateTime($start);
+            }
+            if (!$end instanceof \DateTimeInterface) {
+                $end = new \DateTime($end);
+            }
+
+            $qb->andWhere('p.createdAt BETWEEN :start AND :end')
                 ->setParameter('start', $start)
                 ->setParameter('end', $end);
         }
 
-        return $qb->getQuery()->getResult();
+        $results = $qb->getQuery()->getArrayResult();
+
+        // Traitement en PHP des tranches d’âge
+        $grouped = [];
+
+        foreach ($results as $row) {
+            if (empty($row['dateNaissance'])) {
+                continue;
+            }
+
+            $dateNaissance = $row['dateNaissance'] instanceof \DateTimeInterface
+                ? $row['dateNaissance']
+                : new \DateTime($row['dateNaissance']);
+
+            $age = (new \DateTime())->diff($dateNaissance)->y;
+
+            if ($age < 25) {
+                $tranche = '< 25 ans';
+            } elseif ($age <= 34) {
+                $tranche = '25–34 ans';
+            } elseif ($age <= 44) {
+                $tranche = '35–44 ans';
+            } elseif ($age <= 54) {
+                $tranche = '45–54 ans';
+            } else {
+                $tranche = '55 ans et plus';
+            }
+
+            if (!isset($grouped[$tranche])) {
+                $grouped[$tranche] = 0;
+            }
+
+            $grouped[$tranche]++;
+        }
+
+        // Reformater le tableau de sortie
+        $final = [];
+        foreach ($grouped as $tranche => $count) {
+            $final[] = [
+                'tranche' => $tranche,
+                'nombre' => $count,
+            ];
+        }
+
+        return $final;
     }
+
 
 
 
