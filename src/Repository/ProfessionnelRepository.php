@@ -141,7 +141,8 @@ class ProfessionnelRepository extends ServiceEntityRepository
     public function countProByProfession(?int $annee = null, ?string $periode = null, ?int $mois = null, ?int $tranche = null)
     {
         $qb = $this->createQueryBuilder('p')
-            ->select('p.profession AS libelle, COUNT(p.id) AS nombre')
+            ->select('prof.libelle AS libelle, COUNT(p.id) AS nombre')
+            ->leftJoin('p.profession', 'prof')
             ->groupBy('libelle');
 
         if ($annee != "null" && $periode != "null") {

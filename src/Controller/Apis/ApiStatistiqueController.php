@@ -228,7 +228,7 @@ class ApiStatistiqueController extends ApiInterface
             $dataTrancheAge = $professionnelRepository->countProByTrancheAge((int)$annee, $periode, (int)$mois, (int)$tranche);
             $dataGenre = $professionnelRepository->countProByCiviliteGeneral((int)$annee, $periode, (int)$mois, (int)$tranche);
             $dataAnnee = $professionnelRepository->countProByAnnee();
-dd($dataAnnee,$stats,$dataTrancheAge,$dataGenre);
+//dd($dataAnnee,$stats,$dataTrancheAge,$dataGenre);
             //dd($dataAnnee);
 
             $dataVille = $professionnelRepository->countProByVille((int)$annee, $periode, (int)$mois, (int)$tranche);
@@ -236,7 +236,7 @@ dd($dataAnnee,$stats,$dataTrancheAge,$dataGenre);
             $dataPays = $professionnelRepository->countProByPays((int)$annee, $periode, (int)$mois, (int)$tranche);
             $isFirst = true; // Pour le premier élément sélectionné dans le Pie Chart
 
-            dd($stats,$dataTrancheAge,$dataGenre,$dataAnnee,$dataVille,$dataRegion,$dataPays,$stats2);
+            //dd($stats,$dataTrancheAge,$dataGenre,$dataAnnee,$dataVille,$dataRegion,$dataPays,$stats2);
 
             // Préchargement des professions
             $codes = array_column($stats, 'libelle');
