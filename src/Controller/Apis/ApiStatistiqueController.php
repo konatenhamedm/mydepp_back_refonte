@@ -212,7 +212,7 @@ class ApiStatistiqueController extends ApiInterface
             // dd($mois,$periode,$annee,$tranche);
             // Calcul de la plage de dates
             [$startDate, $endDate] = $this->getDateRangeFromPeriode((int)$annee, $periode, (int)$mois, (int)$tranche);
-dd($startDate,$endDate);
+            //dd($startDate,$endDate);
             // dd($startDate,$endDate,$annee,$mois,$tranche);
 
             // Requête optimisée sans filtres supplémentaires
@@ -303,19 +303,19 @@ dd($startDate,$endDate);
 
     private function getDateRangeFromPeriode(?int $annee, ?string $periode, ?int $mois, ?int $tranche): array
     {
-
+        // Valeurs par défaut
         $annee = $annee ?: (int) date('Y');
         $mois = $mois ?: (int) date('m');
         $tranche = (int) $tranche;
 
         switch ($periode) {
             case 'mois':
-                $start = new \DateTime("$annee-$mois-01");
-                $end = (clone $start)->modify('last day of this month');
+                $start = new \DateTime("$annee-$mois-01 00:00:00");
+                $end = (clone $start)->modify('last day of this month')->setTime(23, 59, 59);
                 break;
 
             case 'trimestre':
-
+                // Définition des trimestres
                 $trimestres = [
                     1 => ['start' => '01-01', 'end' => '03-31'],
                     2 => ['start' => '04-01', 'end' => '06-30'],
@@ -324,29 +324,30 @@ dd($startDate,$endDate);
                 ];
                 // Trimestre par défaut = 1
                 $t = $trimestres[$tranche] ?? $trimestres[1];
-                $start = new \DateTime("$annee-{$t['start']}");
-                $end = new \DateTime("$annee-{$t['end']}");
+                $start = new \DateTime("$annee-{$t['start']} 00:00:00");
+                $end = new \DateTime("$annee-{$t['end']} 23:59:59");
                 break;
 
             case 'semestre':
-
+                // Définition des semestres
                 $semestres = [
                     1 => ['start' => '01-01', 'end' => '06-30'],
                     2 => ['start' => '07-01', 'end' => '12-31'],
                 ];
                 // Semestre par défaut = 1
                 $s = $semestres[$tranche] ?? $semestres[1];
-                $start = new \DateTime("$annee-{$s['start']}");
-                $end = new \DateTime("$annee-{$s['end']}");
+                $start = new \DateTime("$annee-{$s['start']} 00:00:00");
+                $end = new \DateTime("$annee-{$s['end']} 23:59:59");
                 break;
 
             case 'annee':
             default:
-                $start = new \DateTime("$annee-01-01");
-                $end = new \DateTime("$annee-12-31");
+                $start = new \DateTime("$annee-01-01 00:00:00");
+                $end = new \DateTime("$annee-12-31 23:59:59");
                 break;
         }
 
+        // Retourner les objets DateTime avec les heures définies
         return [$start, $end];
     }
 
