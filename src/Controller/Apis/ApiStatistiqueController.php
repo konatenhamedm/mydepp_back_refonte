@@ -228,7 +228,7 @@ class ApiStatistiqueController extends ApiInterface
             $dataTrancheAge = $professionnelRepository->countProByTrancheAge((int)$annee, $periode, (int)$mois, (int)$tranche);
             $dataGenre = $professionnelRepository->countProByCiviliteGeneral((int)$annee, $periode, (int)$mois, (int)$tranche);
             $dataAnnee = $professionnelRepository->countProByAnnee();
-
+dd($dataAnnee,$stats,$dataTrancheAge,$dataGenre);
             //dd($dataAnnee);
 
             $dataVille = $professionnelRepository->countProByVille((int)$annee, $periode, (int)$mois, (int)$tranche);
