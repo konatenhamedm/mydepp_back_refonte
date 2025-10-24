@@ -348,7 +348,7 @@ class ApiStatistiqueController extends ApiInterface
         }
 
         
-        return [$start->format('Y-m-d'), $end->format('Y-m-d')];
+        return [new \DateTime($start->format('Y-m-d')) , new \DateTime($end->format('Y-m-d'))];
     }
 
     private function formatStats(array $data, string $labelKey = 'libelle', bool $markFirst = false): array
