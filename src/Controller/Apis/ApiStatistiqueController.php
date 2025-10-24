@@ -213,7 +213,7 @@ class ApiStatistiqueController extends ApiInterface
             // Calcul de la plage de dates
             [$startDate, $endDate] = $this->getDateRangeFromPeriode((int)$annee, $periode, (int)$mois, (int)$tranche);
 
-           // dd($startDate,$endDate,$annee,$mois,$tranche);
+            // dd($startDate,$endDate,$annee,$mois,$tranche);
 
             // Requête optimisée sans filtres supplémentaires
             $stats2 = $professionnelRepository->findDiplomeStats($startDate, $endDate);
@@ -303,7 +303,7 @@ class ApiStatistiqueController extends ApiInterface
 
     private function getDateRangeFromPeriode(?int $annee, ?string $periode, ?int $mois, ?int $tranche): array
     {
-        // Valeurs par défaut
+
         $annee = $annee ?: (int) date('Y');
         $mois = $mois ?: (int) date('m');
         $tranche = (int) $tranche;
@@ -315,7 +315,7 @@ class ApiStatistiqueController extends ApiInterface
                 break;
 
             case 'trimestre':
-                // Définition des trimestres
+
                 $trimestres = [
                     1 => ['start' => '01-01', 'end' => '03-31'],
                     2 => ['start' => '04-01', 'end' => '06-30'],
@@ -329,7 +329,7 @@ class ApiStatistiqueController extends ApiInterface
                 break;
 
             case 'semestre':
-                // Définition des semestres
+
                 $semestres = [
                     1 => ['start' => '01-01', 'end' => '06-30'],
                     2 => ['start' => '07-01', 'end' => '12-31'],
@@ -347,8 +347,7 @@ class ApiStatistiqueController extends ApiInterface
                 break;
         }
 
-        // Convertir les DateTime en chaînes de caractères (format Y-m-d)
-        return [$start->format('Y-m-d'), $end->format('Y-m-d')];
+        return [$start, $end];
     }
 
     private function formatStats(array $data, string $labelKey = 'libelle', bool $markFirst = false): array
