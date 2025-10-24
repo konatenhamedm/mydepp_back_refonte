@@ -268,7 +268,7 @@ class ApiPaiementController extends ApiInterface
             $transactions = [
                 'expire' => $expire,
                 'etatPro' => $etatPro,
-                'montant' => $profession->getMontantNouvelleDemande(),
+                'montant' => $user->getTypeUser() == "PROFESSIONNEL" ? $profession->getMontant() : "",
                 'date_expiration' => $expiration->format('Y-m-d'),
                 'jours_restants' => $joursRestants,
             ];
