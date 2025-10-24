@@ -213,7 +213,7 @@ class ApiStatistiqueController extends ApiInterface
             // Calcul de la plage de dates
             [$startDate, $endDate] = $this->getDateRangeFromPeriode((int)$annee, $periode, (int)$mois, (int)$tranche);
 
-
+            dd($startDate,$endDate,$annee,$mois,$tranche);
 
             // Requête optimisée sans filtres supplémentaires
             $stats2 = $professionnelRepository->findDiplomeStats($startDate, $endDate);
