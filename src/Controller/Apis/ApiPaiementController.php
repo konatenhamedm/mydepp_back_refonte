@@ -92,7 +92,7 @@ class ApiPaiementController extends ApiInterface
                 $personne = $transaction->getUser()->getPersonne();
 
                 // Cas professionnel
-                $profession = $transaction->getUser()->getTypeUser() == "professionnel" 
+                $profession = $transaction->getUser()->getTypeUser() == "professionnel"
                     ? ($personne->getProfession() ? $professionRepository->findOneByCode($personne->getProfession()) : null)
                     : null;
 
@@ -219,7 +219,7 @@ class ApiPaiementController extends ApiInterface
                 ['createdAt' => 'DESC']
             );
             if ($user->getTypeUser() == "PROFESSIONNEL") {
-               // $profession = $professionRepository->findOneByCode($user->getPersonne());
+                // $profession = $professionRepository->findOneByCode($user->getPersonne());
 
 
 
@@ -230,18 +230,23 @@ class ApiPaiementController extends ApiInterface
                     $expiration = new \DateTime();
                     $etatPro = false;
                 } else {
+                    $today = new \DateTime();
+
+                    // Déterminer la date d'expiration
                     if ($user->getPersonne()->getDateValidation() !== null) {
-
                         $expiration = (clone $user->getPersonne()->getDateValidation())->modify('+1 year');
-                        $today = new \DateTime();
-                        $joursRestants = max(0, $today->diff($expiration)->days);
-                         $expire = $expiration >= $today ? false : true;
                     } else {
-
                         $expiration = (clone $dernierAbonnement->getCreatedAt())->modify('+1 year');
-                        $today = new \DateTime();
-                        $joursRestants = max(0, $today->diff($expiration)->days);
-                        $expire = $expiration >= $today ? false : true;
+                    }
+
+                    // Vérifier l'expiration
+                    $expire = $expiration < $today;
+
+                    // Calculer les jours restants (0 si déjà expiré)
+                    if ($expire) {
+                        $joursRestants = 0;
+                    } else {
+                        $joursRestants = $today->diff($expiration)->days;
                     }
 
                     $etatPro = true;
@@ -252,7 +257,7 @@ class ApiPaiementController extends ApiInterface
                     $expiration = (clone $user->getPersonne()->getDateValidation())->modify('+1 year');
                     $today = new \DateTime();
                     $joursRestants = max(0, $today->diff($expiration)->days);
-                     $expire = $expiration >= $today ? false : true;
+                    $expire = $expiration >= $today ? false : true;
                 } else {
 
                     $expiration = (clone $dernierAbonnement->getCreatedAt())->modify('+1 year');
@@ -544,7 +549,7 @@ class ApiPaiementController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'paiements')]
-    
+
     public function webHook(Request $request, TransactionRepository $transactionRepository, TempProfessionnelRepository $tempProfessionnelRepository, SessionInterface $session, PaiementService $paiementService): Response
     {
         $response = $paiementService->methodeWebHook($request);
@@ -577,7 +582,7 @@ class ApiPaiementController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'paiements')]
-    
+
     public function webHookOep(Request $request,  PaiementService $paiementService): Response
     {
         $response = $paiementService->methodeWebHookOep($request);
@@ -611,7 +616,7 @@ class ApiPaiementController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'paiements')]
-    
+
     public function webHookRenouvellement(Request $request, TransactionRepository $transactionRepository, TempProfessionnelRepository $tempProfessionnelRepository, SessionInterface $session, PaiementService $paiementService): Response
     {
         $response = $paiementService->methodeWebHookRenouvellement($request);
@@ -646,7 +651,7 @@ class ApiPaiementController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'paiements')]
-    
+
     public function create(Request $request, UserRepository $userRepository, TransactionRepository $transactionRepository): Response
     {
 
@@ -702,7 +707,7 @@ class ApiPaiementController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'paiements')]
-    
+
     public function doPaiement(Request $request, PaiementService $paiementService)
     {
 
@@ -831,7 +836,7 @@ class ApiPaiementController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'paiements')]
-    
+
     public function doRenouvellement(Request $request, PaiementService $paiementService)
     {
         $createTransactionData = $paiementService->traiterPaiementRenouvellement($request);
