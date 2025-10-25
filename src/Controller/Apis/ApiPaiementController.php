@@ -235,7 +235,7 @@ class ApiPaiementController extends ApiInterface
                         $expiration = (clone $user->getPersonne()->getDateValidation())->modify('+1 year');
                         $today = new \DateTime();
                         $joursRestants = max(0, $today->diff($expiration)->days);
-                        $expire = $expiration < $today;
+                         $expire = $expiration >= $today ? false : true;
                     } else {
 
                         $expiration = (clone $dernierAbonnement->getCreatedAt())->modify('+1 year');
