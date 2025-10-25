@@ -224,7 +224,7 @@ class ApiPaiementController extends ApiInterface
 
 
 
-                if ($user->getPersonne()->getProfession()->getMontantNouvelleDemande() == null) {
+                if ($user->getPersonne()->getProfession()->getMontantRenouvellement() == null) {
                     $expire = false;
                     $joursRestants = 0;
                     $expiration = new \DateTime();
