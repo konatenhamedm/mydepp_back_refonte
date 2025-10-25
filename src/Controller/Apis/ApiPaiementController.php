@@ -219,12 +219,12 @@ class ApiPaiementController extends ApiInterface
                 ['createdAt' => 'DESC']
             );
             if ($user->getTypeUser() == "PROFESSIONNEL") {
-                $profession = $professionRepository->findOneByCode($user->getPersonne()->getProfession());
+               // $profession = $professionRepository->findOneByCode($user->getPersonne());
 
 
 
 
-                if ($profession->getMontantNouvelleDemande() == null) {
+                if ($user->getPersonne()->getProfession()->getMontantNouvelleDemande() == null) {
                     $expire = false;
                     $joursRestants = 0;
                     $expiration = new \DateTime();
@@ -268,7 +268,7 @@ class ApiPaiementController extends ApiInterface
             $transactions = [
                 'expire' => $expire,
                 'etatPro' => $etatPro,
-                'montant' => $user->getTypeUser() == "PROFESSIONNEL" ? $profession->getMontant() : "",
+                'montant' => $user->getTypeUser() == "PROFESSIONNEL" ? $user->getPersonne()->getProfession()->getMontantNouvelleDemande() : "",
                 'date_expiration' => $expiration->format('Y-m-d'),
                 'jours_restants' => $joursRestants,
             ];
