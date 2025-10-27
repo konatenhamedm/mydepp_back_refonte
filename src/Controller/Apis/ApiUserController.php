@@ -341,7 +341,7 @@ class ApiUserController extends ApiInterface
                         "prenoms" => $user->getPersonne()->getPrenoms()
                     ],
                     "password" => $request->get('password'),
-                    "login_url" => "https://mydepps.net/login"
+                    "login_url" => "https://mydepp-front.pages.dev/login"
                 ]
             );
 
@@ -956,12 +956,80 @@ class ApiUserController extends ApiInterface
                     "email" => $email,
                     "password" => $password,
                 ],
-                "login_url" => "https://mydepps.net/login"
+                "login_url" => "https://mydepp-front.pages.dev/login"
             ]
         );
 
 
 
         return $this->json(['message' => 'Utilisateur créé avec succès']);
+    }
+
+
+    #[Route('/api/create-new-user-with-code', methods: ['POST'])]
+    #[OA\Post(
+        summary: "Creation user admin avec code",
+        description: "Création d'un utilisateur avec un code.",
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: "multipart/form-data",
+                schema: new OA\Schema(
+                    properties: [
+                        new OA\Property(property: "code", type: "string"),
+                        new OA\Property(property: "email", type: "string"),
+                        new OA\Property(property: "password", type: "string"),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Utilisateur créé avec succès',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: new Model(type: User::class, groups: ['full']))
+                )
+            )
+        ]
+    )]
+    public function createUserWithCode(Request $request,ProfessionnelRepository $professionnelRepository,SendMailService $sendMailService, UserRepository $userRepo, UserPasswordHasherInterface $passwordHasher,)
+    {
+            $data = json_decode($request->getContent(), true);
+        $professionnel = $professionnelRepository->findOneBy(['code' => $data['code']]);
+
+        if ($professionnel == null) {
+            return $this->json(['message' => 'Professionnel non trouvée'], 400);
+        }
+
+     
+         $user = new User();
+        $user->setEmail($data['email']);
+        $user->setPassword($passwordHasher->hashPassword($user, $data['password']));
+        $user->setRoles(['ROLE_MEMBRE']);
+        $user->setTypeUser("PROFESSIONNEL");
+        $user->setPersonne($professionnel);
+        $userRepo->add($user,true);
+
+
+        $sendMailService->send(
+            "depps@leadagro.net",
+            $user->getEmail(),
+            "Nouvelle inscription",
+            "new_professionnel",
+            [
+                "user" => [
+                    "email" => $data['email'],
+                    "password" => $data['password'],
+                ],
+                "login_url" => "https://mydepp-front.pages.dev/login"
+            ]
+        );
+
+
+
+        return $this->json(['message' => 'Utilisateur créé avec succès']);
+        
     }
 }
