@@ -243,7 +243,7 @@ class PaiementService
     {
         $data = json_decode($request->getContent(), true);
 
-        $montant = $request->request->get('type') == "professionnel" ? $this->professionRepository->findOneByCode($request->request->get('profession'))->getMontantNouvelleDemande() : $this->niveauInterventionRepository->find($request->request->get('niveauIntervention'))->getMontant();
+        $montant = $request->get('type') == "professionnel" ? $this->professionRepository->findOneByCode($request->get('profession'))->getMontantNouvelleDemande() : $this->niveauInterventionRepository->find($request->get('niveauIntervention'))->getMontant();
 
         $transaction = new Transaction();
         $transaction->setChannel("");
@@ -251,25 +251,25 @@ class PaiementService
         $transaction->setMontant($montant);
         $transaction->setReferenceChannel("");
         $transaction->setType("NOUVELLE DEMANDE");
-        $transaction->setTypeUser($request->request->get('type'));
+        $transaction->setTypeUser($request->get('type'));
         $transaction->setState(0);
         $transaction->setCreatedAtValue(new \DateTime());
         $transaction->setUpdatedAt(new \DateTime());
 
         $this->transactionRepository->add($transaction, true);
 
-        if ($request->request->get('type') == "professionnel") {
+        if ($request->get('type') == "professionnel") {
             $requestData = [
                 "code_paiement" => $transaction->getReference(),
-                "nom_usager" => $request->request->get('nom'),
-                "prenom_usager" => $request->request->get('prenoms'),
-                "telephone" => $request->request->get('numero'),
-                "email" => $request->request->get('email'),
+                "nom_usager" => $request->get('nom'),
+                "prenom_usager" => $request->get('prenoms'),
+                "telephone" => $request->get('numero'),
+                "email" => $request->get('email'),
                 "libelle_article" => "DEMANDE D'ADHESION",
                 "quantite" => 1,
                 "montant" => $montant,
                 "lib_order" => "PAIEMENT ONMCI",
-                "Url_Retour" => "https://mydepps.net/site/" . $request->request->get('type'),
+                "Url_Retour" => "https://mydepps.net/site/" . $request->get('type'),
                 "Url_Callback" => "https://prodmydepps.leadagro.net/api/paiement/info-paiement"
             ];
         } else {
@@ -278,12 +278,12 @@ class PaiementService
                 "nom_usager" => "Mydepps",
                 "prenom_usager" => "Mydepps",
                 "telephone" => "0704314164",
-                "email" => $request->request->get('email'),
+                "email" => $request->get('email'),
                 "libelle_article" => "DEMANDE D'ACCORD DE PRINCIPE",
                 "quantite" => 1,
                 "montant" => $montant,
                 "lib_order" => "PAIEMENT ONMCI",
-                "Url_Retour" => "https://mydepps.net/site/" . $request->request->get('type'),
+                "Url_Retour" => "https://mydepps.net/site/" . $request->get('type'),
                 "Url_Callback" => "https://prodmydepps.leadagro.net/api/paiement/info-paiement"
             ];
         }
@@ -307,18 +307,18 @@ class PaiementService
             'code' => 200,
             'url' => $dataResponse['url'] ?? null,
             'reference' => $transaction->getReference(),
-            'type' => $request->request->get('type')
+            'type' => $request->get('type')
         ];
     }
     public function traiterPaiementOpe(Request $request): array
     {
         $data = json_decode($request->getContent(), true);
 
-        $montant =  $this->niveauInterventionRepository->find($request->request->get('niveauIntervention'))->getMontantRenouvellement();
+        $montant =  $this->niveauInterventionRepository->find($request->get('niveauIntervention'))->getMontantRenouvellement();
 
         $transaction = new Transaction();
         $transaction->setChannel("");
-        $transaction->setUser($this->userRepository->find($request->request->get('user')));
+        $transaction->setUser($this->userRepository->find($request->get('user')));
         $transaction->setReference($this->genererNumero());
         $transaction->setMontant($montant);
         $transaction->setReferenceChannel("");
@@ -336,7 +336,7 @@ class PaiementService
             "nom_usager" => "Mydepps",
             "prenom_usager" => "Mydepps",
             "telephone" => "0704314164",
-            "email" => $request->request->get('email'),
+            "email" => $request->get('email'),
             "libelle_article" => "OUVERTURE D'EXPLOITATION",
             "quantite" => 1,
             "montant" => $montant,

@@ -136,12 +136,12 @@ class ApiArticleController extends ApiInterface
 
 
         $article = new Article();
-        $article->setTitre($request->request->get('titre'));
-        $article->setText($request->request->get('text'));
+        $article->setTitre($request->get('titre'));
+        $article->setText($request->get('text'));
         $article->setStatus(0);
         $article->setCreatedBy($this->getUser());
         $article->setUpdatedBy($this->getUser());
-        $article->setUser($this->userRepository->find($request->request->get('userUpdate')));
+        $article->setUser($this->userRepository->find($request->get('userUpdate')));
         if ($uploadedFile) {
             $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH);
             if ($fichier) {
@@ -197,8 +197,8 @@ class ApiArticleController extends ApiInterface
 
             if ($article != null) {
 
-                $article->setTitre($request->request->get('titre'));
-                $article->setText($request->request->get('text'));
+                $article->setTitre($request->get('titre'));
+                $article->setText($request->get('text'));
                 $article->setUpdatedBy($this->getUser());
                 $article->setUpdatedAt(new \DateTime());
                 if ($uploadedFile) {

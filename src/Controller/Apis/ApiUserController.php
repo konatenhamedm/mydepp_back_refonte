@@ -283,8 +283,8 @@ class ApiUserController extends ApiInterface
             $data = json_decode($request->getContent(), true);
 
             $personne = new Administrateur();
-            $personne->setNom($request->request->get('nom'));
-            $personne->setPrenoms($request->request->get('prenoms'));
+            $personne->setNom($request->get('nom'));
+            $personne->setPrenoms($request->get('prenoms'));
 
 
             $personne->setUpdatedAt(new \DateTime());
@@ -296,12 +296,12 @@ class ApiUserController extends ApiInterface
 
             $user = new User();
             $user->setRoles(["ROLE_ADMIN"]);
-            $user->setEmail($request->request->get('email'));
+            $user->setEmail($request->get('email'));
             $user->setPayement("payed");
-            $user->setTypeUser($request->request->get('typeUser'));
+            $user->setTypeUser($request->get('typeUser'));
             $user->setPersonne($personne);
-            if ($request->request->get('password') != "")
-                $user->setPassword($this->hasher->hashPassword($user,  $request->request->get('password')));
+            if ($request->get('password') != "")
+                $user->setPassword($this->hasher->hashPassword($user,  $request->get('password')));
 
             $user->setUpdatedBy($this->getUser());
             $user->setUpdatedAt(new \DateTime());
@@ -317,7 +317,7 @@ class ApiUserController extends ApiInterface
 
             //$errorResponse = $this->errorResponse($user);
 
-            $errorResponse = $request->request->get('password') !== $request->request->get('confirmPassword') ?  $this->errorResponse($user, "Les mots de passe ne sont pas identiques") :  $this->errorResponse($user);
+            $errorResponse = $request->get('password') !== $request->get('confirmPassword') ?  $this->errorResponse($user, "Les mots de passe ne sont pas identiques") :  $this->errorResponse($user);
             if ($errorResponse !== null) {
                 return $errorResponse; // Retourne la réponse d'erreur si des erreurs sont présentes
             } else {
@@ -340,7 +340,7 @@ class ApiUserController extends ApiInterface
                         "nom" => $user->getPersonne()->getNom(),
                         "prenoms" => $user->getPersonne()->getPrenoms()
                     ],
-                    "password" => $request->request->get('password'),
+                    "password" => $request->get('password'),
                     "login_url" => "https://mydepps.net/login"
                 ]
             );
@@ -533,10 +533,10 @@ class ApiUserController extends ApiInterface
                 return $this->response('[]');
             }
 
-            $nom = (string) $request->request->get('nom', '');
-            $prenoms = (string) $request->request->get('prenoms', '');
-            $typeUser = (string) $request->request->get('typeUser', '');
-            $password = (string) $request->request->get('password', '');
+            $nom = (string) $request->get('nom', '');
+            $prenoms = (string) $request->get('prenoms', '');
+            $typeUser = (string) $request->get('typeUser', '');
+            $password = (string) $request->get('password', '');
 
             if ($nom === '' || $prenoms === '' || $typeUser === '') {
                 $this->setMessage("Champs obligatoires manquants");
@@ -644,9 +644,9 @@ class ApiUserController extends ApiInterface
 
             if ($user !== null) {
 
-                $password = $request->request->get('password');
-                $newPassword = $request->request->get('newPassword');
-                $userUpdate = $this->userRepository->find($request->request->get('userUpdate'));
+                $password = $request->get('password');
+                $newPassword = $request->get('newPassword');
+                $userUpdate = $this->userRepository->find($request->get('userUpdate'));
 
                 if (!empty($password) && !empty($newPassword)) {
                     if (!$this->hasher->isPasswordValid($user, $password)) {

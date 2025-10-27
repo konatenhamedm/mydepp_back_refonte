@@ -212,11 +212,11 @@ class ApiEtablissementController extends ApiInterface
 
             $dto = new ActiveProfessionnelRequestEtablissement();
 
-            $dto->status = $request->request->get('status');
-            $dto->email = $request->request->get('email');
-            $dto->userUpdate = $request->request->get('userUpdate');
-            $dto->raison = $request->request->get('raison');
-            $dto->dateVisite = $request->request->get('dateVisite');
+            $dto->status = $request->get('status');
+            $dto->email = $request->get('email');
+            $dto->userUpdate = $request->get('userUpdate');
+            $dto->raison = $request->get('raison');
+            $dto->dateVisite = $request->get('dateVisite');
 
             $uploaded = $request->files->get('rapportExamen');
             // Gérer l'upload du fichier pour la transition visite_effectuee
@@ -312,7 +312,7 @@ class ApiEtablissementController extends ApiInterface
                 $message = "La visite dans votre établissement a été effectuée. Le rapport d'examen est disponible.";
             }
 
-            $user = $userRepository->find($request->request->get('userUpdate'));
+            $user = $userRepository->find($request->get('userUpdate'));
 
             $info_user = [
                 'user' => $user->getUserIdentifier(),
@@ -329,7 +329,7 @@ class ApiEtablissementController extends ApiInterface
 
             $sendMailService->send(
                 'depps@leadagro.net',
-                $request->request->get('email'),
+                $request->get('email'),
                 'Validation du dossier - Étape: ' . $dto->status,
                 'content_validation',
                 $context
@@ -413,7 +413,7 @@ class ApiEtablissementController extends ApiInterface
 
 
 
-        /*   $transaction = $transactionRepository->findOneBy(['reference' =>  $request->request->get('reference'), 'user' => null]);
+        /*   $transaction = $transactionRepository->findOneBy(['reference' =>  $request->get('reference'), 'user' => null]);
 
         if (!$transaction) {
             return $this->response("Transaction introuvable");
@@ -421,9 +421,9 @@ class ApiEtablissementController extends ApiInterface
 
 
         $user = new User();
-        $user->setUsername($request->request->get('nomEntreprise') . " " . $this->numero());
-        $user->setEmail($request->request->get('email'));
-        $plainPassword = $request->request->get('password');
+        $user->setUsername($request->get('nomEntreprise') . " " . $this->numero());
+        $user->setEmail($request->get('email'));
+        $plainPassword = $request->get('password');
 
 
         $user->setPassword($hasher->hashPassword($user, $plainPassword));
@@ -433,26 +433,26 @@ class ApiEtablissementController extends ApiInterface
         $user->setPayement(User::PAYEMENT['init_payement']);
 
 
-        $errorResponse1 = $request->request->get('password') !== $request->request->get('confirmPassword') ?  $this->errorResponse($user, "Les mots de passe ne sont pas identiques") :  $this->errorResponse($user);
+        $errorResponse1 = $request->get('password') !== $request->get('confirmPassword') ?  $this->errorResponse($user, "Les mots de passe ne sont pas identiques") :  $this->errorResponse($user);
         if ($errorResponse1 !== null) {
             return $errorResponse1; // Retourne la réponse d'erreur si des erreurs sont présentes
         } else {
 
-            $typePersonne = $typePersonneRepository->findOneByCode($request->request->get('typePersonne'));
+            $typePersonne = $typePersonneRepository->findOneByCode($request->get('typePersonne'));
             $etablissement = new Etablissement();
-            $etablissement->setNiveauIntervention($niveauInterventionRepository->find($request->request->get('niveauIntervention')));
+            $etablissement->setNiveauIntervention($niveauInterventionRepository->find($request->get('niveauIntervention')));
 
             if ($typePersonne->getCode() === 'PHYSIQUE') {
-                $etablissement->setNom($request->request->get('nom'));
-                $etablissement->setPrenoms($request->request->get('prenoms'));
-                $etablissement->setBp($request->request->get('bp'));
-                $etablissement->setTelephone($request->request->get('telephone'));
-                $etablissement->setEmailAutre($request->request->get('emailAutre'));
+                $etablissement->setNom($request->get('nom'));
+                $etablissement->setPrenoms($request->get('prenoms'));
+                $etablissement->setBp($request->get('bp'));
+                $etablissement->setTelephone($request->get('telephone'));
+                $etablissement->setEmailAutre($request->get('emailAutre'));
             } else {
-                $etablissement->setDenomination($request->request->get('denomination'));
-                $etablissement->setTypeSociete($request->request->get('typeSociete'));
-                $etablissement->setAdresse($request->request->get('adresse'));
-                $etablissement->setNomRepresentant($request->request->get('nomRepresentant'));
+                $etablissement->setDenomination($request->get('denomination'));
+                $etablissement->setTypeSociete($request->get('typeSociete'));
+                $etablissement->setAdresse($request->get('adresse'));
+                $etablissement->setNomRepresentant($request->get('nomRepresentant'));
             }
 
             $etablissement->setTypePersonne($typePersonne);
@@ -460,7 +460,7 @@ class ApiEtablissementController extends ApiInterface
             $etablissement->setStatus("acp_attente_dossier_depot_service_courrier");
 
 
-            $documents = $request->request->get('documents');
+            $documents = $request->get('documents');
 
 
             $uploadedFiles = $request->files->get('documents');
@@ -517,8 +517,8 @@ class ApiEtablissementController extends ApiInterface
 
 
                 $info_user = [
-                    'login' => $request->request->get('email'),
-                    'password' => $request->request->get('confirmPassword')
+                    'login' => $request->get('email'),
+                    'password' => $request->get('confirmPassword')
                 ];
 
                 $context = compact('info_user');
@@ -526,7 +526,7 @@ class ApiEtablissementController extends ApiInterface
                 // TO DO
                 $sendMailService->send(
                     'depps@leadagro.net',
-                    $request->request->get('email'),
+                    $request->get('email'),
                     'Informations',
                     'content_mail',
                     $context
@@ -835,48 +835,48 @@ class ApiEtablissementController extends ApiInterface
         }
 
         // Vérification et mise à jour du typePersonne si fourni
-        if ($request->request->get('typePersonne') !== null && $request->request->get('typePersonne') !== '') {
-            $typePersonne = $typePersonneRepository->find($request->request->get('typePersonne'));
+        if ($request->get('typePersonne') !== null && $request->get('typePersonne') !== '') {
+            $typePersonne = $typePersonneRepository->find($request->get('typePersonne'));
             if ($typePersonne) {
                 $etablissement->setTypePersonne($typePersonne);
-                $etablissement->setNiveauIntervention($niveauInterventionRepository->find($request->request->get('niveauIntervention')));
+                $etablissement->setNiveauIntervention($niveauInterventionRepository->find($request->get('niveauIntervention')));
 
                 // Mise à jour conditionnelle des champs selon le type de personne
                 if ($typePersonne->getLibelle() === 'PHYSIQUE') {
-                    if ($request->request->get('nom') !== null && $request->request->get('nom') !== '') {
-                        $etablissement->setNom($request->request->get('nom'));
+                    if ($request->get('nom') !== null && $request->get('nom') !== '') {
+                        $etablissement->setNom($request->get('nom'));
                     }
-                    if ($request->request->get('prenoms') !== null && $request->request->get('prenoms') !== '') {
-                        $etablissement->setPrenoms($request->request->get('prenoms'));
+                    if ($request->get('prenoms') !== null && $request->get('prenoms') !== '') {
+                        $etablissement->setPrenoms($request->get('prenoms'));
                     }
-                    if ($request->request->get('bp') !== null && $request->request->get('bp') !== '') {
-                        $etablissement->setBp($request->request->get('bp'));
+                    if ($request->get('bp') !== null && $request->get('bp') !== '') {
+                        $etablissement->setBp($request->get('bp'));
                     }
-                    if ($request->request->get('emailAutre') !== null && $request->request->get('emailAutre') !== '') {
-                        $etablissement->setEmailAutre($request->request->get('emailAutre'));
+                    if ($request->get('emailAutre') !== null && $request->get('emailAutre') !== '') {
+                        $etablissement->setEmailAutre($request->get('emailAutre'));
                     }
-                    if ($request->request->get('telephone') !== null && $request->request->get('telephone') !== '') {
-                        $etablissement->setTelephone($request->request->get('telephone'));
+                    if ($request->get('telephone') !== null && $request->get('telephone') !== '') {
+                        $etablissement->setTelephone($request->get('telephone'));
                     }
                 } else {
-                    if ($request->request->get('denomination') !== null && $request->request->get('denomination') !== '') {
-                        $etablissement->setDenomination($request->request->get('denomination'));
+                    if ($request->get('denomination') !== null && $request->get('denomination') !== '') {
+                        $etablissement->setDenomination($request->get('denomination'));
                     }
-                    if ($request->request->get('typeSociete') !== null && $request->request->get('typeSociete') !== '') {
-                        $etablissement->setTypeSociete($request->request->get('typeSociete'));
+                    if ($request->get('typeSociete') !== null && $request->get('typeSociete') !== '') {
+                        $etablissement->setTypeSociete($request->get('typeSociete'));
                     }
-                    if ($request->request->get('adresse') !== null && $request->request->get('adresse') !== '') {
-                        $etablissement->setAdresse($request->request->get('adresse'));
+                    if ($request->get('adresse') !== null && $request->get('adresse') !== '') {
+                        $etablissement->setAdresse($request->get('adresse'));
                     }
-                    if ($request->request->get('nomRepresentant') !== null && $request->request->get('nomRepresentant') !== '') {
-                        $etablissement->setNomRepresentant($request->request->get('nomRepresentant'));
+                    if ($request->get('nomRepresentant') !== null && $request->get('nomRepresentant') !== '') {
+                        $etablissement->setNomRepresentant($request->get('nomRepresentant'));
                     }
                 }
             }
         }
 
         // Gestion des documents existants
-        $documentsData = $request->request->get('documents');
+        $documentsData = $request->get('documents');
         $uploadedFiles = $request->files->get('documents');
 
         if ($documentsData && is_array($documentsData)) {

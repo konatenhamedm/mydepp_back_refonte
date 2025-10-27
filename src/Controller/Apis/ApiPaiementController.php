@@ -776,11 +776,11 @@ class ApiPaiementController extends ApiInterface
         $names = 'document_' . '01';
         $filePrefix  = str_slug($names);
         $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
-        // $etablissement = $etablissementRepository->find($request->request->get('perdsonneId'));
+        // $etablissement = $etablissementRepository->find($request->get('perdsonneId'));
         $createTransactionData = $paiementService->traiterPaiementOpe($request);
 
         if ($createTransactionData) {
-            $documents = $request->request->get('documents');
+            $documents = $request->get('documents');
             $uploadedFiles = $request->files->get('documents');
 
             foreach ($documents as $index => $doc) {
@@ -788,7 +788,7 @@ class ApiPaiementController extends ApiInterface
                 $newDocument = new DocumentOepTemp();
                 $newDocument->setLibelle($doc['libelle'])
                     ->setReference($createTransactionData['reference'])
-                    ->setEtablissement($request->request->get('etablissement'))
+                    ->setEtablissement($request->get('etablissement'))
                     ->setLibelleGroupe($this->em->getRepository(LibelleGroupe::class)->find($doc['libelleGroupe']));
 
                 if (isset($uploadedFiles[$index])) {
@@ -859,58 +859,58 @@ class ApiPaiementController extends ApiInterface
 
         //etape 1
 
-        $professionnel->setPassword($request->request->get('password'));
-        $professionnel->setCode($request->request->get('code'));
-        $professionnel->setEmail($request->request->get('email'));
-        $professionnel->setUsername($request->request->get('nom') . " " . $this->numero());
+        $professionnel->setPassword($request->get('password'));
+        $professionnel->setCode($request->get('code'));
+        $professionnel->setEmail($request->get('email'));
+        $professionnel->setUsername($request->get('nom') . " " . $this->numero());
 
         // etatpe 2
 
-        $professionnel->setPoleSanitaire($request->request->get('poleSanitaire'));
-        $professionnel->setRegion($request->request->get('region'));
-        $professionnel->setDistrict($request->request->get('district'));
-        $professionnel->setVille($request->request->get('ville'));
-        $professionnel->setCommune($request->request->get('commune'));
-        $professionnel->setQuartier($request->request->get('quartier'));
+        $professionnel->setPoleSanitaire($request->get('poleSanitaire'));
+        $professionnel->setRegion($request->get('region'));
+        $professionnel->setDistrict($request->get('district'));
+        $professionnel->setVille($request->get('ville'));
+        $professionnel->setCommune($request->get('commune'));
+        $professionnel->setQuartier($request->get('quartier'));
 
-        $professionnel->setNom($request->request->get('nom'));
-        $professionnel->setProfessionnel($request->request->get('professionnel'));
-        $professionnel->setPrenoms($request->request->get('prenoms'));
-        $professionnel->setLieuExercicePro($request->request->get('lieuExercicePro'));
-        $professionnel->setSpecialiteAutre($request->request->get('specialiteAutre'));
+        $professionnel->setNom($request->get('nom'));
+        $professionnel->setProfessionnel($request->get('professionnel'));
+        $professionnel->setPrenoms($request->get('prenoms'));
+        $professionnel->setLieuExercicePro($request->get('lieuExercicePro'));
+        $professionnel->setSpecialiteAutre($request->get('specialiteAutre'));
 
         // etatpe 3
-        $professionnel->setStatusPro($request->request->get('statusPro'));
-        $professionnel->setTypeDiplome($request->request->get('typeDiplome'));
+        $professionnel->setStatusPro($request->get('statusPro'));
+        $professionnel->setTypeDiplome($request->get('typeDiplome'));
 
-        $professionnel->setProfession($request->request->get('profession'));
-        $professionnel->setEmailAutre($request->request->get('emailAutre'));
-        $professionnel->setCivilite($request->request->get('civilite'));
-        $professionnel->setEmailPro($request->request->get('emailPro'));
-        $professionnel->setDateDiplome($request->request->get('dateDiplome'));
-        $professionnel->setDateNaissance($request->request->get('dateNaissance'));
-        $professionnel->setNumber($request->request->get('numero'));
-        $professionnel->setLieuDiplome($request->request->get('lieuDiplome'));
-        $professionnel->setLieuObtentionDiplome($request->request->get('lieuObtentionDiplome'));
-        $professionnel->setNationate($request->request->get('nationalite'));
-        $professionnel->setSituation($request->request->get('situation'));
-        $professionnel->setDatePremierDiplome(new DateTimeImmutable($request->request->get('datePremierDiplome')));
-        $professionnel->setPoleSanitairePro($request->request->get('poleSanitairePro'));
-        $professionnel->setDiplome($request->request->get('diplome'));
-        $professionnel->setSituationPro($request->request->get('situationPro'));
-        $professionnel->setAppartenirOrganisation($request->request->get('appartenirOrganisation'));
-        $professionnel->setAppartenirOrdre($request->request->get('appartenirOrdre'));
+        $professionnel->setProfession($request->get('profession'));
+        $professionnel->setEmailAutre($request->get('emailAutre'));
+        $professionnel->setCivilite($request->get('civilite'));
+        $professionnel->setEmailPro($request->get('emailPro'));
+        $professionnel->setDateDiplome($request->get('dateDiplome'));
+        $professionnel->setDateNaissance($request->get('dateNaissance'));
+        $professionnel->setNumber($request->get('numero'));
+        $professionnel->setLieuDiplome($request->get('lieuDiplome'));
+        $professionnel->setLieuObtentionDiplome($request->get('lieuObtentionDiplome'));
+        $professionnel->setNationate($request->get('nationalite'));
+        $professionnel->setSituation($request->get('situation'));
+        $professionnel->setDatePremierDiplome(new DateTimeImmutable($request->get('datePremierDiplome')));
+        $professionnel->setPoleSanitairePro($request->get('poleSanitairePro'));
+        $professionnel->setDiplome($request->get('diplome'));
+        $professionnel->setSituationPro($request->get('situationPro'));
+        $professionnel->setAppartenirOrganisation($request->get('appartenirOrganisation'));
+        $professionnel->setAppartenirOrdre($request->get('appartenirOrdre'));
 
-        if ($request->request->get('appartenirOrganisation') == "oui") {
+        if ($request->get('appartenirOrganisation') == "oui") {
 
 
-            $professionnel->setOrganisationNom($request->request->get('organisationNom'));
+            $professionnel->setOrganisationNom($request->get('organisationNom'));
         }
 
-        if ($request->request->get('appartenirOrdre') == "oui") {
+        if ($request->get('appartenirOrdre') == "oui") {
 
 
-            $professionnel->setNumeroInscription($request->request->get('numeroInscription'));
+            $professionnel->setNumeroInscription($request->get('numeroInscription'));
         }
 
 
@@ -995,27 +995,27 @@ class ApiPaiementController extends ApiInterface
         $etablissement = new TempEtablissement();
 
 
-        $etablissement->setPassword($request->request->get('password'));
-        $etablissement->setEmail($request->request->get('email'));
-        $etablissement->setUsername($request->request->get('nomEntreprise') . " " . $this->numero());
+        $etablissement->setPassword($request->get('password'));
+        $etablissement->setEmail($request->get('email'));
+        $etablissement->setUsername($request->get('nomEntreprise') . " " . $this->numero());
 
-        $etablissement->setTypePersonne($request->request->get('typePersonne'));
-        $etablissement->setNiveauIntervention($request->request->get('niveauIntervention'));
+        $etablissement->setTypePersonne($request->get('typePersonne'));
+        $etablissement->setNiveauIntervention($request->get('niveauIntervention'));
 
         $etablissement->setReference($data['reference']);
         $etablissement->setTypeUser(User::TYPE['ETABLISSEMENT']);
-        $etablissement->setNom($request->request->get('nom'));
-        $etablissement->setPrenoms($request->request->get('prenoms'));
-        $etablissement->setDenomination($request->request->get('denomination'));
-        $etablissement->setEmailAutre($request->request->get('emailAutre'));
-        $etablissement->setBp($request->request->get('bp'));
-        $etablissement->setAdresse($request->request->get('adresse'));
-        $etablissement->setNomRepresentant($request->request->get('nomRepresentant'));
-        $etablissement->setTelephone($request->request->get('telephone'));
-        $etablissement->setTypeSociete($request->request->get('typeSociete'));
+        $etablissement->setNom($request->get('nom'));
+        $etablissement->setPrenoms($request->get('prenoms'));
+        $etablissement->setDenomination($request->get('denomination'));
+        $etablissement->setEmailAutre($request->get('emailAutre'));
+        $etablissement->setBp($request->get('bp'));
+        $etablissement->setAdresse($request->get('adresse'));
+        $etablissement->setNomRepresentant($request->get('nomRepresentant'));
+        $etablissement->setTelephone($request->get('telephone'));
+        $etablissement->setTypeSociete($request->get('typeSociete'));
 
 
-        $documents = $request->request->get('documents');
+        $documents = $request->get('documents');
 
 
         $uploadedFiles = $request->files->get('documents');
@@ -1056,7 +1056,7 @@ class ApiPaiementController extends ApiInterface
 
 
         /* 
-        $libelles = $request->request->get('documents'); // Récupère les libellés
+        $libelles = $request->get('documents'); // Récupère les libellés
         $uploadedDocuments = $request->files->get('documents'); // Récupère les fichiers
 
         if ($uploadedDocuments) {

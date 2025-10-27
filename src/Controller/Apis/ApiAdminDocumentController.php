@@ -135,7 +135,7 @@ class ApiAdminDocumentController extends ApiInterface
 
 
         $adminDocument = new AdminDocument();
-        $adminDocument->setLibelle($request->request->get('libelle'));
+        $adminDocument->setLibelle($request->get('libelle'));
         $adminDocument->setCreatedAtValue(new \DateTime());
         $adminDocument->setUpdatedAt(new \DateTime());
         $adminDocument->setCreatedBy($this->getUser());
@@ -203,7 +203,7 @@ class ApiAdminDocumentController extends ApiInterface
 
             if ($adminDocument != null) {
 
-                $adminDocument->setLibelle($request->request->get('libelle'));
+                $adminDocument->setLibelle($request->get('libelle'));
                 $adminDocument->setUpdatedAt(new \DateTime());
                 $adminDocument->setUpdatedBy($this->getUser());
                 $errorResponse = $this->errorResponse($adminDocument);

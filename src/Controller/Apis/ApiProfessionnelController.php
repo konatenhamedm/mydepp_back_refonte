@@ -952,8 +952,8 @@ class ApiProfessionnelController extends ApiInterface
 
 
         $user = new User();
-        $user->setEmail($request->request->get('email'));
-        $user->setPassword($this->hasher->hashPassword($user, $request->request->get('password')));
+        $user->setEmail($request->get('email'));
+        $user->setPassword($this->hasher->hashPassword($user, $request->get('password')));
         $user->setRoles(['ROLE_MEMBRE']);
         $user->setTypeUser(User::TYPE['PROFESSIONNEL']);
         $user->setPayement(User::PAYEMENT['payed']);
@@ -961,7 +961,7 @@ class ApiProfessionnelController extends ApiInterface
         $user->setCreatedAtValue(new DateTime());
 
 
-        $errorResponse1 = $request->request->get('password') !== $request->request->get('confirmPassword') ?  $this->errorResponse($user, "Les mots de passe ne sont pas identiques") :  $this->errorResponse($user);
+        $errorResponse1 = $request->get('password') !== $request->get('confirmPassword') ?  $this->errorResponse($user, "Les mots de passe ne sont pas identiques") :  $this->errorResponse($user);
         if ($errorResponse1 !== null) {
             return $errorResponse1; // Retourne la réponse d'erreur si des erreurs sont présentes
         } else {
@@ -971,54 +971,54 @@ class ApiProfessionnelController extends ApiInterface
             $professionnel = new Professionnel();
 
             //ETAPE 2
-            if ($request->request->get('code') && $codeGenerateurRepository->findOneBy(['code' => $request->request->get('code')])) {
-                $professionnel->setCode($request->request->get('code'));
+            if ($request->get('code') && $codeGenerateurRepository->findOneBy(['code' => $request->get('code')])) {
+                $professionnel->setCode($request->get('code'));
                 $professionnel->setStatus("renouvellement");
             } else {
                 $professionnel->setStatus("attente");
             }
-            $professionnel->setPoleSanitaire($request->request->get('poleSanitaire'));
-            $professionnel->setSpecialiteAutre($request->request->get('specialiteAutre'));
-            $professionnel->setRegion($regionRepository->find($request->request->get('region')));
-            $professionnel->setDistrict($districtRepository->find($request->request->get('district')));
-            $professionnel->setVille($villeRepository->find($request->request->get('ville')));
-            $professionnel->setCommune($communeRepository->find($request->request->get('commune')));
-            $professionnel->setQuartier($request->request->get('quartier'));
-            $professionnel->setNom($request->request->get('nom'));
-            $professionnel->setProfessionnel($request->request->get('professionnel'));
-            $professionnel->setPrenoms($request->request->get('prenoms'));
-            $professionnel->setEmail($request->request->get('emailAutre'));
-            $professionnel->setLieuExercicePro($request->request->get('lieuExercicePro'));
+            $professionnel->setPoleSanitaire($request->get('poleSanitaire'));
+            $professionnel->setSpecialiteAutre($request->get('specialiteAutre'));
+            $professionnel->setRegion($regionRepository->find($request->get('region')));
+            $professionnel->setDistrict($districtRepository->find($request->get('district')));
+            $professionnel->setVille($villeRepository->find($request->get('ville')));
+            $professionnel->setCommune($communeRepository->find($request->get('commune')));
+            $professionnel->setQuartier($request->get('quartier'));
+            $professionnel->setNom($request->get('nom'));
+            $professionnel->setProfessionnel($request->get('professionnel'));
+            $professionnel->setPrenoms($request->get('prenoms'));
+            $professionnel->setEmail($request->get('emailAutre'));
+            $professionnel->setLieuExercicePro($request->get('lieuExercicePro'));
 
             //ETAPE 3
 
-            $professionnel->setProfession($professionRepository->find($request->request->get('profession')));
-            $professionnel->setCivilite($civiliteRepository->find($request->request->get('civilite')));
-            $professionnel->setEmailPro($request->request->get('emailPro'));
-            $professionnel->setDateDiplome(new DateTimeImmutable($request->request->get('dateDiplome')));
-            $professionnel->setDateNaissance(new DateTimeImmutable($request->request->get('dateNaissance')));
-            $professionnel->setNumber($request->request->get('numero'));
-            $professionnel->setLieuDiplome($request->request->get('lieuDiplome'));
-            $professionnel->setLieuObtentionDiplome($lieuDiplomeRepository->find($request->request->get('lieuObtentionDiplome')));
-            $professionnel->setNationate($paysRepository->find($request->request->get('nationalite')));
-            $professionnel->setSituation($request->request->get('situation'));
-            $professionnel->setDatePremierDiplome(new DateTimeImmutable($request->request->get('datePremierDiplome')));
-            $professionnel->setPoleSanitairePro($request->request->get('poleSanitairePro'));
-            $professionnel->setDiplome($request->request->get('diplome'));
-            $professionnel->setSituationPro($situationProfessionnelleRepository->find($request->request->get('situationPro')));
-            $professionnel->setStatusPro($statusProRepository->find($request->request->get('statusPro')));
-            $professionnel->setTypeDiplome($typeDiplomeRepository->find($request->request->get('typeDiplome')));
-            $professionnel->setAppartenirOrganisation($request->request->get('appartenirOrganisation'));
-            $professionnel->setAppartenirOrdre($request->request->get('appartenirOrdre'));
-            if ($request->request->get('appartenirOrganisation') == "oui") {
+            $professionnel->setProfession($professionRepository->find($request->get('profession')));
+            $professionnel->setCivilite($civiliteRepository->find($request->get('civilite')));
+            $professionnel->setEmailPro($request->get('emailPro'));
+            $professionnel->setDateDiplome(new DateTimeImmutable($request->get('dateDiplome')));
+            $professionnel->setDateNaissance(new DateTimeImmutable($request->get('dateNaissance')));
+            $professionnel->setNumber($request->get('numero'));
+            $professionnel->setLieuDiplome($request->get('lieuDiplome'));
+            $professionnel->setLieuObtentionDiplome($lieuDiplomeRepository->find($request->get('lieuObtentionDiplome')));
+            $professionnel->setNationate($paysRepository->find($request->get('nationalite')));
+            $professionnel->setSituation($request->get('situation'));
+            $professionnel->setDatePremierDiplome(new DateTimeImmutable($request->get('datePremierDiplome')));
+            $professionnel->setPoleSanitairePro($request->get('poleSanitairePro'));
+            $professionnel->setDiplome($request->get('diplome'));
+            $professionnel->setSituationPro($situationProfessionnelleRepository->find($request->get('situationPro')));
+            $professionnel->setStatusPro($statusProRepository->find($request->get('statusPro')));
+            $professionnel->setTypeDiplome($typeDiplomeRepository->find($request->get('typeDiplome')));
+            $professionnel->setAppartenirOrganisation($request->get('appartenirOrganisation'));
+            $professionnel->setAppartenirOrdre($request->get('appartenirOrdre'));
+            if ($request->get('appartenirOrganisation') == "oui") {
 
 
-                $professionnel->setOrganisationNom($request->request->get('organisationNom'));
+                $professionnel->setOrganisationNom($request->get('organisationNom'));
             }
-            if ($request->request->get('appartenirOrdre') == "oui") {
+            if ($request->get('appartenirOrdre') == "oui") {
 
 
-                $professionnel->setNumeroInscription($request->request->get('numeroInscription'));
+                $professionnel->setNumeroInscription($request->get('numeroInscription'));
             }
 
 
@@ -1091,7 +1091,7 @@ class ApiProfessionnelController extends ApiInterface
                     $this->userRepository->add($user, true);
                 }
                 $info_user = [
-                    'login' => $request->request->get('email'),
+                    'login' => $request->get('email'),
 
                 ];
 
@@ -1100,7 +1100,7 @@ class ApiProfessionnelController extends ApiInterface
                 // TO DO
                 $sendMailService->send(
                     'depps@leadagro.net',
-                    $request->request->get('email'),
+                    $request->get('email'),
                     'Informations',
                     'content_mail',
                     $context
@@ -1202,7 +1202,6 @@ class ApiProfessionnelController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'professionnel')]
-    
     public function update(
         Request $request,
         SituationProfessionnelleRepository $situationProfessionnelleRepository,
@@ -1229,90 +1228,90 @@ class ApiProfessionnelController extends ApiInterface
             //return $this->responseData($professionnel, 'group_pro', ['Content-Type' => 'application/json']);
             if ($professionnel) {
                 //ETAPE 2
-                /* $professionnel->setCode($request->request->get('code')); */
-                if (!empty($request->request->get('poleSanitaire'))) {
-                    $professionnel->setPoleSanitaire($request->request->get('poleSanitaire'));
+                /* $professionnel->setCode($request->get('code')); */
+                if (!empty($request->get('poleSanitaire'))) {
+                    $professionnel->setPoleSanitaire($request->get('poleSanitaire'));
                 }
-                if (!empty($request->request->get('region'))) {
-                    $professionnel->setRegion($regionRepository->find($request->request->get('region')));
+                if (!empty($request->get('region'))) {
+                    $professionnel->setRegion($regionRepository->find($request->get('region')));
                 }
-                if (!empty($request->request->get('district'))) {
-                    $professionnel->setDistrict($districtRepository->find($request->request->get('district')));
+                if (!empty($request->get('district'))) {
+                    $professionnel->setDistrict($districtRepository->find($request->get('district')));
                 }
-                if (!empty($request->request->get('ville'))) {
-                    $professionnel->setVille($villeRepository->find($request->request->get('ville')));
+                if (!empty($request->get('ville'))) {
+                    $professionnel->setVille($villeRepository->find($request->get('ville')));
                 }
-                if (!empty($request->request->get('commune'))) {
-                    $professionnel->setCommune($communeRepository->find($request->request->get('commune')));
+                if (!empty($request->get('commune'))) {
+                    $professionnel->setCommune($communeRepository->find($request->get('commune')));
                 }
-                if (!empty($request->request->get('quartier'))) {
-                    $professionnel->setQuartier($request->request->get('quartier'));
+                if (!empty($request->get('quartier'))) {
+                    $professionnel->setQuartier($request->get('quartier'));
                 }
-                if (!empty($request->request->get('nom'))) {
-                    $professionnel->setNom($request->request->get('nom'));
+                if (!empty($request->get('nom'))) {
+                    $professionnel->setNom($request->get('nom'));
                 }
-                if (!empty($request->request->get('professionnel'))) {
-                    $professionnel->setProfessionnel($request->request->get('professionnel'));
+                if (!empty($request->get('professionnel'))) {
+                    $professionnel->setProfessionnel($request->get('professionnel'));
                 }
-                if (!empty($request->request->get('prenoms'))) {
-                    $professionnel->setPrenoms($request->request->get('prenoms'));
+                if (!empty($request->get('prenoms'))) {
+                    $professionnel->setPrenoms($request->get('prenoms'));
                 }
-                if (!empty($request->request->get('emailAutre'))) {
-                    $professionnel->setEmail($request->request->get('emailAutre'));
+                if (!empty($request->get('emailAutre'))) {
+                    $professionnel->setEmail($request->get('emailAutre'));
                 }
-                if (!empty($request->request->get('lieuExercicePro'))) {
-                    $professionnel->setLieuExercicePro($request->request->get('lieuExercicePro'));
+                if (!empty($request->get('lieuExercicePro'))) {
+                    $professionnel->setLieuExercicePro($request->get('lieuExercicePro'));
                 }
-                if (!empty($request->request->get('civilite'))) {
-                    $professionnel->setCivilite($civiliteRepository->find($request->request->get('civilite')));
+                if (!empty($request->get('civilite'))) {
+                    $professionnel->setCivilite($civiliteRepository->find($request->get('civilite')));
                 }
-                if (!empty($request->request->get('emailPro'))) {
-                    $professionnel->setEmailPro($request->request->get('emailPro'));
+                if (!empty($request->get('emailPro'))) {
+                    $professionnel->setEmailPro($request->get('emailPro'));
                 }
-                if (!empty($request->request->get('dateDiplome'))) {
-                    $professionnel->setDateDiplome(new DateTimeImmutable($request->request->get('dateDiplome')));
+                if (!empty($request->get('dateDiplome'))) {
+                    $professionnel->setDateDiplome(new DateTimeImmutable($request->get('dateDiplome')));
                 }
-                if (!empty($request->request->get('dateNaissance'))) {
-                    $professionnel->setDateNaissance(new DateTimeImmutable($request->request->get('dateNaissance')));
+                if (!empty($request->get('dateNaissance'))) {
+                    $professionnel->setDateNaissance(new DateTimeImmutable($request->get('dateNaissance')));
                 }
-                if (!empty($request->request->get('numero'))) {
-                    $professionnel->setNumber($request->request->get('numero'));
+                if (!empty($request->get('numero'))) {
+                    $professionnel->setNumber($request->get('numero'));
                 }
-                if (!empty($request->request->get('lieuDiplome'))) {
-                    $professionnel->setLieuDiplome($request->request->get('lieuDiplome'));
+                if (!empty($request->get('lieuDiplome'))) {
+                    $professionnel->setLieuDiplome($request->get('lieuDiplome'));
                 }
-                if (!empty($request->request->get('typeDiplome'))) {
+                if (!empty($request->get('typeDiplome'))) {
 
-                    $professionnel->setTypeDiplome($typeDiplomeRepository->find($request->request->get('typeDiplome')));
+                    $professionnel->setTypeDiplome($typeDiplomeRepository->find($request->get('typeDiplome')));
                 }
-                if (!empty($request->request->get('statusPro'))) {
-                    $professionnel->setStatusPro($statusProRepository->find($request->request->get('statusPro')));
+                if (!empty($request->get('statusPro'))) {
+                    $professionnel->setStatusPro($statusProRepository->find($request->get('statusPro')));
                 }
 
 
-                if (!empty($request->request->get('lieuObtentionDiplome'))) {
-                    $professionnel->setLieuObtentionDiplome($lieuDiplomeRepository->find($request->request->get('lieuObtentionDiplome')));
+                if (!empty($request->get('lieuObtentionDiplome'))) {
+                    $professionnel->setLieuObtentionDiplome($lieuDiplomeRepository->find($request->get('lieuObtentionDiplome')));
                 }
-                if (!empty($request->request->get('nationalite'))) {
-                    $professionnel->setNationate($paysRepository->find($request->request->get('nationalite')));
+                if (!empty($request->get('nationalite'))) {
+                    $professionnel->setNationate($paysRepository->find($request->get('nationalite')));
                 }
-                if (!empty($request->request->get('situation'))) {
-                    $professionnel->setSituation($request->request->get('situation'));
+                if (!empty($request->get('situation'))) {
+                    $professionnel->setSituation($request->get('situation'));
                 }
-                if (!empty($request->request->get('datePremierDiplome'))) {
-                    $professionnel->setDatePremierDiplome(new DateTimeImmutable($request->request->get('datePremierDiplome')));
+                if (!empty($request->get('datePremierDiplome'))) {
+                    $professionnel->setDatePremierDiplome(new DateTimeImmutable($request->get('datePremierDiplome')));
                 }
-                if (!empty($request->request->get('poleSanitairePro'))) {
-                    $professionnel->setPoleSanitairePro($request->request->get('poleSanitairePro'));
+                if (!empty($request->get('poleSanitairePro'))) {
+                    $professionnel->setPoleSanitairePro($request->get('poleSanitairePro'));
                 }
-                if (!empty($request->request->get('diplome'))) {
-                    $professionnel->setDiplome($request->request->get('diplome'));
+                if (!empty($request->get('diplome'))) {
+                    $professionnel->setDiplome($request->get('diplome'));
                 }
-                if (!empty($request->request->get('diplospecialiteAutreme'))) {
-                    $professionnel->setSpecialiteAutre($request->request->get('specialiteAutre'));
+                if (!empty($request->get('diplospecialiteAutreme'))) {
+                    $professionnel->setSpecialiteAutre($request->get('specialiteAutre'));
                 }
-                if (!empty($request->request->get('situationPro'))) {
-                    $professionnel->setSituationPro($situationProfessionnelleRepository->find($request->request->get('situationPro')));
+                if (!empty($request->get('situationPro'))) {
+                    $professionnel->setSituationPro($situationProfessionnelleRepository->find($request->get('situationPro')));
                 }
 
 
@@ -1362,22 +1361,22 @@ class ApiProfessionnelController extends ApiInterface
                     }
                 }
 
-                $professionnel->setAppartenirOrganisation($request->request->get('appartenirOrganisation'));
-                $professionnel->setAppartenirOrdre($request->request->get('appartenirOrdre'));
+                $professionnel->setAppartenirOrganisation($request->get('appartenirOrganisation'));
+                $professionnel->setAppartenirOrdre($request->get('appartenirOrdre'));
 
                 /* $professionnel->setCreatedBy($this->getUser());
                 $professionnel->setUpdatedBy($this->getUser()); */
 
                 $errorResponse = $this->errorResponse($professionnel);
 
-                if ($request->request->get('appartenirOrganisation') == "oui") {
-                    $professionnel->setOrganisationNom($request->request->get('organisationNom'));
+                if ($request->get('appartenirOrganisation') == "oui") {
+                    $professionnel->setOrganisationNom($request->get('organisationNom'));
                 } else {
                     $professionnel->setOrganisationNom("");
                 }
 
-                if ($request->request->get('appartenirOrdre') == "oui") {
-                    $professionnel->setNumeroInscription($request->request->get('numeroInscription'));
+                if ($request->get('appartenirOrdre') == "oui") {
+                    $professionnel->setNumeroInscription($request->get('numeroInscription'));
                 } else {
                     $professionnel->setOrganisationNom("");
                 }
