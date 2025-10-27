@@ -374,7 +374,8 @@ class PaiementService
 
         $user = $this->em->getRepository(User::class)->find($data['user']);
 
-        $montant = $this->professionRepository->findOneByCode($user->getPersonne()->getProfession())->getMontantRenouvellement();
+       // $montant = $this->professionRepository->findOneByCode($user->getPersonne()->getProfession())->getMontantRenouvellement();
+        $montant = $user->getPersonne()->getProfession()->getMontantRenouvellement();
 
         $transaction = new Transaction();
         $transaction->setChannel("");
