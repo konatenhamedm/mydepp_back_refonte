@@ -270,7 +270,7 @@ class PaiementService
                 "montant" => $montant,
                 "lib_order" => "PAIEMENT ONMCI",
                 "Url_Retour" => "https://mydepps.net/site/" . $request->get('type'),
-                "Url_Callback" => "https://prodmydepps.leadagro.net/api/paiement/info-paiement"
+                "Url_Callback" => "https://backend.leadagro.net/api/paiement/info-paiement"
             ];
         } else {
             $requestData = [
@@ -284,7 +284,7 @@ class PaiementService
                 "montant" => $montant,
                 "lib_order" => "PAIEMENT ONMCI",
                 "Url_Retour" => "https://mydepps.net/site/" . $request->get('type'),
-                "Url_Callback" => "https://prodmydepps.leadagro.net/api/paiement/info-paiement"
+                "Url_Callback" => "https://backend.leadagro.net/api/paiement/info-paiement"
             ];
         }
 
@@ -342,7 +342,7 @@ class PaiementService
             "montant" => $montant,
             "lib_order" => "PAIEMENT ONMCI",
             "Url_Retour" => "https://mydepps.net/site/dashboard_etablissement",
-            "Url_Callback" => "https://prodmydepps.leadagro.net/api/paiement/info-paiement-oep"
+            "Url_Callback" => "https://backend.leadagro.net/api/paiement/info-paiement-oep"
         ];
 
 
@@ -401,7 +401,7 @@ class PaiementService
             "montant" => $montant,
             "lib_order" => "PAIEMENT ONMCI",
             "Url_Retour" => "https://mydepps.net/site/dashboard",
-            "Url_Callback" => "https://prodmydepps.leadagro.net/api/paiement/info-paiement-renouvellement"
+            "Url_Callback" => "https://backend.leadagro.net/api/paiement/info-paiement-renouvellement"
         ];
 
         $response = $this->httpClient->request('POST', $this->paiementUrl, [
