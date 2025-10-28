@@ -93,7 +93,7 @@ class ApiPaiementController extends ApiInterface
 
                 // Cas professionnel
                 $profession = $transaction->getUser()->getTypeUser() == "professionnel"
-                    ? ($personne->getProfession() ? $professionRepository->findOneByCode($personne->getProfession()) : null)
+                    ? $personne->getProfession()
                     : null;
 
                 return [
@@ -109,13 +109,7 @@ class ApiPaiementController extends ApiInterface
 
                     "user" => $type == "professionnel" ? [
                         // bloc professionnel
-                        'profession' => $profession ? [
-                            'libelle' => $profession->getLibelle() ?? "",
-                            'id' => $profession->getId(),
-                            'code' => $profession->getCode(),
-                            'montantNouvelleDemande' => $profession->getMontantNouvelleDemande(),
-                            'montantRenouvellement' => $profession->getMontantRenouvellement(),
-                        ] : null,
+                        'profession' => $profession ? $profession : null,
                         "typeUser" => $transaction->getUser()->getTypeUser(),
                         "code" => $personne->getCode(),
                         "poleSanitaire" => $personne->getPoleSanitaire(),
@@ -449,7 +443,7 @@ class ApiPaiementController extends ApiInterface
         // On envoie la réponse
         return $response;
     }
-    #[Route('/historique/{userId}', methods: ['GET'])]
+    #[Route('/historique/by/user/{userId}', methods: ['GET'])]
     /**
      * liste historique.
      * 
