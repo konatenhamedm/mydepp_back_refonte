@@ -65,7 +65,7 @@ class ApiProfessionnelController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "imputation", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -239,7 +239,7 @@ class ApiProfessionnelController extends ApiInterface
                 if (!$personne || !$personne->getImputation()) return null;
                 if ($personne->getImputation()->getId() !== $id) return null;
 
-               // $profession = $personne->getProfession() ? $professionRepository->findOneByCode($personne->getProfession()) : null;
+                // $profession = $personne->getProfession() ? $professionRepository->findOneByCode($personne->getProfession()) : null;
 
                 return [
                     'username' => $professionnel->getUsername(),
@@ -271,6 +271,7 @@ class ApiProfessionnelController extends ApiInterface
                         'professionnel' => $personne->getProfessionnel() ?? "",
                         'civilite' => $this->formatEntity($personne->getCivilite()),
                         'region' => $this->formatEntity($personne->getRegion()),
+                        'typeDiplome' => $personne->getTypeDiplome() ?? "",
                         'district' => $this->formatEntity($personne->getDistrict()),
                         'commune' => $this->formatEntity($personne->getCommune()),
                         'ville' => $this->formatEntity($personne->getVille()),
@@ -330,11 +331,11 @@ class ApiProfessionnelController extends ApiInterface
             $professionnels = $userRepository->findActiveProfessionnelsByImputationWithouParam();
             //$professionnels = $userRepository->findBy(['typeUser' => 'PROFESSIONNEL'], ['id' => 'DESC']);
 
-         // dd($professionnels);
+            // dd($professionnels);
 
             $formattedProfessionnels = array_map(function ($professionnel) use ($professionRepository) {
                 $personne = $professionnel->getPersonne();
-               // $profession = $personne->getProfession() ? $professionRepository->findOneByCode($personne->getProfession()) : null;
+                // $profession = $personne->getProfession() ? $professionRepository->findOneByCode($personne->getProfession()) : null;
 
                 return [
                     'username' => $professionnel->getUsername(),
@@ -370,6 +371,7 @@ class ApiProfessionnelController extends ApiInterface
                         'commune' => $this->formatEntity($personne->getCommune()),
                         'ville' => $this->formatEntity($personne->getVille()),
                         'nationate' => $this->formatEntity($personne->getNationate()),
+                        'typeDiplome' => $personne->getTypeDiplome() ?? "",
                         'situationPro' => $this->formatEntity($personne->getSituationPro()),
                         'dateNaissance' => $this->formatDate($personne->getDateNaissance()),
                         'dateDiplome' => $this->formatDate($personne->getDateDiplome()),
@@ -422,7 +424,7 @@ class ApiProfessionnelController extends ApiInterface
 
     #[OA\Tag(name: 'professionnel')]
     // 
-    public function indexEtat(ProfessionnelRepository $professionnelRepository, $status,UserRepository $userRepository, ProfessionRepository $professionRepository): Response
+    public function indexEtat(ProfessionnelRepository $professionnelRepository, $status, UserRepository $userRepository, ProfessionRepository $professionRepository): Response
     {
         try {
 
@@ -432,7 +434,7 @@ class ApiProfessionnelController extends ApiInterface
 
             //$professionnels = $userRepository->findBy(['typeUser' => 'PROFESSIONNEL'], ['id' => 'DESC']);
 
-         // dd($professionnels);
+            // dd($professionnels);
 
             $formattedProfessionnels = array_map(function ($professionnel) use ($professionRepository) {
                 $personne = $professionnel->getPersonne();
@@ -466,6 +468,7 @@ class ApiProfessionnelController extends ApiInterface
                         'quartier' => $personne->getQuartier(),
                         'reason' => $personne->getReason() ?? "",
                         'professionnel' => $personne->getProfessionnel() ?? "",
+                        'typeDiplome' => $personne->getTypeDiplome() ?? "",
                         'civilite' => $this->formatEntity($personne->getCivilite()),
                         'region' => $this->formatEntity($personne->getRegion()),
                         'district' => $this->formatEntity($personne->getDistrict()),
@@ -718,7 +721,7 @@ class ApiProfessionnelController extends ApiInterface
             }
 
             $personne = $professionnel->getPersonne();
-            $profession = $personne->getProfession() ;
+            $profession = $personne->getProfession();
 
             $responseData = [
                 'username' => $professionnel->getUsername(),
@@ -752,6 +755,7 @@ class ApiProfessionnelController extends ApiInterface
                     'dateNaissance' => $this->formatDate($personne->getDateNaissance()),
                     'dateDiplome' => $this->formatDate($personne->getDateDiplome()),
                     'diplome' => $personne->getDiplome() ?? "",
+                    'typeDiplome' => $personne->getTypeDiplome() ?? "",
                     'poleSanitaire' => $personne->getPoleSanitaire() ?? "",
                     'specialiteAutre' => $personne->getSpecialiteAutre() ?? "",
                     'organisationNom' => $personne->getOrganisationNom() ?? "",
@@ -919,7 +923,7 @@ class ApiProfessionnelController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'professionnel')]
-    
+
     public function create(
         Request $request,
         SessionInterface $session,
@@ -1517,7 +1521,7 @@ class ApiProfessionnelController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'professionnel')]
-    
+
     public function deleteAll(Request $request, ProfessionnelRepository $villeRepository): Response
     {
         try {
