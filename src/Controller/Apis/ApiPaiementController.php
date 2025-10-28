@@ -394,7 +394,7 @@ class ApiPaiementController extends ApiInterface
             $transactions = $transactionRepository->findLastTransactionByUser($userId);
 
             $personne = $transactions->getUser()->getPersonne();
-            $profession = $personne->getProfession() ? $professionRepository->findOneByCode($personne->getProfession()) : null;
+            $profession = $personne->getProfession() ? $personne->getProfession() : null;
 
             $data = [
                 'user' => [
