@@ -328,8 +328,8 @@ class ApiProfessionnelController extends ApiInterface
     {
 
         try {
-            $professionnels = $userRepository->findActiveProfessionnelsByImputationWithouParam();
-            //$professionnels = $userRepository->findBy(['typeUser' => 'PROFESSIONNEL'], ['id' => 'DESC']);
+            //$professionnels = $userRepository->findActiveProfessionnelsByImputationWithouParam();
+            $professionnels = $userRepository->findBy(['typeUser' => 'PROFESSIONNEL'], ['id' => 'DESC']);
 
             // dd($professionnels);
 
