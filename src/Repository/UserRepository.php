@@ -49,11 +49,21 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->getOneOrNullResult();
     }
 
+   
+
     public function findUserByTypeCode():array
     {
         return $this->createQueryBuilder('u')
             ->andWhere('u.typeUser in (:type)')
-            ->setParameter('type', ['INSTRUCTEUR-PROF', 'INSTRUCTEUR-SECOND-PROF','INSTRUCTEUR-ETAB','INSTRUCTEUR-SECOND-ETAB'])
+            ->setParameter('type', ['INSTRUCTEUR-PROF', 'INSTRUCTEUR-SECOND-PROF'])
+            ->getQuery()
+            ->getResult();
+    }
+    public function findUserByTypeCodeEtab():array
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.typeUser in (:type)')
+            ->setParameter('type', ['INSTRUCTEUR-ETAB', 'INSTRUCTEUR-SECOND-ETAB'])
             ->getQuery()
             ->getResult();
     }

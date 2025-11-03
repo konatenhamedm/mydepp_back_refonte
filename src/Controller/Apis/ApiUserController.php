@@ -95,6 +95,36 @@ class ApiUserController extends ApiInterface
         // On envoie la réponse
         return $response;
     }
+    #[Route('/liste/instructeur/etablissement', methods: ['GET'])]
+    /**
+     * Retourne la liste des users.
+     * 
+     */
+    #[OA\Response(
+        response: 200,
+        description: 'Returns the rewards of an user',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(ref: new Model(type: User::class, groups: ['full']))
+        )
+    )]
+    #[OA\Tag(name: 'user')]
+    // 
+    public function indexInstructeurEtab(UserRepository $userRepository): Response
+    {
+        try {
+
+            $users = $userRepository->findUserByTypeCodeEtab();
+
+            $response = $this->responseData($users, 'group_user', ['Content-Type' => 'application/json']);
+        } catch (\Exception $exception) {
+            $this->setMessage("");
+            $response = $this->response('[]');
+        }
+
+        // On envoie la réponse
+        return $response;
+    }
 
     #[Route('/check/email/existe/{email}', methods: ['GET'])]
     /**

@@ -685,7 +685,7 @@ class ApiProfessionnelController extends ApiInterface
             return $this->responseData($info_user, 'group_pro', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
 
-            dd($exception->getMessage());
+           // dd($exception->getMessage());
             return $this->json(["message" => "Une erreur est survenue"], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

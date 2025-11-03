@@ -269,7 +269,7 @@ class PaiementService
                 "quantite" => 1,
                 "montant" => $montant,
                 "lib_order" => "PAIEMENT ONMCI",
-                "Url_Retour" => "https://mydepp-front.pages.dev/site/" . $request->get('type'),
+                "Url_Retour" => "https://mydepp-front.pages.dev/inscription/" . $request->get('type'),
                 "Url_Callback" => "https://backend.leadagro.net/api/paiement/info-paiement"
             ];
         } else {
@@ -283,7 +283,7 @@ class PaiementService
                 "quantite" => 1,
                 "montant" => $montant,
                 "lib_order" => "PAIEMENT ONMCI",
-                "Url_Retour" => "https://mydepp-front.pages.dev/site/" . $request->get('type'),
+                "Url_Retour" => "https://mydepp-front.pages.dev/inscription/" . $request->get('type'),
                 "Url_Callback" => "https://backend.leadagro.net/api/paiement/info-paiement"
             ];
         }

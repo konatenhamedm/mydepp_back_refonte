@@ -830,7 +830,6 @@ class ApiPaiementController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'paiements')]
-
     public function doRenouvellement(Request $request, PaiementService $paiementService)
     {
         $createTransactionData = $paiementService->traiterPaiementRenouvellement($request);

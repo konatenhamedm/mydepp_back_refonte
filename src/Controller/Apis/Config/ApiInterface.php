@@ -5,6 +5,8 @@ namespace App\Controller\Apis\Config;
 use App\Controller\FileTrait;
 use App\Repository\UserRepository;
 use App\Service\PaginationService;
+use App\Service\PaiementBusinessLogicService;
+use App\Service\PaiementServiceHub2;
 use App\Service\SendMailService;
 use App\Service\Utils;
 use Doctrine\ORM\EntityManagerInterface;
@@ -25,6 +27,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class ApiInterface extends AbstractController
 {
@@ -62,6 +65,9 @@ class ApiInterface extends AbstractController
         SerializerInterface $serializer,
         ValidatorInterface $validator,
         UserRepository $userRepository,
+        protected PaiementServiceHub2 $paiementService,
+        protected PaiementBusinessLogicService $businessLogicService,
+        protected ParameterBagInterface $params,
         protected PaginationService $paginationService,
        #[Autowire(param: 'SEND_MAIL')] string $sendMail,
         #[Autowire(param: 'SUPER_ADMIN')] string $superAdmin
