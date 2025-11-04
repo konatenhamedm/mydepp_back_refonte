@@ -29,10 +29,10 @@ class PaiementServiceHub2
         private NiveauInterventionRepository $niveauInterventionRepository,
         private UserRepository $userRepository,
     ) {
-        $this->apiKey = $params->get('HUB2_API_KEY');
+       /*  $this->apiKey = $params->get('HUB2_API_KEY');
         $this->merchantId = $params->get('HUB2_MERCHANT_ID');
         $this->apiUrl = $params->get('HUB2_API_URL') ?? 'https://api.hub2.io';
-        $this->environment = $params->get('HUB2_ENVIRONMENT') ?? 'sandbox';
+        $this->environment = $params->get('HUB2_ENVIRONMENT') ?? 'sandbox'; */
     }
 
     /**
@@ -89,10 +89,10 @@ class PaiementServiceHub2
                     'currency' => 'XOF'
                 ],
                 'headers' => [
-                    'ApiKey' => $this->apiKey,
+                    /* 'ApiKey' => $this->apiKey,
                     'MerchantId' => $this->merchantId,
                     'Environment' => $this->environment,
-                    'Content-Type' => 'application/json',
+                    'Content-Type' => 'application/json', */
                 ],
                 'verify_peer' => false,
                 'verify_host' => false
@@ -185,15 +185,7 @@ class PaiementServiceHub2
         return $messages[$provider] ?? 'Paiement en cours de traitement.';
     }
 
-    /**
-     * MÉTHODE 2: Initier le paiement (appelé depuis le frontend)
-     * Note: Cette méthode peut être appelée directement depuis le frontend
-     * avec le token obtenu via initPaymentIntent
-     * 
-     * Pour Wave: retourne un lien de paiement
-     * Pour Orange: envoie l'OTP directement si fourni
-     * Pour MTN/Moov: initie et l'utilisateur reçoit un SMS
-     */
+  
     public function initPayment(string $intentId, string $token, array $paymentData): array
     {
         try {
@@ -423,10 +415,10 @@ class PaiementServiceHub2
                     'metadata' => []
                 ],
                 'headers' => [
-                    'ApiKey' => $this->apiKey,
+                   /*  'ApiKey' => $this->apiKey,
                     'MerchantId' => $this->merchantId,
                     'Environment' => $this->environment,
-                    'Content-Type' => 'application/json',
+                    'Content-Type' => 'application/json', */
                 ],
                 'verify_peer' => false,
                 'verify_host' => false
@@ -434,8 +426,7 @@ class PaiementServiceHub2
 
             $webhook = $response->toArray();
             
-            // IMPORTANT: Sauvegarder le secret dans votre .env ou base de données
-            // $webhook['secret'] contient le secret de signature
+         
             
             return [
                 'code' => 200,
@@ -449,10 +440,7 @@ class PaiementServiceHub2
         }
     }
 
-    /**
-     * MÉTHODE UTILITAIRE: Vérifier et créer les webhooks si nécessaire
-     * À appeler une seule fois au démarrage ou via une commande
-     */
+
     public function ensureWebhooksExist(string $baseUrl): array
     {
         try {
@@ -519,10 +507,6 @@ class PaiementServiceHub2
         }
     }
 
-    /**
-     * MÉTHODE BONUS 2: Valider la signature d'un webhook Hub2
-     * Vérifie que la requête provient bien de Hub2
-     */
     public function validateWebhookSignature(Request $request, string $webhookSecret): bool
     {
         $signature = $request->headers->get('Hub2-Signature');
@@ -562,17 +546,14 @@ class PaiementServiceHub2
         return false;
     }
 
-    /**
-     * MÉTHODE BONUS 3: Lister tous les webhooks
-     */
     public function listWebhooks(): array
     {
         try {
             $response = $this->httpClient->request('GET', $this->apiUrl . '/webhooks', [
                 'headers' => [
-                    'ApiKey' => $this->apiKey,
+                   /*  'ApiKey' => $this->apiKey,
                     'MerchantId' => $this->merchantId,
-                    'Environment' => $this->environment,
+                    'Environment' => $this->environment, */
                 ],
                 'verify_peer' => false,
                 'verify_host' => false
@@ -585,9 +566,6 @@ class PaiementServiceHub2
         }
     }
 
-    /**
-     * MÉTHODE BONUS 4: Supprimer un webhook
-     */
     public function deleteWebhook(string $webhookId): array
     {
         try {
@@ -596,9 +574,9 @@ class PaiementServiceHub2
                 $this->apiUrl . '/webhooks/' . $webhookId,
                 [
                     'headers' => [
-                        'ApiKey' => $this->apiKey,
+                        /* 'ApiKey' => $this->apiKey,
                         'MerchantId' => $this->merchantId,
-                        'Environment' => $this->environment,
+                        'Environment' => $this->environment, */
                     ],
                     'verify_peer' => false,
                     'verify_host' => false
