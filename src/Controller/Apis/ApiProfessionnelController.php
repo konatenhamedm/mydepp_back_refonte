@@ -56,6 +56,45 @@ class ApiProfessionnelController extends ApiInterface
 {
 
 
+    #[Route('/check/code/existe/{code}', methods: ['GET'])]
+    /**
+     * Affiche un(e) specialite en offrant un identifiant.
+     */
+    #[OA\Response(
+        response: 200,
+        description: 'Affiche etat paiement de la specialite',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(ref: new Model(type: User::class, groups: ['full']))
+        )
+    )]
+    #[OA\Parameter(
+        name: 'code',
+        in: 'query',
+        schema: new OA\Schema(type: 'string')
+    )]
+    #[OA\Tag(name: 'specialite')]
+    //
+    public function codeExiste($code, ProfessionnelRepository $professionnelRepository)
+    {
+        try {
+
+            $pro = $professionnelRepository->findOneBy(['code' => $code]);
+            if ($pro != null) {
+                $response = $this->response(true);
+            } else {
+
+                $response = $this->response(false);
+            }
+        } catch (\Exception $exception) {
+            $this->setMessage($exception->getMessage());
+            $response = $this->response('[]');
+        }
+
+
+        return $response;
+    }
+
     #[Route('/update/imputation/{id}', methods: ['PUT', 'POST'])]
     #[OA\Post(
         summary: "Creation de pro",
