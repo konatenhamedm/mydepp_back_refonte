@@ -81,10 +81,16 @@ class ApiProfessionnelController extends ApiInterface
 
             $pro = $professionnelRepository->findOneBy(['code' => $code]);
             if ($pro != null) {
-                $response = $this->response(true);
+                $response = $this->response([
+                    'statut'=>true,
+                    'id'=>$pro->getId()
+                ]);
             } else {
 
-                $response = $this->response(false);
+                $response = $this->response([
+                    'statut'=>false,
+                    'id'=>null
+                ]);
             }
         } catch (\Exception $exception) {
             $this->setMessage($exception->getMessage());
