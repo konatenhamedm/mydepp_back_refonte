@@ -24,6 +24,7 @@ class ApiStatistiqueController extends ApiInterface
 {
 
     #[Route('/web-site-statistique', methods: ['GET'])]
+    #[OA\Tag(name: 'statistiques')]
     public function webSiteStatistique(EtablissementRepository $etablissementRepository, ProfessionnelRepository $professionnelRepository)
     {
         try {
