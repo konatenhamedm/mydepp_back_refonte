@@ -39,6 +39,8 @@ class ApiStatistiqueController extends ApiInterface
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
+
+        return $response;
     }
 
 
