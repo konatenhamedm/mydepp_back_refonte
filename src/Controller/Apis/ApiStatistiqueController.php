@@ -23,6 +23,23 @@ use App\Repository\TransactionRepository;
 class ApiStatistiqueController extends ApiInterface
 {
 
+    #[Route('/web-site-statistique', methods: ['GET'])]
+    public function webSiteStatistique(EtablissementRepository $etablissementRepository, ProfessionnelRepository $professionnelRepository)
+    {
+        try {
+            $tab = [
+                'countEtablissement' => count($etablissementRepository->findAll()),
+                'countProfessionnel' => count($professionnelRepository->findAll()),
+                'professionnelAjour' => count($professionnelRepository->allProfAjour())
+            ];
+
+            $response = $this->responseData($tab, 'group_user', ['Content-Type' => 'application/json']);
+        } catch (\Exception $exception) {
+            $this->setMessage($exception->getMessage());
+            $response = $this->response('[]');
+        }
+    }
+
 
     #[Route('/info-dashboard', methods: ['GET'])]
     /**

@@ -59,6 +59,41 @@ class ApiProfessionController extends ApiInterface
   }
 
 
+  #[Route('/get/profession/typeProfession/{typeProfession}', methods: ['GET'])]
+  /**
+   * Affiche un(e) specialite en offrant un identifiant.
+   */
+  #[OA\Response(
+    response: 200,
+    description: 'Affiche etat paiement de la specialite',
+    content: new OA\JsonContent(
+      type: 'array',
+      items: new OA\Items(ref: new Model(type: Profession::class, groups: ['full']))
+    )
+  )]
+  #[OA\Parameter(
+    name: 'typeProfession',
+    in: 'query',
+    schema: new OA\Schema(type: 'string')
+  )]
+  #[OA\Tag(name: 'profession')]
+  //
+  public function getProfessionByTypeProfession($typeProfession, ProfessionRepository $professionRepository)
+  {
+    try {
+
+      $professions = $professionRepository->findOneBy(['typeProfession' => $typeProfession]);
+      $response =  $this->responseData($professions, 'group_autre', ['Content-Type' => 'application/json']);
+   
+    } catch (\Exception $exception) {
+      $this->setMessage($exception->getMessage());
+      $response = $this->response('[]');
+    }
+
+
+    return $response;
+  }
+
   #[Route('/get/status/paiement/{code}', methods: ['GET'])]
   /**
    * Affiche un(e) specialite en offrant un identifiant.
@@ -98,6 +133,7 @@ class ApiProfessionController extends ApiInterface
 
     return $response;
   }
+
   #[Route('/get/by/code/{code}', methods: ['GET'])]
   /**
    * Affiche un(e) specialite en offrant un identifiant.

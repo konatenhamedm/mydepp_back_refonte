@@ -19,16 +19,16 @@ class Profession
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Group(["group1","group2","group_pro"])]
+    #[Group(["group1","group2","group_pro","group_autre"])]
     private ?int $id = null;
 
 
-    #[Group(["group1","group2","group_pro"])]
+    #[Group(["group1","group2","group_pro","group_autre"])]
     #[ORM\Column(type: 'string', unique: true, nullable: true,length: 255)]
     private ?string $libelle = null;
 
     #[ORM\Column(length: 255)]
-    #[Group(["group1","group2","group_pro"])]
+    #[Group(["group1","group2","group_pro","group_autre"])]
     private ?string $code = null;
 
     #[ORM\ManyToOne(inversedBy: 'professions')]

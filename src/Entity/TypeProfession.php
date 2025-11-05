@@ -39,7 +39,7 @@ class TypeProfession
         cascade: ['remove'],
         orphanRemoval: true
     )]
-    #[Group(["group2"])]
+  /*   #[Group(["group2"])] */
     private Collection $professions;
 
     public function __construct()

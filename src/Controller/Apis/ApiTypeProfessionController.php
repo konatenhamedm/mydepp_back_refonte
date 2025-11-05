@@ -34,7 +34,6 @@ class ApiTypeProfessionController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'typeProfession')]
-    // 
     public function index(TypeProfessionRepository $typeProfessionRepository): Response
     {
         try {
