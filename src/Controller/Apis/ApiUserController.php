@@ -1033,6 +1033,9 @@ class ApiUserController extends ApiInterface
             return $this->json(['message' => 'Professionnel non trouvée'], 400);
         }
 
+        $professionnel->setStatut("a_jour");
+
+        $professionnelRepository->add($professionnel,true);
      
          $user = new User();
         $user->setEmail($data['email']);
@@ -1048,13 +1051,13 @@ class ApiUserController extends ApiInterface
             "depps@leadagro.net",
             $user->getEmail(),
             "Nouvelle inscription",
-            "new_professionnel",
+            "new_professionnel_code",
             [
                 "user" => [
                     "email" => $data['email'],
                     "password" => $data['password'],
                 ],
-                "login_url" => "https://mydepp-front.pages.dev/login"
+                "login_url" => "https://mydepp-front.pages.dev/connexion"
             ]
         );
 

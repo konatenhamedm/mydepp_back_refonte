@@ -278,6 +278,10 @@ class ApiEtablissementController extends ApiInterface
             if ($dto->status === "validation_finale") {
                 
                 // Enregistrer le rapport d'examen dans l'établissement
+                if($etablissement->getNiveauIntervention()->getMontant() != null){
+                    $etablissement->setDateValidation(new \DateTime());
+                }
+            
                 $etablissement->setCode($this->genererCodeEtablissement());
             }
 
