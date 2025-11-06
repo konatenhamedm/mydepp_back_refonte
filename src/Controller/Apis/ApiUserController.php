@@ -1036,6 +1036,7 @@ class ApiUserController extends ApiInterface
      
          $user = new User();
         $user->setEmail($data['email']);
+        $user->setPayement("payed");
         $user->setPassword($passwordHasher->hashPassword($user, $data['password']));
         $user->setRoles(['ROLE_MEMBRE']);
         $user->setTypeUser("PROFESSIONNEL");
