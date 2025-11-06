@@ -89,7 +89,7 @@ class ResetPasswordController extends AbstractController
                 "Réinitialisation du mot de passe",
                 "otp",
                 [
-                    'otp_code' => $sixDigitCode,
+                    //'otp_code' => $sixDigitCode,
                     "info_user" => [
                         "login" => $data['email'],
                         "nom" =>   null,
