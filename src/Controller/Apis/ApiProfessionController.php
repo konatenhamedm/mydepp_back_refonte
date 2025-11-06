@@ -82,7 +82,7 @@ class ApiProfessionController extends ApiInterface
   {
     try {
 
-      $professions = $professionRepository->findOneBy(['typeProfession' => $typeProfession]);
+      $professions = $professionRepository->findBy(['typeProfession' => $typeProfession]);
       $response =  $this->responseData($professions, 'group_autre', ['Content-Type' => 'application/json']);
    
     } catch (\Exception $exception) {
