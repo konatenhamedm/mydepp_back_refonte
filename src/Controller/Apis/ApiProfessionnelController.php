@@ -82,14 +82,14 @@ class ApiProfessionnelController extends ApiInterface
             $pro = $professionnelRepository->findOneBy(['code' => $code]);
             if ($pro != null) {
                 $response = $this->response([
-                    'statut'=>true,
-                    'id'=>$pro->getId()
+                    'statut' => true,
+                    'id' => $pro->getId()
                 ]);
             } else {
 
                 $response = $this->response([
-                    'statut'=>false,
-                    'id'=>null
+                    'statut' => false,
+                    'id' => null
                 ]);
             }
         } catch (\Exception $exception) {
@@ -598,7 +598,7 @@ class ApiProfessionnelController extends ApiInterface
                     new OA\Property(property: "status", type: "string"),
                     new OA\Property(property: "raison", type: "string", nullable: true),
                     new OA\Property(property: "email", type: "string", nullable: true),
-                  
+
                 ],
                 type: "object"
             )
@@ -631,24 +631,24 @@ class ApiProfessionnelController extends ApiInterface
             $dto->status = $data['status'] ?? null;
             $dto->raison = $data['raison'] ?? null;
 
-           // $errors = $validator->validate($dto);
-          /*   if (count($errors) > 0) {
+            $errors = $validator->validate($dto);
+            if (count($errors) > 0) {
                 $errorMessages = [];
                 foreach ($errors as $error) {
                     $errorMessages[] = $error->getMessage();
                 }
                 return $this->json(['errors' => $errorMessages], Response::HTTP_BAD_REQUEST);
-            } */
+            }
 
             $validationCompteWorkflow = $workflowRegistry->get($professionnel);
 
             // Vérifier la transition du workflow
-          /*   if (!$validationCompteWorkflow->can($professionnel, $dto->status)) {
+            if (!$validationCompteWorkflow->can($professionnel, $dto->status)) {
                 return new JsonResponse([
                     'error' => "Transition non valide depuis l'état actuel"
                 ], Response::HTTP_BAD_REQUEST);
-            } */
-
+            }
+            $user = $userRepository->find($data['userUpdate']);
             $validationCompteWorkflow->apply($professionnel, $dto->status);
 
             if ($dto->status == "validation") {
@@ -662,25 +662,23 @@ class ApiProfessionnelController extends ApiInterface
 
                 $professionnel->setCode("eee88");
                 $professionnel->setDateValidation(new DateTime());
-
-                dd($professionnel);
                 //$professionnel->setCode($this->numeroGeneration($professionnel, $professionCode, $racineSequenceRepository->findOneBySomeField()->getCode()));
             }
             $professionnel->setReason($dto->raison);
             $professionnelRepository->add($professionnel, true);
-           /*  $validationWorkflow = new ValidationWorkflow();
+            $validationWorkflow = new ValidationWorkflow();
             $validationWorkflow->setEtape($dto->status);
             $validationWorkflow->setRaison($dto->raison);
             $validationWorkflow->setPersonne($professionnel);
             $validationWorkflow->setCreatedAtValue(new DateTime());
             $validationWorkflow->setUpdatedAt(new DateTime());
-            $validationWorkflow->setCreatedBy($this->getUser());
-            $validationWorkflow->setUpdatedBy($this->getUser());
+            $validationWorkflow->setCreatedBy($user);
+            $validationWorkflow->setUpdatedBy($user);
 
             $this->em->persist($validationWorkflow);
-            $this->em->flush(); */
+            $this->em->flush();
 
-           /*  if ($dto->status == "validation") {
+            if ($dto->status == "validation") {
                 $profession->setMaxCode("zzz");
                 $this->em->persist($profession);
                 $this->em->flush();
@@ -698,7 +696,7 @@ class ApiProfessionnelController extends ApiInterface
             } elseif ($dto->status == "validation") {
                 $message = "Votre dossier a été jugé conforme et est désormais en attente de validation finale. Vous recevrez une notification dès que le processus sera complété.";
             }
-            $user = $userRepository->find($data['userUpdate']);
+
 
 
             $info_user = [
@@ -728,11 +726,11 @@ class ApiProfessionnelController extends ApiInterface
 
 
             $sendMailService->sendNotification("votre compte vient d'être valider pour l'etape " . $dto->status, $userRepository->findOneBy(['personne' => $professionnel->getId()]), $userRepository->find($data['userUpdate']));
- */
-            return $this->responseData([], 'group_pro', ['Content-Type' => 'application/json']);
+
+            return $this->responseData($info_user, 'group_pro', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
 
-           // dd($exception->getMessage());
+            // dd($exception->getMessage());
             return $this->json(["message" => "Une erreur est survenue"], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
