@@ -696,11 +696,11 @@ class ApiProfessionnelController extends ApiInterface
             } elseif ($dto->status == "validation") {
                 $message = "Votre dossier a été jugé conforme et est désormais en attente de validation finale. Vous recevrez une notification dès que le processus sera complété.";
             }
-            $user = $userRepository->find($data['userUpdate']);
+           
 
 
             $info_user = [
-                'user' => $user->getUserIdentifier(),
+                'user' => $this->getUser()->getUserIdentifier(),
                 'nom' => $professionnel->getNom() . ' ' . $professionnel->getPrenoms(),
                 'profession' => $profession->getLibelle(),
                 'etape' => $dto->status,
