@@ -643,11 +643,11 @@ class ApiProfessionnelController extends ApiInterface
             $validationCompteWorkflow = $workflowRegistry->get($professionnel);
 
             // Vérifier la transition du workflow
-            if (!$validationCompteWorkflow->can($professionnel, $dto->status)) {
+          /*   if (!$validationCompteWorkflow->can($professionnel, $dto->status)) {
                 return new JsonResponse([
                     'error' => "Transition non valide depuis l'état actuel"
                 ], Response::HTTP_BAD_REQUEST);
-            }
+            } */
 
             $validationCompteWorkflow->apply($professionnel, $dto->status);
 
@@ -729,7 +729,7 @@ class ApiProfessionnelController extends ApiInterface
 
             $sendMailService->sendNotification("votre compte vient d'être valider pour l'etape " . $dto->status, $userRepository->findOneBy(['personne' => $professionnel->getId()]), $userRepository->find($data['userUpdate']));
  */
-            return $this->responseData($info_user, 'group_pro', ['Content-Type' => 'application/json']);
+            return $this->responseData([], 'group_pro', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
 
            // dd($exception->getMessage());
