@@ -598,7 +598,7 @@ class ApiProfessionnelController extends ApiInterface
                     new OA\Property(property: "status", type: "string"),
                     new OA\Property(property: "raison", type: "string", nullable: true),
                     new OA\Property(property: "email", type: "string", nullable: true),
-                    new OA\Property(property: "userUpdate", type: "string", nullable: true)
+                  
                 ],
                 type: "object"
             )
@@ -672,8 +672,8 @@ class ApiProfessionnelController extends ApiInterface
             $validationWorkflow->setPersonne($professionnel);
             $validationWorkflow->setCreatedAtValue(new DateTime());
             $validationWorkflow->setUpdatedAt(new DateTime());
-            $validationWorkflow->setCreatedBy($userRepository->find($data['userUpdate']));
-            $validationWorkflow->setUpdatedBy($userRepository->find($data['userUpdate']));
+            $validationWorkflow->setCreatedBy($this->getUser());
+            $validationWorkflow->setUpdatedBy($this->getUser());
 
             $this->em->persist($validationWorkflow);
             $this->em->flush();

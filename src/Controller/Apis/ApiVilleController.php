@@ -4,16 +4,23 @@ namespace  App\Controller\Apis;
 
 use App\Controller\Apis\Config\ApiInterface;
 use App\DTO\VilleDTO;
+use App\Entity\Professionnel;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\Ville;
+use App\Form\UploadType;
 use App\Repository\DistrictRepository;
+use App\Repository\EntiteRepository;
+use App\Repository\GenreRepository;
+use App\Repository\PaysRepository;
+use App\Repository\ProfessionnelRepository;
 use App\Repository\VilleRepository;
 use App\Repository\UserRepository;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use OpenApi\Attributes as OA;
 use Nelmio\ApiDocBundle\Attribute\Model;
-
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
@@ -44,7 +51,7 @@ class ApiVilleController extends ApiInterface
 
             $villes = $villeRepository->findAll();
 
-          
+
 
             $response =  $this->responseData($villes, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -71,13 +78,13 @@ class ApiVilleController extends ApiInterface
     )]
     #[OA\Tag(name: 'ville')]
     // 
-    public function indexByDistrict(VilleRepository $villeRepository,$district): Response
+    public function indexByDistrict(VilleRepository $villeRepository, $district): Response
     {
         try {
 
             $villes = $villeRepository->findBy(['district' => $district]);
 
-          
+
 
             $response =  $this->responseData($villes, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -143,7 +150,7 @@ class ApiVilleController extends ApiInterface
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
                     new OA\Property(property: "district", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -154,8 +161,8 @@ class ApiVilleController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'ville')]
-    
-    public function create(Request $request, VilleRepository $villeRepository,DistrictRepository $districtRepository): Response
+
+    public function create(Request $request, VilleRepository $villeRepository, DistrictRepository $districtRepository): Response
     {
 
         $data = json_decode($request->getContent(), true);
@@ -188,7 +195,7 @@ class ApiVilleController extends ApiInterface
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
                     new OA\Property(property: "district", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -199,8 +206,8 @@ class ApiVilleController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'ville')]
-    
-    public function update(Request $request, Ville $ville, VilleRepository $villeRepository,DistrictRepository $districtRepository): Response
+
+    public function update(Request $request, Ville $ville, VilleRepository $villeRepository, DistrictRepository $districtRepository): Response
     {
         try {
             $data = json_decode($request->getContent());
@@ -287,7 +294,6 @@ class ApiVilleController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'ville')]
-    
     public function deleteAll(Request $request, VilleRepository $villeRepository): Response
     {
         try {
@@ -308,4 +314,136 @@ class ApiVilleController extends ApiInterface
         }
         return $response;
     }
+
+
+   private const ALLOWED_EXTENSIONS = ['xlsx', 'xls'];
+    private const MAX_FILE_SIZE = 10485760; // 10MB
+
+    #[Route('/upload-excel/ufr/examen', name: 'api_xlsx_ufr_examen', methods: ['POST'])]
+    public function uploadExamen(
+        Request $request,
+        ProfessionnelRepository $professionnelRepository,
+        EntiteRepository $personneRepository,
+        GenreRepository $genreRepository,
+        PaysRepository $nationaleRepository,
+    ): JsonResponse {
+        
+        try {
+            // Validation du fichier
+            $file = $request->files->get('path');
+            
+         
+
+            // Upload du fichier
+            $fileFolder = $this->getParameter('kernel.project_dir') . '/public/uploads/';
+            $filePathName = md5(uniqid()) . '_' . $file->getClientOriginalName();
+
+            try {
+                $file->move($fileFolder, $filePathName);
+            } catch (FileException $e) {
+                return $this->json([
+                    'statut' => 0,
+                    'message' => 'Erreur lors de l\'upload du fichier',
+                    'error' => $e->getMessage(),
+                    'data' => null
+                ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            }
+
+            // Traitement du fichier Excel
+            $filePath = $fileFolder . $filePathName;
+            
+            try {
+                $spreadsheet = IOFactory::load($filePath);
+                $sheet = $spreadsheet->getActiveSheet();
+
+                // Supprimer les 3 premières lignes
+                $sheet->removeRow(1, 3);
+
+                $sheetData = $sheet->toArray(null, true, true, true);
+                
+               /*  dd($sheetData); */
+                $processedData = [];
+                $errors = [];
+                $successCount = 0;
+
+                foreach ($sheetData as $index => $row) {
+                    try {
+                        $rowData = [
+                            'num' => $row['A'] ?? null,
+                            'dateEnregistre' => $row['B'] ?? null,
+                            'nom' => $row['C'] ?? null,
+                            'numId' => $row['D'] ?? null,
+                            'dateNaissance' => $row['E'] ?? null,
+                            'lieuNaissance' => $row['F'] ?? null,
+                            'sexe' => $row['G'] ?? null,
+                            'nationalite' => $row['H'] ?? null,
+                            'dateCommission' => $row['I'] ?? null,
+                        ];
+
+                    if($rowData['num'] != null && $rowData['dateEnregistre'] != null && $rowData['nom'] != null && $rowData['numId'] != null && $rowData['dateNaissance'] != null && $rowData['lieuNaissance'] != null && $rowData['sexe'] != null && $rowData['nationalite'] != null && $rowData['dateCommission'] != null){
+                        $personne = new Professionnel();
+                        $personne->setStatus("a_jour");
+                        $personne->setGenre($genreRepository->findOneBy(['id' => $rowData['sexe']]));
+                        $personne->setNom($rowData['nom']);
+                        $personne->setActived(true);
+                        $personne->setCode($rowData['numId']);
+                        $personne->setDateNaissance($rowData['dateNaissance']);
+                        $personne->setPrenoms($rowData['nom']);
+                        $personne->setDateValidation(new \DateTime($rowData['dateCommission']));
+                        $personne->setNationate($nationaleRepository->findOneBy(['id' => $rowData['nationalite']]));
+                        $personne->setCreatedAtValue(new \DateTime($rowData['dateEnregistre']));
+                        $personne->setSpecialite($professionnelRepository->find(1));
+
+                        $professionnelRepository->add($personne, true);
+                        $successCount++;
+                    }
+                      
+                    } catch (\Exception $e) {
+                        $errors[] = [
+                            'message' => $e->getMessage()
+                        ];
+                    }
+                }
+
+                // Suppression du fichier temporaire (optionnel)
+                if (file_exists($filePath)) {
+                    unlink($filePath);
+                }
+
+                return $this->json([
+                    'statut' => 1,
+                    'message' => "Import terminé avec succès",
+                    'data' => [
+                        'total_lignes' => count($sheetData),
+                        'lignes_traitees' => $successCount,
+                        'lignes_erreur' => count($errors),
+                        'donnees' => $processedData,
+                        'erreurs' => $errors
+                    ]
+                ], Response::HTTP_OK);
+
+            } catch (\Exception $e) {
+                // Suppression du fichier en cas d'erreur
+                if (file_exists($filePath)) {
+                    unlink($filePath);
+                }
+
+                return $this->json([
+                    'statut' => 0,
+                    'message' => 'Erreur lors du traitement du fichier Excel',
+                    'error' => $e->getMessage(),
+                    'data' => null
+                ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            }
+
+        } catch (\Exception $e) {
+            return $this->json([
+                'statut' => 0,
+                'message' => 'Erreur serveur',
+                'error' => $e->getMessage(),
+                'data' => null
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }
+
