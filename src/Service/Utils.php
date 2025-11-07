@@ -104,7 +104,7 @@ class Utils
         if (!$filePrefix || !$uploadedFile) {
             return false;
         }
-        
+
         // Supprimer l'ancien fichier s'il existe
         if ($oldFilePath && file_exists($oldFilePath)) {
             @unlink($oldFilePath);
@@ -128,7 +128,7 @@ class Utils
         $newFilePath = $this->fileUploader->upload($uploadedFile, null, $filePath, $filePrefix, true);
         /* dd($filePath, $filePrefix, $uploadedFile, $basePath, $oldFilePath,$newFilePath);
  */
-          $fileExtension = strtolower(pathinfo($newFilePath, PATHINFO_EXTENSION));
+        $fileExtension = strtolower(pathinfo($newFilePath, PATHINFO_EXTENSION));
         // Créer l'entité Fichier
         dd($fileExtension, $newFilePath, $basePath);
         $fichier = new Fichier();
@@ -161,51 +161,59 @@ class Utils
         return $path;
     }
 
-    public function numeroGeneration($codeCilite, $dataNaissance, $dataCreate, $racine, $dernierChronoAvantReset, $type, $professionCode,$profession)
-    {
+    public function numeroGeneration(
+        ?string $codeCilite,
+        ?\DateTime $dataNaissance,
+        ?\DateTime $dataCreate,
+        $dernierChronoAvantReset,
+        ?string $type,
+        ?string $professionCode,
+        ?string $profession
+    ): string {
+        // Gestion des valeurs null avec valeurs par défaut
+        $civilite = $codeCilite ?? '0';
+        $anneeInscription = $dataCreate?->format('y') ?? '00';
+        $jour = $dataNaissance?->format('d') ?? '01';
+        $annee = $dataNaissance?->format('y') ?? '00';
 
-        $civilite = $codeCilite;
-        $anneeInscription = $dataCreate->format('y');
-        $jour = $dataNaissance->format('d');
-        $annee = $dataNaissance->format('y');
+        $dernierChrono = 0;
 
+        // Requête seulement si profession est fournie
+        if ($profession !== null) {
+            $query = $this->em->createQueryBuilder();
+            $query
+                ->select("count(a.id)")
+                ->from(CodeGenerateur::class, 'a')
+                ->innerJoin('a.profession', 'r')
+                ->andWhere('r.code = :valeur')
+                ->setParameter('valeur', $profession);
 
-        $query = $this->em->createQueryBuilder();
-        $query
-            ->select("count(a.id)")
-            ->from(CodeGenerateur::class, 'a')
-            ->innerJoin('a.profession', 'r') 
-            ->andWhere('r.code = :valeur') 
-            ->setParameter('valeur', $profession)
-          ;
+            $dernierChrono = $query->getQuery()->getSingleScalarResult();
+        }
 
-      
-        $dernierChrono = $query->getQuery()->getSingleScalarResult(); 
-
-
-        if ($type === 'new') {
+        // Calcul du chrono en fonction du type
+        if ($type === 'new' && $dernierChronoAvantReset !== null) {
             $maxChrono = intval($dernierChronoAvantReset);
         } else {
             $maxChrono = intval($dernierChrono);
         }
 
-
+        // Incrémentation avec reset à 10000
         $maxChrono = ($maxChrono + 1) % 10000;
-        if ($maxChrono == 0) {
+        if ($maxChrono === 0) {
             $maxChrono = 1;
         }
 
+        // Génération du numéro final
         return sprintf(
             "%s%s0%s%s%s%s.%04d",
-            $racine,
+            $racine ?? '',
             $civilite,
             $anneeInscription,
-            $professionCode,
+            $professionCode ?? '00',
             $jour,
             $annee,
             $maxChrono
         );
     }
-
-    
 }
