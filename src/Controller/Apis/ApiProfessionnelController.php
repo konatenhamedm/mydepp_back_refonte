@@ -700,12 +700,12 @@ class ApiProfessionnelController extends ApiInterface
 
 
             $info_user = [
-                'user' => $this->getUser(),
+                'user' => $this->getUser()->getUsername(),
                 'nom' => $professionnel->getNom() . ' ' . $professionnel->getPrenoms(),
                 'profession' => $profession->getLibelle(),
                 'etape' => $dto->status,
                 'message' => $message,
-                'annee' => $professionnel->getCreatedAt()->format('Y'),
+                'annee' => ($professionnel->getCreatedAt() ? $professionnel->getCreatedAt()->format('Y') : (new \DateTime())->format('Y'))
             ];
 
             //  dd($info_user);
