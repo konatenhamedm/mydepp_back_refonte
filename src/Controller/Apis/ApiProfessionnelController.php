@@ -651,8 +651,10 @@ class ApiProfessionnelController extends ApiInterface
             $user = $userRepository->find($data['userUpdate']);
             $validationCompteWorkflow->apply($professionnel, $dto->status);
 
+            $profession = $professionnel->getProfession();
+       
+
             if ($dto->status == "validation") {
-                $profession = $professionnel->getProfession();
                 $professionCode = $profession->getCodeGeneration();
                 $professionChronoMax = $profession->getChronoMax();
                 $professionMaxCode = $profession->getMaxCode();
