@@ -696,16 +696,16 @@ class ApiProfessionnelController extends ApiInterface
             } elseif ($dto->status == "validation") {
                 $message = "Votre dossier a été jugé conforme et est désormais en attente de validation finale. Vous recevrez une notification dès que le processus sera complété.";
             }
-           
+            $user = $userRepository->find($data['userUpdate']);
 
 
             $info_user = [
-                'user' => $this->getUser()->getUsername(),
+                'user' => $user->getEmail(),
                 'nom' => $professionnel->getNom() . ' ' . $professionnel->getPrenoms(),
                 'profession' => $profession->getLibelle(),
                 'etape' => $dto->status,
                 'message' => $message,
-                'annee' => ($professionnel->getCreatedAt() ? $professionnel->getCreatedAt()->format('Y') : (new \DateTime())->format('Y'))
+                'annee' => ($professionnel->getCreatedAt() ? $professionnel->getCreatedAt()->format('Y') : (new DateTime())->format('Y'))
             ];
 
             //  dd($info_user);
@@ -725,7 +725,7 @@ class ApiProfessionnelController extends ApiInterface
 
 
 
-            $sendMailService->sendNotification("votre compte vient d'être valider pour l'etape " . $dto->status, $userRepository->findOneBy(['personne' => $professionnel->getId()]), $this->getUser());
+            $sendMailService->sendNotification("votre compte vient d'être valider pour l'etape " . $dto->status, $userRepository->findOneBy(['personne' => $professionnel->getId()]), $userRepository->find($data['userUpdate']));
 
             return $this->responseData($info_user, 'group_pro', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
