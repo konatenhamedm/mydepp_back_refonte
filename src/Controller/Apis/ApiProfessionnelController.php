@@ -700,7 +700,7 @@ class ApiProfessionnelController extends ApiInterface
 
 
             $info_user = [
-                'user' => $this->getUser()->getUserIdentifier(),
+                'user' => $this->getUser(),
                 'nom' => $professionnel->getNom() . ' ' . $professionnel->getPrenoms(),
                 'profession' => $profession->getLibelle(),
                 'etape' => $dto->status,
