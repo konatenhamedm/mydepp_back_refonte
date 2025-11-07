@@ -679,7 +679,7 @@ class ApiProfessionnelController extends ApiInterface
             $this->em->flush();
 
             if ($dto->status == "validation") {
-                $profession->setMaxCode(substr($numeroGenere, -4));
+                $profession->setMaxCode(substr("eee88", -4));
                 $this->em->persist($profession);
                 $this->em->flush();
             }
