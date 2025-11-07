@@ -658,9 +658,9 @@ class ApiProfessionnelController extends ApiInterface
                 $professionMaxCode = $profession->getMaxCode();
                 $code = $profession->getCode();
 
-                $numeroGenere = $utils->numeroGeneration($professionnel->getCivilite()->getCodeGeneration(), $professionnel->getDateNaissance() ?? new \DateTime(), $professionnel->getCreatedAt() ?? new \DateTime(), $racineSequenceRepository->findOneBySomeField()->getCode(), $professionMaxCode, "new", $professionCode, $code);
+                //$numeroGenere = $utils->numeroGeneration($professionnel->getCivilite()->getCodeGeneration(), $professionnel->getDateNaissance() ?? new \DateTime(), $professionnel->getCreatedAt() ?? new \DateTime(), $racineSequenceRepository->findOneBySomeField()->getCode(), $professionMaxCode, "new", $professionCode, $code);
 
-                $professionnel->setCode($numeroGenere);
+                $professionnel->setCode("eee88");
                 $professionnel->setDateValidation(new DateTime());
                 //$professionnel->setCode($this->numeroGeneration($professionnel, $professionCode, $racineSequenceRepository->findOneBySomeField()->getCode()));
             }
