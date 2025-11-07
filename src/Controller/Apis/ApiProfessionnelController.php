@@ -678,7 +678,7 @@ class ApiProfessionnelController extends ApiInterface
             $this->em->persist($validationWorkflow);
             $this->em->flush();
 
-            if ($dto->status == "validation") {
+           /*  if ($dto->status == "validation") {
                 $profession->setMaxCode("zzz");
                 $this->em->persist($profession);
                 $this->em->flush();
@@ -726,7 +726,7 @@ class ApiProfessionnelController extends ApiInterface
 
 
             $sendMailService->sendNotification("votre compte vient d'être valider pour l'etape " . $dto->status, $userRepository->findOneBy(['personne' => $professionnel->getId()]), $userRepository->find($data['userUpdate']));
-
+ */
             return $this->responseData($info_user, 'group_pro', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
 
