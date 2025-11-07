@@ -631,14 +631,14 @@ class ApiProfessionnelController extends ApiInterface
             $dto->status = $data['status'] ?? null;
             $dto->raison = $data['raison'] ?? null;
 
-            $errors = $validator->validate($dto);
-            if (count($errors) > 0) {
+           // $errors = $validator->validate($dto);
+          /*   if (count($errors) > 0) {
                 $errorMessages = [];
                 foreach ($errors as $error) {
                     $errorMessages[] = $error->getMessage();
                 }
                 return $this->json(['errors' => $errorMessages], Response::HTTP_BAD_REQUEST);
-            }
+            } */
 
             $validationCompteWorkflow = $workflowRegistry->get($professionnel);
 
@@ -662,6 +662,8 @@ class ApiProfessionnelController extends ApiInterface
 
                 $professionnel->setCode("eee88");
                 $professionnel->setDateValidation(new DateTime());
+
+                dd($professionnel);
                 //$professionnel->setCode($this->numeroGeneration($professionnel, $professionCode, $racineSequenceRepository->findOneBySomeField()->getCode()));
             }
             $professionnel->setReason($dto->raison);
