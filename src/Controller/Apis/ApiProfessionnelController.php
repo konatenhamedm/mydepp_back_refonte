@@ -655,14 +655,13 @@ class ApiProfessionnelController extends ApiInterface
        
 
             if ($dto->status == "validation") {
-                $professionCode = $profession->getCodeGeneration();
+                $professionCode = $profession->getCodeGeneration() ?? "";
                 $professionChronoMax = $profession->getChronoMax();
-                $professionMaxCode = $profession->getMaxCode();
+                $professionMaxCode = $profession->getMaxCode() ?? "";
                 $code = $profession->getCode();
+                $numeroGenere = $utils->numeroGeneration($professionnel->getCivilite()->getCodeGeneration(), $professionnel->getDateNaissance() ?? new \DateTime(), $professionnel->getCreatedAt() ?? new \DateTime(), $racineSequenceRepository->findOneBySomeField()->getCode(), $professionMaxCode, "new", $professionCode, $code);
 
-                //$numeroGenere = $utils->numeroGeneration($professionnel->getCivilite()->getCodeGeneration(), $professionnel->getDateNaissance() ?? new \DateTime(), $professionnel->getCreatedAt() ?? new \DateTime(), $racineSequenceRepository->findOneBySomeField()->getCode(), $professionMaxCode, "new", $professionCode, $code);
-
-                $professionnel->setCode("eee88");
+                $professionnel->setCode($numeroGenere);
                 $professionnel->setDateValidation(new DateTime());
                 //$professionnel->setCode($this->numeroGeneration($professionnel, $professionCode, $racineSequenceRepository->findOneBySomeField()->getCode()));
             }
@@ -681,7 +680,7 @@ class ApiProfessionnelController extends ApiInterface
             $this->em->flush();
 
             if ($dto->status == "validation") {
-                $profession->setMaxCode("zzz");
+                $profession->setMaxCode(substr($numeroGenere, -4));
                 $this->em->persist($profession);
                 $this->em->flush();
             }
