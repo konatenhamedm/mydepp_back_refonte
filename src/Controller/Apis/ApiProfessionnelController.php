@@ -666,7 +666,7 @@ class ApiProfessionnelController extends ApiInterface
             }
             $professionnel->setReason($dto->raison);
             $professionnelRepository->add($professionnel, true);
-            $validationWorkflow = new ValidationWorkflow();
+           /*  $validationWorkflow = new ValidationWorkflow();
             $validationWorkflow->setEtape($dto->status);
             $validationWorkflow->setRaison($dto->raison);
             $validationWorkflow->setPersonne($professionnel);
@@ -676,7 +676,7 @@ class ApiProfessionnelController extends ApiInterface
             $validationWorkflow->setUpdatedBy($this->getUser());
 
             $this->em->persist($validationWorkflow);
-            $this->em->flush();
+            $this->em->flush(); */
 
            /*  if ($dto->status == "validation") {
                 $profession->setMaxCode("zzz");
