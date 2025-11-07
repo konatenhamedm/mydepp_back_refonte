@@ -84,7 +84,7 @@ class ApiEtablissementController extends ApiInterface
 
                 $etablissement->setImputation($userRepository->find($data->imputation));
 
-                $etablissement->setUpdatedBy($userRepository->find($data->userUpdate));
+                $etablissement->setUpdatedBy($this->getUser());
                 $etablissement->setUpdatedAt(new \DateTime());
                 $etablissement->setStatus("oep_dossier_imputer");
                 $errorResponse = $this->errorResponse($etablissement);

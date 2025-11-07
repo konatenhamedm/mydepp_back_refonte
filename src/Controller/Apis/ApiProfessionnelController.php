@@ -130,7 +130,7 @@ class ApiProfessionnelController extends ApiInterface
 
                 $professionnel->setImputation($userRepository->find($data->imputation));
 
-                $professionnel->setUpdatedBy($userRepository->find($data->userUpdate));
+                $professionnel->setUpdatedBy($this->getUser());
                 $professionnel->setUpdatedAt(new \DateTime());
                 $errorResponse = $this->errorResponse($professionnel);
 
