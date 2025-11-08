@@ -109,7 +109,7 @@ class ApiPaiementController extends ApiInterface
 
                     "user" => $type == "professionnel" ? [
                         // bloc professionnel
-                        'profession' => $profession ? $profession : null,
+                        'profession' => $this->formatEntityProfession($personne->getProfession()),
                         "typeUser" => $transaction->getUser()->getTypeUser(),
                         "code" => $personne->getCode(),
                         "poleSanitaire" => $personne->getPoleSanitaire(),
@@ -186,6 +186,17 @@ class ApiPaiementController extends ApiInterface
         return $response;
     }
 
+
+    private function formatEntityProfession($entity): ?array
+    {
+        return $entity ? [
+            'libelle' => $entity->getLibelle(),
+            'id' => $entity->getId(),
+            'code' => $entity->getCode(),
+            'montantNouvelleDemande' => $entity->getMontantNouvelleDemande(),
+            'montantRenouvellement' => $entity->getMontantRenouvellement(),
+        ] : null;
+    }
     #[Route('/status/renouvellement/{userId}', methods: ['GET'])]
     /**
      * liste historique.
