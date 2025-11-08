@@ -119,7 +119,7 @@ class ApiProfessionController extends ApiInterface
 
       $profession = $professionRepository->findOneBy(['code' => $code]);
       if ($profession) {
-        $response = $this->response($profession->getMontantNouvelleDemande() != null || $profession->getMontantNouvelleDemande() != 0 ? true : false);
+        $response = $this->response($profession->getMontantNouvelleDemande() != null || (int)$profession->getMontantNouvelleDemande() != 0 ? true : false);
       } else {
         $this->setMessage('Cette ressource est inexistante');
         $this->setStatusCode(300);
