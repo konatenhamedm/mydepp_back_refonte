@@ -42,6 +42,49 @@ class ApiStatistiqueController extends ApiInterface
 
         return $response;
     }
+    #[Route('/stats-card', methods: ['GET'])]
+    #[OA\Tag(name: 'statistiques')]
+    public function statsCard(EtablissementRepository $etablissementRepository, ProfessionnelRepository $professionnelRepository)
+    {
+        try {
+            $tab = [
+
+                "professionnel" => [
+                    "total" => count($professionnelRepository->findAll()),
+                    "attente" => count($professionnelRepository->findBy(['status' => 'attente'])),
+                    "accepte" => count($professionnelRepository->findBy(['status' => 'accepte'])),
+                    "ajour" => count($professionnelRepository->findBy(['status' => 'ajour'])),
+                    "refuse" => count($professionnelRepository->findBy(['status' => 'refuse'])),
+                    "rejete" => count($professionnelRepository->findBy(['status' => 'rejete'])),
+                    "valide" => count($professionnelRepository->findBy(['status' => 'valide'])),
+                    "renouvellement" => count($professionnelRepository->allProfRenouvellement())
+                ],
+                "etablissement" => [
+                    "total"=>count($etablissementRepository->findAll()),
+                    "acp_attente_dossier_depot_service_courrier" => count($etablissementRepository->findBy(['status' => 'acp_attente_dossier_depot_service_courrier'])),
+                    "acp_dossier_attente_validation_directrice" => count($etablissementRepository->findBy(['status' => 'acp_dossier_attente_validation_directrice'])),
+                    "acp_dossier_valide_directrice" => count($etablissementRepository->findBy(['status' => 'acp_dossier_valide_directrice'])),
+                    "oep_demande_initie" => count($etablissementRepository->findBy(['status' => 'oep_demande_initie'])),
+                    "oep_dossier_imputer" => count($etablissementRepository->findBy(['status' => 'oep_dossier_imputer'])),
+                    "oep_dossier_imputer_conforme_attente_planification_visite" => count($etablissementRepository->findBy(['status' => 'oep_dossier_imputer_conforme_attente_planification_visite'])),
+                    "oep_dossier_imputer_non_conforme" => count($etablissementRepository->findBy(['status' => 'oep_dossier_imputer_non_conforme'])),
+                    "oep_dossier_visite_programme" => count($etablissementRepository->findBy(['status' => 'oep_dossier_visite_programme'])),
+                    "oep_visite_effectue_attente_validation_directrice" => count($etablissementRepository->findBy(['status' => 'oep_visite_effectue_attente_validation_directrice'])),
+                    "oep_dossier_conforme" => count($etablissementRepository->findBy(['status' => 'oep_dossier_conforme'])),
+                    "oep_dossier_non_conforme" => count($etablissementRepository->findBy(['status' => 'oep_dossier_non_conforme'])),
+                ]
+            ];
+
+            $response = $this->responseData($tab, 'group_user', ['Content-Type' => 'application/json']);
+        } catch (\Exception $exception) {
+            $this->setMessage($exception->getMessage());
+            $response = $this->response('[]');
+        }
+
+        return $response;
+    }
+
+
 
 
     #[Route('/info-dashboard', methods: ['GET'])]
@@ -234,7 +277,7 @@ class ApiStatistiqueController extends ApiInterface
             [$startDate, $endDate] = $this->getDateRangeFromPeriode((int)$annee, $periode, (int)$mois, (int)$tranche);
 
             //dd($startDate,$endDate);
-           // dd($startDate,$endDate,$annee,$mois,$tranche);
+            // dd($startDate,$endDate,$annee,$mois,$tranche);
 
             // Requête optimisée sans filtres supplémentaires
             $stats2 = $professionnelRepository->findDiplomeStats(new \DateTime($startDate), new \DateTime($endDate));
@@ -248,7 +291,7 @@ class ApiStatistiqueController extends ApiInterface
             $dataTrancheAge = $professionnelRepository->countProByTrancheAge((int)$annee, $periode, (int)$mois, (int)$tranche);
             $dataGenre = $professionnelRepository->countProByCiviliteGeneral((int)$annee, $periode, (int)$mois, (int)$tranche);
             $dataAnnee = $professionnelRepository->countProByAnnee();
-//dd($dataAnnee,$stats,$dataTrancheAge,$dataGenre);
+            //dd($dataAnnee,$stats,$dataTrancheAge,$dataGenre);
             //dd($dataAnnee);
 
             $dataVille = $professionnelRepository->countProByVille((int)$annee, $periode, (int)$mois, (int)$tranche);
@@ -260,7 +303,7 @@ class ApiStatistiqueController extends ApiInterface
 
             // Préchargement des professions
             //$codes = array_column($stats, 'libelle');
-          /*   $professions = $professionRepository->findBy(['code' => $codes]);
+            /*   $professions = $professionRepository->findBy(['code' => $codes]);
             $professionMap = [];
             foreach ($professions as $profession) {
                 $professionMap[$profession->getCode()] = $profession->getLibelle();
@@ -368,8 +411,8 @@ class ApiStatistiqueController extends ApiInterface
                 break;
         }
 
-        
-        return [ $start->format('Y-m-d'), $end->format('Y-m-d')];
+
+        return [$start->format('Y-m-d'), $end->format('Y-m-d')];
     }
 
     private function formatStats(array $data, string $labelKey = 'libelle', bool $markFirst = false): array

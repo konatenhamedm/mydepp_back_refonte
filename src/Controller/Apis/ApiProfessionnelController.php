@@ -56,6 +56,9 @@ class ApiProfessionnelController extends ApiInterface
 {
 
 
+    public function getStat
+
+
     #[Route('/check/code/existe/{code}', methods: ['GET'])]
     /**
      * Affiche un(e) specialite en offrant un identifiant.
