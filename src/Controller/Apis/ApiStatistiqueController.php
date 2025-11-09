@@ -42,7 +42,7 @@ class ApiStatistiqueController extends ApiInterface
 
         return $response;
     }
-    
+
     #[Route('/stats-card', methods: ['GET'])]
     #[OA\Tag(name: 'statistiques')]
     public function statsCard(EtablissementRepository $etablissementRepository, ProfessionnelRepository $professionnelRepository)
@@ -58,7 +58,7 @@ class ApiStatistiqueController extends ApiInterface
                     "refuse" => count($professionnelRepository->findBy(['status' => 'refuse'])),
                     "rejete" => count($professionnelRepository->findBy(['status' => 'rejete'])),
                     "valide" => count($professionnelRepository->findBy(['status' => 'valide'])),
-                    "renouvellement" => count($professionnelRepository->allProfRenouvellement())
+                    "renouvellement" => count($professionnelRepository->findBy(['status' => 'renouvellement']))
                 ],
                 "etablissement" => [
                     "total"=>count($etablissementRepository->findAll()),
