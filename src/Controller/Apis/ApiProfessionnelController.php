@@ -56,7 +56,7 @@ class ApiProfessionnelController extends ApiInterface
 {
 
 
-    public function getStat
+  
 
 
     #[Route('/check/code/existe/{code}', methods: ['GET'])]

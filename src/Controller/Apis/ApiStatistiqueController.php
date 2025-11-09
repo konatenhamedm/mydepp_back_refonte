@@ -42,6 +42,7 @@ class ApiStatistiqueController extends ApiInterface
 
         return $response;
     }
+    
     #[Route('/stats-card', methods: ['GET'])]
     #[OA\Tag(name: 'statistiques')]
     public function statsCard(EtablissementRepository $etablissementRepository, ProfessionnelRepository $professionnelRepository)
@@ -77,6 +78,7 @@ class ApiStatistiqueController extends ApiInterface
 
             $response = $this->responseData($tab, 'group_user', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+
             $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
