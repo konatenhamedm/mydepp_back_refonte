@@ -1033,7 +1033,7 @@ class ApiUserController extends ApiInterface
             return $this->json(['message' => 'Professionnel non trouvée'], 400);
         }
 
-        $professionnel->setStatut("a_jour");
+        $professionnel->setStatus("a_jour");
 
         $professionnelRepository->add($professionnel,true);
      
