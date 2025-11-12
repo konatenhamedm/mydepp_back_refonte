@@ -1413,8 +1413,9 @@ class ApiProfessionnelController extends ApiInterface
                         $professionnel->setCv($fichier);
                     }
                 }
-                if($request->get('appartenirOrganisation') == "oui" || $request->get('appartenirOrganisation') == "non"){
-                    $professionnel->setAppartenirOrganisation($request->get('save'));
+                if($request->get('appartenirOrganisation') != null){
+                    
+                    $professionnel->setAppartenirOrganisation($request->get('appartenirOrganisation'));
                 }
                 $professionnel->setAppartenirOrdre($request->get('appartenirOrdre'));
 
