@@ -477,8 +477,11 @@ class PaiementService
 
 
         $professionnel->setPoleSanitaire($dataTemp->getPoleSanitaire());
-        $professionnel->setLieuObtentionDiplome($this->lieuDiplomeRepository->find($dataTemp->getLieuDiplome()));
+        $professionnel->setLieuObtentionDiplome($this->lieuDiplomeRepository->find($dataTemp->getLieuObtentionDiplome()));
         $professionnel->setDateValidation(new DateTime());
+        $professionnel->getLieuDiplome($dataTemp->getLieuDiplome());
+
+       // $professionnel->setLieuObtentionDiplome();
         $professionnel->setRegion($this->regionRepository->find($dataTemp->getRegion()));
         $professionnel->setDistrict($this->districtRepository->find($dataTemp->getDistrict()));
         $professionnel->setVille($this->villeRepository->find($dataTemp->getVille()));
