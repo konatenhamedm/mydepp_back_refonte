@@ -507,6 +507,7 @@ class PaiementService
         $professionnel->setNumber($dataTemp->getNumber());
         $professionnel->setEmailPro($dataTemp->getEmailPro());
         $professionnel->setProfession($this->professionRepository->findOneBy(['code' => $dataTemp->getProfession()]));
+        //$professionnel->setSpecialite($this->professionRepository->findOneBy(['code' => $dataTemp->getProfession()]));
         $professionnel->setAppartenirOrganisation($dataTemp->getAppartenirOrganisation());
         $professionnel->setAppartenirOrdre($dataTemp->getAppartenirOrdre());
         $professionnel->setLieuDiplome($dataTemp->getLieuDiplome());
