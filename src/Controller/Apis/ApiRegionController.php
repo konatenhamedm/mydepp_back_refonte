@@ -44,7 +44,7 @@ class ApiRegionController extends ApiInterface
 
             $regions = $regionRepository->findAll();
 
-            $response =  $this->responseData($regions, 'group1', ['Content-Type' => 'application/json']);
+            $response =  $this->responseData($regions, '"group_region"', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("");
             $response = $this->response('[]');

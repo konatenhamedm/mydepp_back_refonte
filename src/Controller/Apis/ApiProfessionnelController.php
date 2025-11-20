@@ -56,7 +56,7 @@ class ApiProfessionnelController extends ApiInterface
 {
 
 
-  
+
 
 
     #[Route('/check/code/existe/{code}', methods: ['GET'])]
@@ -623,11 +623,9 @@ class ApiProfessionnelController extends ApiInterface
         ProfessionRepository $professionRepository,
         Utils $utils,
         RacineSequenceRepository $racineSequenceRepository,
-        SendMailService $sendMailService // Injecter le Registry
+        SendMailService $sendMailService
     ): Response {
         try {
-
-
             $data = json_decode($request->getContent(), true);
 
             $dto = new ActiveProfessionnelRequest();
@@ -651,25 +649,59 @@ class ApiProfessionnelController extends ApiInterface
                     'error' => "Transition non valide depuis l'état actuel"
                 ], Response::HTTP_BAD_REQUEST);
             }
-            $user = $userRepository->find($data['userUpdate']);
+
+            $user = $userRepository->find($data['userUpdate'] ?? null);
+            if (!$user) {
+                return $this->json(['error' => 'Utilisateur non trouvé'], Response::HTTP_BAD_REQUEST);
+            }
+
             $validationCompteWorkflow->apply($professionnel, $dto->status);
 
             $profession = $professionnel->getProfession();
-       
+            if (!$profession) {
+                return $this->json(['error' => 'Profession non définie'], Response::HTTP_BAD_REQUEST);
+            }
 
             if ($dto->status == "validation") {
-                $professionCode = $profession->getCodeGeneration() ?? "";
-                $professionChronoMax = $profession->getChronoMax();
-                $professionMaxCode = $profession->getMaxCode() ?? "";
-                $code = $profession->getCode();
-                $numeroGenere = $utils->numeroGeneration($professionnel->getCivilite()->getCodeGeneration(), $professionnel->getDateNaissance() ?? new \DateTime(), $professionnel->getCreatedAt() ?? new \DateTime(), $racineSequenceRepository->findOneBySomeField()->getCode(), $professionMaxCode, "new", $professionCode, $code);
+                // Sécuriser toutes les valeurs avant génération du code
+                $civilite = $professionnel->getCivilite();
+                $codeCivilite = $civilite ? $civilite->getCodeGeneration() : 'XX';
 
-                $professionnel->setCode($numeroGenere);
-                $professionnel->setDateValidation(new DateTime());
-                //$professionnel->setCode($this->numeroGeneration($professionnel, $professionCode, $racineSequenceRepository->findOneBySomeField()->getCode()));
+                $dateNaissance = $professionnel->getDateNaissance() ?? new \DateTime();
+                $dateCreation = $professionnel->getCreatedAt() ?? new \DateTime();
+
+                $racineSequence = $racineSequenceRepository->findOneBySomeField();
+                $racineCode = $racineSequence ? $racineSequence->getCode() : 'DEF';
+
+                $professionCode = $profession->getCodeGeneration() ?? '00';
+                $professionMaxCode = $profession->getMaxCode() ?? '0';
+                $code = $profession->getCode() ?? 'DEFAULT';
+
+                try {
+                    $numeroGenere = $utils->numeroGeneration(
+                        $codeCivilite,
+                        $dateNaissance,
+                        $dateCreation,
+                        $racineCode,
+                        $professionMaxCode,
+                        "new",
+                        $professionCode,
+                        $code
+                    );
+
+                    $professionnel->setCode($numeroGenere);
+                    $professionnel->setDateValidation(new DateTime());
+                } catch (\Exception $e) {
+                    // Log l'erreur mais continue le processus
+                    error_log("Erreur génération code: " . $e->getMessage());
+                    // Optionnel: retourner une erreur
+                    // return $this->json(['error' => 'Erreur lors de la génération du code'], Response::HTTP_INTERNAL_SERVER_ERROR);
+                }
             }
+
             $professionnel->setReason($dto->raison);
             $professionnelRepository->add($professionnel, true);
+
             $validationWorkflow = new ValidationWorkflow();
             $validationWorkflow->setEtape($dto->status);
             $validationWorkflow->setRaison($dto->raison);
@@ -682,60 +714,72 @@ class ApiProfessionnelController extends ApiInterface
             $this->em->persist($validationWorkflow);
             $this->em->flush();
 
-            if ($dto->status == "validation") {
-                $profession->setMaxCode(substr($numeroGenere, -4));
+            if ($dto->status == "validation" && isset($numeroGenere)) {
+                $lastFourDigits = substr($numeroGenere, -4);
+                $profession->setMaxCode($lastFourDigits);
                 $this->em->persist($profession);
                 $this->em->flush();
             }
 
-            $message = "";
-
-            if ($dto->status == "acceptation") {
-                $message = "Votre dossier vient de passer l'etape d'acceptation et est en séance d'analyse";
-            } elseif ($dto->status == "rejet") {
-                $message = "Votre dossier vient de passer d'être réjeté pour la raison suivante: " . $dto->raison;
-            } elseif ($dto->status == "refuse") {
-
-                $message = "Votre dossier vient de passer d'être réfusé pour la raison suivante: " . $dto->raison;
-            } elseif ($dto->status == "validation") {
-                $message = "Votre dossier a été jugé conforme et est désormais en attente de validation finale. Vous recevrez une notification dès que le processus sera complété.";
-            }
-
-
-
-            $info_user = [
-                'user' => $user->getEmail(),
-                'nom' => $professionnel->getNom() . ' ' . $professionnel->getPrenoms(),
-                'profession' => $profession->getLibelle(),
-                'etape' => $dto->status,
-                'message' => $message,
-                'annee' => ($professionnel->getCreatedAt() ? $professionnel->getCreatedAt()->format('Y') : (new DateTime())->format('Y'))
+            // Messages selon le statut
+            $messages = [
+                'acceptation' => "Votre dossier vient de passer l'étape d'acceptation et est en séance d'analyse",
+                'rejet' => "Votre dossier a été rejeté pour la raison suivante: " . ($dto->raison ?? 'Non spécifié'),
+                'refuse' => "Votre dossier a été refusé pour la raison suivante: " . ($dto->raison ?? 'Non spécifié'),
+                'validation' => "Votre dossier a été jugé conforme et est désormais en attente de validation finale. Vous recevrez une notification dès que le processus sera complété."
             ];
 
-            //  dd($info_user);
+            $message = $messages[$dto->status] ?? "Statut du dossier mis à jour";
+
+            $info_user = [
+                'user' => $user->getEmail() ?? '',
+                'nom' => trim(($professionnel->getNom() ?? '') . ' ' . ($professionnel->getPrenoms() ?? '')),
+                'profession' => $profession->getLibelle() ?? 'Non spécifié',
+                'etape' => $dto->status ?? '',
+                'message' => $message,
+                'annee' => $professionnel->getCreatedAt()
+                    ? $professionnel->getCreatedAt()->format('Y')
+                    : (new DateTime())->format('Y')
+            ];
 
             $context = compact('info_user');
 
-            // TO DO
+            // Envoi email sécurisé
+            try {
+                $emailTo = $data['email'] ?? null;
+                if ($emailTo && filter_var($emailTo, FILTER_VALIDATE_EMAIL)) {
+                    $sendMailService->send(
+                        'depps@leadagro.net',
+                        $emailTo,
+                        'Validation du dossier',
+                        'content_validation',
+                        $context
+                    );
+                }
 
-
-            $sendMailService->send(
-                'depps@leadagro.net',
-                $data['email'],
-                'Validaton du dossier',
-                'content_validation',
-                $context
-            );
-
-
-
-            $sendMailService->sendNotification("votre compte vient d'être valider pour l'etape " . $dto->status, $userRepository->findOneBy(['personne' => $professionnel->getId()]), $userRepository->find($data['userUpdate']));
+                // Envoi notification
+                $professionnelUser = $userRepository->findOneBy(['personne' => $professionnel->getId()]);
+                if ($professionnelUser) {
+                    $sendMailService->sendNotification(
+                        "Votre compte vient d'être validé pour l'étape " . $dto->status,
+                        $professionnelUser,
+                        $user
+                    );
+                }
+            } catch (\Exception $e) {
+                // Log l'erreur d'envoi d'email mais ne bloque pas le processus
+                error_log("Erreur envoi email: " . $e->getMessage());
+            }
 
             return $this->responseData($info_user, 'group_pro', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
+            // Log l'erreur complète pour le debugging
+            error_log("Erreur dans active(): " . $exception->getMessage());
+            error_log($exception->getTraceAsString());
 
-            // dd($exception->getMessage());
-            return $this->json(["message" => "Une erreur est survenue"], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->json([
+                "message" => "Une erreur est survenue lors de la validation du dossier"
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -1277,7 +1321,13 @@ class ApiProfessionnelController extends ApiInterface
             $names = 'document_' . '01';
             $filePrefix  = str_slug($names);
             $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
+/* Type de diplôme *
+Origine du diplôme *
 
+Commune *
+District sanitaire *
+Ville *
+Situation professionnelle * */
             //return $this->responseData($professionnel, 'group_pro', ['Content-Type' => 'application/json']);
             if ($professionnel) {
                 //ETAPE 2
@@ -1286,16 +1336,16 @@ class ApiProfessionnelController extends ApiInterface
                     $professionnel->setPoleSanitaire($request->get('poleSanitaire'));
                 }
                 if (!empty($request->get('region'))) {
-                    $professionnel->setRegion($regionRepository->find($request->get('region')));
+                    $professionnel->setRegion($request->get('region'));
                 }
                 if (!empty($request->get('district'))) {
-                    $professionnel->setDistrict($districtRepository->find($request->get('district')));
+                    $professionnel->setDistrict($request->get('district'));
                 }
                 if (!empty($request->get('ville'))) {
-                    $professionnel->setVille($villeRepository->find($request->get('ville')));
+                    $professionnel->setVille($request->get('ville'));
                 }
                 if (!empty($request->get('commune'))) {
-                    $professionnel->setCommune($communeRepository->find($request->get('commune')));
+                    $professionnel->setCommune($request->get('commune'));
                 }
                 if (!empty($request->get('quartier'))) {
                     $professionnel->setQuartier($request->get('quartier'));
@@ -1315,9 +1365,9 @@ class ApiProfessionnelController extends ApiInterface
                 if (!empty($request->get('lieuExercicePro'))) {
                     $professionnel->setLieuExercicePro($request->get('lieuExercicePro'));
                 }
-                if (!empty($request->get('civilite'))) {
+              /*   if (!empty($request->get('civilite'))) {
                     $professionnel->setCivilite($civiliteRepository->find($request->get('civilite')));
-                }
+                } */
                 if (!empty($request->get('emailPro'))) {
                     $professionnel->setEmailPro($request->get('emailPro'));
                 }
@@ -1335,7 +1385,7 @@ class ApiProfessionnelController extends ApiInterface
                 }
                 if (!empty($request->get('typeDiplome'))) {
 
-                    $professionnel->setTypeDiplome($typeDiplomeRepository->find($request->get('typeDiplome')));
+                    $professionnel->setTypeDiplome($request->get('typeDiplome'));
                 }
                 if (!empty($request->get('statusPro'))) {
                     $professionnel->setStatusPro($statusProRepository->find($request->get('statusPro')));
@@ -1343,10 +1393,10 @@ class ApiProfessionnelController extends ApiInterface
 
 
                 if (!empty($request->get('lieuObtentionDiplome'))) {
-                    $professionnel->setLieuObtentionDiplome($lieuDiplomeRepository->find($request->get('lieuObtentionDiplome')));
+                    $professionnel->setLieuObtentionDiplome($request->get('lieuObtentionDiplome'));
                 }
                 if (!empty($request->get('nationalite'))) {
-                    $professionnel->setNationate($paysRepository->find($request->get('nationalite')));
+                    $professionnel->setNationate($request->get('nationalite'));
                 }
                 if (!empty($request->get('situation'))) {
                     $professionnel->setSituation($request->get('situation'));
@@ -1364,7 +1414,7 @@ class ApiProfessionnelController extends ApiInterface
                     $professionnel->setSpecialiteAutre($request->get('specialiteAutre'));
                 }
                 if (!empty($request->get('situationPro'))) {
-                    $professionnel->setSituationPro($situationProfessionnelleRepository->find($request->get('situationPro')));
+                    $professionnel->setSituationPro($request->get('situationPro'));
                 }
 
 
@@ -1413,8 +1463,8 @@ class ApiProfessionnelController extends ApiInterface
                         $professionnel->setCv($fichier);
                     }
                 }
-                if($request->get('appartenirOrganisation') != null){
-                    
+                if ($request->get('appartenirOrganisation') != null) {
+
                     $professionnel->setAppartenirOrganisation($request->get('appartenirOrganisation'));
                 }
                 $professionnel->setAppartenirOrdre($request->get('appartenirOrdre'));

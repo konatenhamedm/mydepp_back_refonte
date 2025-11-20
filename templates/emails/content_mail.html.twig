@@ -1,77 +1,312 @@
-
-
-
 <!DOCTYPE html>
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
     <style>
         * {
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
-        .menu {
-            float: left;
-            width: 20%;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f7 100%);
+            color: #2d3748;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2AD10F 0%, #22a00d 100%);
+            padding: 40px 30px;
             text-align: center;
         }
 
-        .menu a {
-            background-color: #e5e5e5;
-            padding: 8px;
-            margin-top: 7px;
-            display: block;
-            width: 100%;
-            color: black;
+        .logo-container {
+            background: white;
+            width: 140px;
+            height: 140px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 25px rgba(42, 209, 15, 0.3);
+            margin-bottom: 20px;
         }
 
-        .main {
-            float: left;
-            width: 60%;
-            padding: 0 20px;
+        .logo-container img {
+            max-width: 120px;
+            max-height: 120px;
+            object-fit: contain;
         }
 
-        .right {
-            background-color: #e5e5e5;
-            float: left;
-            width: 20%;
-            padding: 15px;
-            margin-top: 7px;
+        .header-title {
+            color: white;
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .welcome-message {
             text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .welcome-message h2 {
+            color: #1a202c;
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .welcome-message p {
+            color: #718096;
+            font-size: 16px;
+        }
+
+        .info-card {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 4px solid #2AD10F;
+        }
+
+        .info-title {
+            color: #2d3748;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .info-title::before {
+            content: "✓";
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background: #2AD10F;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #718096;
+            font-size: 14px;
+            font-weight: 500;
+            min-width: 100px;
+        }
+
+        .info-value {
+            color: #2d3748;
+            font-size: 15px;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .cta-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #2AD10F 0%, #22a00d 100%);
+            color: white;
+            text-decoration: none;
+            padding: 16px 40px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 8px 20px rgba(42, 209, 15, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(42, 209, 15, 0.4);
+        }
+
+        .message-box {
+            background: #edf7f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 25px 0;
+            border-left: 4px solid #2AD10F;
+        }
+
+        .message-box p {
+            color: #2d3748;
+            font-size: 15px;
+            margin: 0;
+        }
+
+        .footer {
+            background: #1a202c;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .footer-text {
+            color: #a0aec0;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .footer-brand {
+            color: #2AD10F;
+            font-weight: 600;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, #e2e8f0, transparent);
+            margin: 25px 0;
         }
 
         @media only screen and (max-width: 620px) {
-            /* For mobile phones: */
-            .menu, .main, .right {
-                width: 100%;
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 30px 20px;
+            }
+
+            .logo-container {
+                width: 120px;
+                height: 120px;
+            }
+
+            .logo-container img {
+                max-width: 100px;
+                max-height: 100px;
+            }
+
+            .content {
+                padding: 30px 20px;
+            }
+
+            .welcome-message h2 {
+                font-size: 22px;
+            }
+
+            .info-card {
+                padding: 20px;
+            }
+
+            .info-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .info-label {
+                margin-bottom: 5px;
+            }
+
+            .cta-button {
+                padding: 14px 30px;
+                font-size: 15px;
             }
         }
     </style>
 </head>
-<body style="font-family:Verdana;color:#aaaaaa;">
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-container">
+                <img src="https://mydepps.net/_files/logo-depps.png" alt="DEPPS Logo">
+            </div>
+            <h1 class="header-title">Bienvenue sur DEPPS</h1>
+        </div>
 
-<div style="background-color:#ffff;padding:15px;text-align:center;">
-        <img src="https://mydepps.net/_files/logo-depps.png" width="200" height="200">
+        <!-- Content -->
+        <div class="content">
+            <!-- Welcome Message -->
+            <div class="welcome-message">
+                <h2>🎉 Compte créé avec succès !</h2>
+                <p>Votre compte utilisateur a été configuré et est prêt à l'emploi</p>
+            </div>
 
-</div>
-<hr size="10" style="background-color:#2AD10F;">
-<div style="overflow:auto">
+            <!-- Info Card -->
+            <div class="info-card">
+                <div class="info-title">Informations de connexion</div>
+                <div class="info-item">
+                    <span class="info-label">Login :</span>
+                    <span class="info-value">{{ info_user.login }}</span>
+                </div>
+                {# Uncomment if you want to show password
+                <div class="info-item">
+                    <span class="info-label">Mot de passe :</span>
+                    <span class="info-value">{{ info_user.password }}</span>
+                </div>
+                #}
+            </div>
 
+            <div class="divider"></div>
 
-    <div class="main">
-        <p> Voici les informations concernant votre compte utilisateur .</p>
+            <!-- Message Box -->
+            <div class="message-box">
+                <p>
+                    Votre compte est maintenant actif ! Cliquez sur le bouton ci-dessous pour accéder à votre espace et commencer à utiliser DEPPS.
+                </p>
+            </div>
 
-        <p>Login {{ info_user.login }} </p>
-        {# <p>Password {{ info_user.password }}</p> #}
-        <p>Votre création de compte à été effectué avec success, veuillez cliquer sur le lien suivant pour vous connectez : <a href="https://mydepps.pages.dev/site/connexion">Login</a></p>
-        <p>Merci</p>
+            <!-- CTA Button -->
+            <div class="cta-section">
+                <a href="https://mydepp-front.pages.dev/connexion" class="cta-button">
+                    Se connecter maintenant →
+                </a>
+            </div>
 
+            <div class="divider"></div>
+
+            <!-- Additional Info -->
+            <div style="text-align: center; color: #718096; font-size: 14px;">
+                <p>Si vous rencontrez des difficultés pour vous connecter, n'hésitez pas à contacter notre support.</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p class="footer-text">
+                © {{ "now"|date("Y") }} <span class="footer-brand">DEPPS</span> - Tous droits réservés
+            </p>
+        </div>
     </div>
-
-
-</div>
-<br>
-<div style="background-color:#2AD10F;text-align:center;padding:10px;margin-top:7px;"><h3 style="color: white;">© copyright DEPPS</h3></div>
-
 </body>
 </html>

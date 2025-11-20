@@ -139,6 +139,22 @@ class PaiementService
                     $this->tempEtablissementRepository->remove($temp, true);
                 }
             }
+
+
+              $info_user = [
+                    'login' =>  $transaction->getUser()->getEmail(),
+
+                ];
+
+                $context = compact('info_user');
+
+                $this->sendMailService->send(
+                    'depps@leadagro.net',
+                    $transaction->getUser()->getEmail(),
+                    'Informations',
+                    'content_mail',
+                    $context
+                );
         } else {
             $response = [
                 'message' => 'Echec',

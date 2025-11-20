@@ -17,21 +17,22 @@ class Region
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Group(["group1","group_pro"])]
+    #[Group(["group1","group_pro","group_region"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Group(["group1","group_pro"])]
+    #[Group(["group1","group_pro","group_region"])]
     private ?string $code = null;
 
     #[ORM\Column(length: 255)]
-    #[Group(["group1","group_pro"])]
+    #[Group(["group1","group_pro","group_region"])]
     private ?string $libelle = null;
 
     /**
      * @var Collection<int, District>
      */
     #[ORM\OneToMany(targetEntity: District::class, mappedBy: 'region')]
+    #[Group(["group_region",])]
     private Collection $districts;
 
     /**
