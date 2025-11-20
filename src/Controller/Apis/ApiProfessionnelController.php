@@ -767,7 +767,9 @@ class ApiProfessionnelController extends ApiInterface
                 'acceptation' => "Votre dossier vient de passer l'étape d'acceptation et est en séance d'analyse",
                 'rejet' => "Votre dossier a été rejeté pour la raison suivante: " . ($dto->raison ?? 'Non spécifié'),
                 'refuse' => "Votre dossier a été refusé pour la raison suivante: " . ($dto->raison ?? 'Non spécifié'),
-                'validation' => "Votre dossier a été jugé conforme et est désormais en attente de validation finale. Vous recevrez une notification dès que le processus sera complété."
+                'validation' => "Votre dossier a été jugé conforme et est désormais en attente de validation finale. Vous recevrez une notification dès que le processus sera complété.",
+                'refuse_mise_a_jour' => "Votre dossier a été refusé pour la raison suivante: " . ($dto->raison ?? 'Non spécifié'),
+                
             ];
 
             $message = $messages[$dto->status] ?? "Statut du dossier mis à jour";
