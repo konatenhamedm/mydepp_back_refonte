@@ -1511,7 +1511,7 @@ Situation professionnelle * */
         return $response;
     }
 
-    #[Route('/update-all-documents/{id}',  methods: ['PUT'])]
+    #[Route('/update-all-documents/{id}',  methods: ['PUT','POST'])]
      #[OA\Post(
         summary: "Update documents du professionnel",
         description: "Permet de mettre à jour les documents d'un professionnel.",
