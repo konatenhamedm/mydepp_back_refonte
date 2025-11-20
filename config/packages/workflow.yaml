@@ -18,6 +18,7 @@ framework:
                 - refuse
                 - renouvellement
                 - a_jour
+                - refuse_mise_a_jour
             transitions:
                 acceptation:
                     from: attente
@@ -28,6 +29,12 @@ framework:
                 refuse:
                     from: accepte
                     to: refuse
+                refuse_mise_a_jour:
+                    from: accepte
+                    to: refuse_mise_a_jour
+                retour_mise_a_jour:
+                    from: refuse_mise_a_jour
+                    to: accepte
                 validation:
                     from: accepte 
                     to: valide

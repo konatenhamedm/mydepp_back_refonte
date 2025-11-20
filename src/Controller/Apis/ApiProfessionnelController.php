@@ -1511,6 +1511,87 @@ Situation professionnelle * */
         return $response;
     }
 
+    #[Route('/update-all-documents/{id}',  methods: ['PUT'])]
+    #[OA\Response(
+        response: 200,
+        description: 'permet de mettre à jour un(e) professionnel',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(ref: new Model(type: Professionnel::class, groups: ['full']))
+        )
+    )]
+    #[OA\Tag(name: 'professionnel')]
+    public function updateAllProfessionnelDocuments(Request $request, Professionnel $professionnel, ProfessionnelRepository $professionnelRepository): Response
+    {
+        try {
+            $names = 'document_' . '01';
+               $filePrefix  = str_slug($names);
+               $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
+
+                $uploadedPhoto = $request->files->get('photo');
+                $uploadedCasier = $request->files->get('casier');
+                $uploadedCni = $request->files->get('cni');
+                $uploadedDiplome = $request->files->get('diplomeFile');
+                $uploadedCertificat = $request->files->get('certificat');
+                $uploadedCv = $request->files->get('cv');
+
+                if ($uploadedPhoto) {
+                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedPhoto, self::UPLOAD_PATH);
+                    if ($fichier) {
+                        $professionnel->setPhoto($fichier);
+                    }
+                }
+                if ($uploadedCasier) {
+                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCasier, self::UPLOAD_PATH);
+                    if ($fichier) {
+                        $professionnel->setCasier($fichier);
+                    }
+                }
+                if ($uploadedCni) {
+                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCni, self::UPLOAD_PATH);
+                    if ($fichier) {
+                        $professionnel->setCni($fichier);
+                    }
+                }
+                if ($uploadedDiplome) {
+                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedDiplome, self::UPLOAD_PATH);
+                    if ($fichier) {
+                        $professionnel->setDiplomeFile($fichier);
+                    }
+                }
+                if ($uploadedCertificat) {
+                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCertificat, self::UPLOAD_PATH);
+                    if ($fichier) {
+                        $professionnel->setCertificat($fichier);
+                    }
+                }
+                if ($uploadedCv) {
+                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCv, self::UPLOAD_PATH);
+                    if ($fichier) {
+                        $professionnel->setCv($fichier);
+                    }
+                }
+
+                $professionnelRepository->add($professionnel, true);
+
+                $this->setMessage("Operation effectuées avec success");
+                $response = $this->responseData([
+                    'id' => $professionnel->getId(),
+                    'code' => $professionnel->getCode(),
+                    'status' => $professionnel->getStatus(),
+                    'nom' => $professionnel->getNom(),
+                    'prenom' => $professionnel->getPrenoms(),
+                    'email' => $professionnel->getEmail(),
+                    'professionnel' => $professionnel->getProfessionnel(),
+                ], 'group_pro', ['Content-Type' => 'application/json']);
+            
+        } catch (\Exception $exception) {
+            $this->setMessage("");
+            $response = $this->response('[]');
+        }
+        return $response;
+    }
+
     //const TAB_ID = 'parametre-tabs';
 
     #[Route('/delete/{id}',  methods: ['DELETE'])]
