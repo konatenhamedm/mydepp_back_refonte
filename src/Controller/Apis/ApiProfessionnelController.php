@@ -1427,7 +1427,7 @@ Situation professionnelle * */
                 $uploadedCv = $request->files->get('cv');
 
 
-                if ($uploadedPhoto) {
+               /*  if ($uploadedPhoto) {
                     $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedPhoto, self::UPLOAD_PATH);
                     if ($fichier) {
                         $professionnel->setPhoto($fichier);
@@ -1462,7 +1462,7 @@ Situation professionnelle * */
                     if ($fichier) {
                         $professionnel->setCv($fichier);
                     }
-                }
+                } */
                 if ($request->get('appartenirOrganisation') != null) {
 
                     $professionnel->setAppartenirOrganisation($request->get('appartenirOrganisation'));
