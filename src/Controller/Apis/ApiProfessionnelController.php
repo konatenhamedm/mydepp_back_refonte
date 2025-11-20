@@ -707,8 +707,9 @@ class ApiProfessionnelController extends ApiInterface
                 $civilite = $professionnel->getCivilite();
                 $codeCivilite = $civilite ? $civilite->getCodeGeneration() : 'XX';
 
-                $dateNaissance = $professionnel->getDateNaissance() ?? new \DateTime();
-                $dateCreation = $professionnel->getCreatedAt() ?? new \DateTime();
+                $dateNaissance = $professionnel->getDateNaissance() ? \DateTime::createFromInterface($professionnel->getDateNaissance()) : new \DateTime();
+                $createdAt = $professionnel->getCreatedAt();
+                $dateCreation = $createdAt ? \DateTime::createFromInterface($createdAt) : new \DateTime();
 
                 $racineSequence = $racineSequenceRepository->findOneBySomeField();
                 $racineCode = $racineSequence ? $racineSequence->getCode() : 'DEF';
