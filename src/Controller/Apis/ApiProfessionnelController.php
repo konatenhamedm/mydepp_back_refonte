@@ -78,30 +78,70 @@ class ApiProfessionnelController extends ApiInterface
     )]
     #[OA\Tag(name: 'specialite')]
     //
-    public function codeExiste($code, ProfessionnelRepository $professionnelRepository)
+    public function codeExiste(Request $request, ProfessionnelRepository $professionnelRepository)
     {
         try {
+            // Récupération des données depuis la payload
+            $data = json_decode($request->getContent(), true);
+            $code = $data['code'] ?? null;
+            $nom = $data['nom'] ?? null;
+            $prenoms = $data['prenoms'] ?? null;
 
+            // Validation des champs requis
+            if (!$code || !$nom || !$prenoms) {
+                return $this->response([
+                    'statut' => false,
+                    'message' => 'Le code, le nom et les prénoms sont obligatoires',
+                    'id' => null
+                ]);
+            }
+
+            // Recherche du professionnel par code
             $pro = $professionnelRepository->findOneBy(['code' => $code]);
-            if ($pro != null) {
-                $response = $this->response([
+
+            if ($pro == null) {
+                return $this->response([
+                    'statut' => false,
+                    'message' => 'Code professionnel introuvable',
+                    'id' => null
+                ]);
+            }
+
+            // Vérification du nom et des prénoms (comparaison insensible à la casse)
+            $nomMatch = strtolower(trim($pro->getNom())) === strtolower(trim($nom));
+            $prenomsMatch = strtolower(trim($pro->getPrenoms())) === strtolower(trim($prenoms));
+
+            if ($nomMatch && $prenomsMatch) {
+                return $this->response([
                     'statut' => true,
-                    'id' => $pro->getId()
+                    'message' => 'Professionnel vérifié avec succès',
+                    'id' => $pro->getId(),
+                    'professionnel' => [
+                        'nom' => $pro->getNom(),
+                        'prenoms' => $pro->getPrenoms(),
+                        'code' => $pro->getCode()
+                    ]
                 ]);
             } else {
-
-                $response = $this->response([
+                return $this->response([
                     'statut' => false,
-                    'id' => null
+                    'message' => 'Le nom ou les prénoms ne correspondent pas au code fourni',
+                    'id' => null,
+                    'details' => [
+                        'nom_correspond' => $nomMatch,
+                        'prenoms_correspondent' => $prenomsMatch
+                    ]
                 ]);
             }
         } catch (\Exception $exception) {
             $this->setMessage($exception->getMessage());
-            $response = $this->response('[]');
+            return $this->response([
+                'statut' => false,
+                'message' => 'Une erreur est survenue',
+                'erreur' => $exception->getMessage(),
+                'id' => null
+            ]);
         }
-
-
-        return $response;
     }
 
     #[Route('/update/imputation/{id}', methods: ['PUT', 'POST'])]
@@ -1321,7 +1361,7 @@ class ApiProfessionnelController extends ApiInterface
             $names = 'document_' . '01';
             $filePrefix  = str_slug($names);
             $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
-/* Type de diplôme *
+            /* Type de diplôme *
 Origine du diplôme *
 
 Commune *
@@ -1365,7 +1405,7 @@ Situation professionnelle * */
                 if (!empty($request->get('lieuExercicePro'))) {
                     $professionnel->setLieuExercicePro($request->get('lieuExercicePro'));
                 }
-              /*   if (!empty($request->get('civilite'))) {
+                /*   if (!empty($request->get('civilite'))) {
                     $professionnel->setCivilite($civiliteRepository->find($request->get('civilite')));
                 } */
                 if (!empty($request->get('emailPro'))) {
@@ -1427,7 +1467,7 @@ Situation professionnelle * */
                 $uploadedCv = $request->files->get('cv');
 
 
-               /*  if ($uploadedPhoto) {
+                /*  if ($uploadedPhoto) {
                     $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedPhoto, self::UPLOAD_PATH);
                     if ($fichier) {
                         $professionnel->setPhoto($fichier);
@@ -1511,8 +1551,8 @@ Situation professionnelle * */
         return $response;
     }
 
-    #[Route('/update-all-documents/{id}',  methods: ['PUT','POST'])]
-     #[OA\Post(
+    #[Route('/update-all-documents/{id}',  methods: ['PUT', 'POST'])]
+    #[OA\Post(
         summary: "Update documents du professionnel",
         description: "Permet de mettre à jour les documents d'un professionnel.",
         requestBody: new OA\RequestBody(
@@ -1542,68 +1582,67 @@ Situation professionnelle * */
     {
         try {
             $names = 'document_' . '01';
-               $filePrefix  = str_slug($names);
-               $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
+            $filePrefix  = str_slug($names);
+            $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
 
-                $uploadedPhoto = $request->files->get('photo');
-                $uploadedCasier = $request->files->get('casier');
-                $uploadedCni = $request->files->get('cni');
-                $uploadedDiplome = $request->files->get('diplomeFile');
-                $uploadedCertificat = $request->files->get('certificat');
-                $uploadedCv = $request->files->get('cv');
+            $uploadedPhoto = $request->files->get('photo');
+            $uploadedCasier = $request->files->get('casier');
+            $uploadedCni = $request->files->get('cni');
+            $uploadedDiplome = $request->files->get('diplomeFile');
+            $uploadedCertificat = $request->files->get('certificat');
+            $uploadedCv = $request->files->get('cv');
 
-                if ($uploadedPhoto) {
-                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedPhoto, self::UPLOAD_PATH);
-                    if ($fichier) {
-                        $professionnel->setPhoto($fichier);
-                    }
+            if ($uploadedPhoto) {
+                $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedPhoto, self::UPLOAD_PATH);
+                if ($fichier) {
+                    $professionnel->setPhoto($fichier);
                 }
-                if ($uploadedCasier) {
-                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCasier, self::UPLOAD_PATH);
-                    if ($fichier) {
-                        $professionnel->setCasier($fichier);
-                    }
+            }
+            if ($uploadedCasier) {
+                $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCasier, self::UPLOAD_PATH);
+                if ($fichier) {
+                    $professionnel->setCasier($fichier);
                 }
-                if ($uploadedCni) {
-                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCni, self::UPLOAD_PATH);
-                    if ($fichier) {
-                        $professionnel->setCni($fichier);
-                    }
+            }
+            if ($uploadedCni) {
+                $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCni, self::UPLOAD_PATH);
+                if ($fichier) {
+                    $professionnel->setCni($fichier);
                 }
-                if ($uploadedDiplome) {
-                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedDiplome, self::UPLOAD_PATH);
-                    if ($fichier) {
-                        $professionnel->setDiplomeFile($fichier);
-                    }
+            }
+            if ($uploadedDiplome) {
+                $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedDiplome, self::UPLOAD_PATH);
+                if ($fichier) {
+                    $professionnel->setDiplomeFile($fichier);
                 }
-                if ($uploadedCertificat) {
-                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCertificat, self::UPLOAD_PATH);
-                    if ($fichier) {
-                        $professionnel->setCertificat($fichier);
-                    }
+            }
+            if ($uploadedCertificat) {
+                $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCertificat, self::UPLOAD_PATH);
+                if ($fichier) {
+                    $professionnel->setCertificat($fichier);
                 }
-                if ($uploadedCv) {
-                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCv, self::UPLOAD_PATH);
-                    if ($fichier) {
-                        $professionnel->setCv($fichier);
-                    }
+            }
+            if ($uploadedCv) {
+                $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCv, self::UPLOAD_PATH);
+                if ($fichier) {
+                    $professionnel->setCv($fichier);
                 }
+            }
 
-                $professionnel->setStatus("accepte");
+            $professionnel->setStatus("accepte");
 
-                $professionnelRepository->add($professionnel, true);
+            $professionnelRepository->add($professionnel, true);
 
-                $this->setMessage("Operation effectuées avec success");
-                $response = $this->responseData([
-                    'id' => $professionnel->getId(),
-                    'code' => $professionnel->getCode(),
-                    'status' => $professionnel->getStatus(),
-                    'nom' => $professionnel->getNom(),
-                    'prenom' => $professionnel->getPrenoms(),
-                    'email' => $professionnel->getEmail(),
-                    'professionnel' => $professionnel->getProfessionnel(),
-                ], 'group_pro', ['Content-Type' => 'application/json']);
-            
+            $this->setMessage("Operation effectuées avec success");
+            $response = $this->responseData([
+                'id' => $professionnel->getId(),
+                'code' => $professionnel->getCode(),
+                'status' => $professionnel->getStatus(),
+                'nom' => $professionnel->getNom(),
+                'prenom' => $professionnel->getPrenoms(),
+                'email' => $professionnel->getEmail(),
+                'professionnel' => $professionnel->getProfessionnel(),
+            ], 'group_pro', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("");
             $response = $this->response('[]');
