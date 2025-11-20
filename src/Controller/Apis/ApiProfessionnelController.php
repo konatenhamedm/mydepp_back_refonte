@@ -1589,6 +1589,8 @@ Situation professionnelle * */
                     }
                 }
 
+                $professionnel->setStatus("accepte");
+
                 $professionnelRepository->add($professionnel, true);
 
                 $this->setMessage("Operation effectuées avec success");
