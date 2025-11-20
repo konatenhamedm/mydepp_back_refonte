@@ -1336,16 +1336,16 @@ Situation professionnelle * */
                     $professionnel->setPoleSanitaire($request->get('poleSanitaire'));
                 }
                 if (!empty($request->get('region'))) {
-                    $professionnel->setRegion($request->get('region'));
+                    $professionnel->setRegion($regionRepository->find($request->get('region')));
                 }
                 if (!empty($request->get('district'))) {
-                    $professionnel->setDistrict($request->get('district'));
+                    $professionnel->setDistrict($districtRepository->find($request->get('district')));
                 }
                 if (!empty($request->get('ville'))) {
-                    $professionnel->setVille($request->get('ville'));
+                    $professionnel->setVille($villeRepository->find($request->get('ville')));
                 }
                 if (!empty($request->get('commune'))) {
-                    $professionnel->setCommune($request->get('commune'));
+                    $professionnel->setCommune($communeRepository->find($request->get('commune')));
                 }
                 if (!empty($request->get('quartier'))) {
                     $professionnel->setQuartier($request->get('quartier'));
@@ -1385,18 +1385,18 @@ Situation professionnelle * */
                 }
                 if (!empty($request->get('typeDiplome'))) {
 
-                    $professionnel->setTypeDiplome($request->get('typeDiplome'));
+                    $professionnel->setTypeDiplome($typeDiplomeRepository->find($request->get('typeDiplome')));
                 }
-                if (!empty($request->get('statusPro'))) {
+                /* if (!empty($request->get('statusPro'))) {
                     $professionnel->setStatusPro($statusProRepository->find($request->get('statusPro')));
                 }
-
+ */
 
                 if (!empty($request->get('lieuObtentionDiplome'))) {
                     $professionnel->setLieuObtentionDiplome($request->get('lieuObtentionDiplome'));
                 }
                 if (!empty($request->get('nationalite'))) {
-                    $professionnel->setNationate($request->get('nationalite'));
+                    $professionnel->setNationate($paysRepository->find($request->get('nationalite')));
                 }
                 if (!empty($request->get('situation'))) {
                     $professionnel->setSituation($request->get('situation'));
@@ -1414,7 +1414,7 @@ Situation professionnelle * */
                     $professionnel->setSpecialiteAutre($request->get('specialiteAutre'));
                 }
                 if (!empty($request->get('situationPro'))) {
-                    $professionnel->setSituationPro($request->get('situationPro'));
+                    $professionnel->setSituationPro($situationProfessionnelleRepository->find($request->get('situationPro')));
                 }
 
 
