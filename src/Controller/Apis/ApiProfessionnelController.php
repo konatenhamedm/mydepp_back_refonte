@@ -59,7 +59,7 @@ class ApiProfessionnelController extends ApiInterface
 
 
 
-    #[Route('/check/code/existe/{code}', methods: ['GET'])]
+    #[Route('/check/code/existe/{code}/{nom}/{prenoms}', methods: ['GET'])]
     /**
      * Affiche un(e) specialite en offrant un identifiant.
      */
@@ -76,73 +76,54 @@ class ApiProfessionnelController extends ApiInterface
         in: 'query',
         schema: new OA\Schema(type: 'string')
     )]
+    #[OA\Parameter(
+        name: 'nom',
+        in: 'query',
+        schema: new OA\Schema(type: 'string')
+    )]
+    #[OA\Parameter(
+        name: 'prenoms',
+        in: 'query',
+        schema: new OA\Schema(type: 'string')
+    )]
     #[OA\Tag(name: 'specialite')]
-    //
-    public function codeExiste(Request $request, ProfessionnelRepository $professionnelRepository)
+    public function codeExistes($code, $nom, $prenoms, ProfessionnelRepository $professionnelRepository)
     {
         try {
-            // Récupération des données depuis la payload
-            $data = json_decode($request->getContent(), true);
-            $code = $data['code'] ?? null;
-            $nom = $data['nom'] ?? null;
-            $prenoms = $data['prenoms'] ?? null;
 
-            // Validation des champs requis
-            if (!$code || !$nom || !$prenoms) {
-                return $this->response([
-                    'statut' => false,
-                    'message' => 'Le code, le nom et les prénoms sont obligatoires',
-                    'id' => null
-                ]);
-            }
-
-            // Recherche du professionnel par code
             $pro = $professionnelRepository->findOneBy(['code' => $code]);
+            if ($pro != null) {
 
-            if ($pro == null) {
-                return $this->response([
-                    'statut' => false,
-                    'message' => 'Code professionnel introuvable',
-                    'id' => null
-                ]);
-            }
+                $nomMatch = strtolower(trim($pro->getNom())) === strtolower(trim($nom));
+                $prenomsMatch = strtolower(trim($pro->getPrenoms())) === strtolower(trim($prenoms));
 
-            // Vérification du nom et des prénoms (comparaison insensible à la casse)
-            $nomMatch = strtolower(trim($pro->getNom())) === strtolower(trim($nom));
-            $prenomsMatch = strtolower(trim($pro->getPrenoms())) === strtolower(trim($prenoms));
-
-            if ($nomMatch && $prenomsMatch) {
-                return $this->response([
-                    'statut' => true,
-                    'message' => 'Professionnel vérifié avec succès',
-                    'id' => $pro->getId(),
-                    'professionnel' => [
-                        'nom' => $pro->getNom(),
-                        'prenoms' => $pro->getPrenoms(),
-                        'code' => $pro->getCode()
-                    ]
-                ]);
+                if ($nomMatch && $prenomsMatch) {
+                    $response = $this->response([
+                        'statut' => true,
+                        'id' => $pro->getId()
+                    ]);
+                } else {
+                    $response = $this->response([
+                        'statut' => false,
+                        'id' => null
+                    ]);
+                }
             } else {
-                return $this->response([
+
+                $response = $this->response([
                     'statut' => false,
-                    'message' => 'Le nom ou les prénoms ne correspondent pas au code fourni',
-                    'id' => null,
-                    'details' => [
-                        'nom_correspond' => $nomMatch,
-                        'prenoms_correspondent' => $prenomsMatch
-                    ]
+                    'id' => null
                 ]);
             }
         } catch (\Exception $exception) {
             $this->setMessage($exception->getMessage());
-            return $this->response([
-                'statut' => false,
-                'message' => 'Une erreur est survenue',
-                'erreur' => $exception->getMessage(),
-                'id' => null
-            ]);
+            $response = $this->response('[]');
         }
+
+
+        return $response;
     }
+    
 
     #[Route('/update/imputation/{id}', methods: ['PUT', 'POST'])]
     #[OA\Post(
@@ -769,7 +750,7 @@ class ApiProfessionnelController extends ApiInterface
                 'refuse' => "Votre dossier a été refusé pour la raison suivante: " . ($dto->raison ?? 'Non spécifié'),
                 'validation' => "Votre dossier a été jugé conforme et est désormais en attente de validation finale. Vous recevrez une notification dès que le processus sera complété.",
                 'refuse_mise_a_jour' => "Votre dossier a été refusé pour la raison suivante: " . ($dto->raison ?? 'Non spécifié'),
-                
+
             ];
 
             $message = $messages[$dto->status] ?? "Statut du dossier mis à jour";
