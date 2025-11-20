@@ -1512,13 +1512,30 @@ Situation professionnelle * */
     }
 
     #[Route('/update-all-documents/{id}',  methods: ['PUT'])]
-    #[OA\Response(
-        response: 200,
-        description: 'permet de mettre à jour un(e) professionnel',
-        content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: Professionnel::class, groups: ['full']))
-        )
+     #[OA\Post(
+        summary: "Update documents du professionnel",
+        description: "Permet de mettre à jour les documents d'un professionnel.",
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: "multipart/form-data",
+                schema: new OA\Schema(
+                    properties: [
+                        new OA\Property(property: "photo", type: "string", format: "binary"), //photo
+                        new OA\Property(property: "cni", type: "string", format: "binary"), //cni
+                        new OA\Property(property: "casier", type: "string", format: "binary"), //casier
+                        new OA\Property(property: "diplomeFile", type: "string", format: "binary"), //diplomeFile
+                        new OA\Property(property: "certificat", type: "string", format: "binary"), //certificat
+                        new OA\Property(property: "cv", type: "string", format: "binary"), //cv
+
+                    ],
+                    type: "object"
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 401, description: "Invalid credentials")
+        ]
     )]
     #[OA\Tag(name: 'professionnel')]
     public function updateAllProfessionnelDocuments(Request $request, Professionnel $professionnel, ProfessionnelRepository $professionnelRepository): Response
