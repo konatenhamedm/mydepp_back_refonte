@@ -6,6 +6,7 @@ use App\Repository\OrdreRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: OrdreRepository::class)]
 class Ordre
@@ -15,9 +16,11 @@ use TraitEntity;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["group1"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["group1"])]
     private ?string $libelle = null;
 
     /**
