@@ -24,6 +24,7 @@ use App\Repository\EtablissementRepository;
 use App\Repository\GenreRepository;
 use App\Repository\LieuDiplomeRepository;
 use App\Repository\NiveauInterventionRepository;
+use App\Repository\OrdreRepository;
 use App\Repository\PaysRepository;
 use App\Repository\ProfessionRepository;
 use App\Repository\RegionRepository;
@@ -90,7 +91,7 @@ class PaiementService
         private DocumentRepository $documentRepository,
         private DocumentOepRepository $documentOepRepository,
         private EtablissementRepository $etablissementRepository,
-        
+        private OrdreRepository $ordreRepository
 
 
     ) {
@@ -548,11 +549,12 @@ class PaiementService
 
         if ($dataTemp->getAppartenirOrganisation() == "oui") {
 
-
             $professionnel->setOrganisationNom($dataTemp->getOrganisationNom());
         }
         if ($dataTemp->getAppartenirOrdre() == "oui") {
+            
             $professionnel->setNumeroInscription($dataTemp->getNumeroInscription());
+            $professionnel->setOrdre($this->ordreRepository->find($dataTemp->getOrdre()));
         }
 
 

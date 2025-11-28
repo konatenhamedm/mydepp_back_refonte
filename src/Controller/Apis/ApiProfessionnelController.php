@@ -340,6 +340,7 @@ class ApiProfessionnelController extends ApiInterface
                         'reason' => $personne->getReason() ?? "",
                         'professionnel' => $personne->getProfessionnel() ?? "",
                         'civilite' => $this->formatEntity($personne->getCivilite()),
+                        'ordre' => $personne->getOrdre() ? $this->formatEntity($personne->getOrdre()) : null,
                         'region' => $this->formatEntity($personne->getRegion()),
                         'typeDiplome' => $this->formatEntity($personne->getTypeDiplome()) ?? "",
                         'district' => $this->formatEntity($personne->getDistrict()),
@@ -436,6 +437,7 @@ class ApiProfessionnelController extends ApiInterface
                         'reason' => $personne->getReason() ?? "",
                         'professionnel' => $personne->getProfessionnel() ?? "",
                         'civilite' => $this->formatEntity($personne->getCivilite()),
+                        'ordre' => $personne->getOrdre() ? $this->formatEntity($personne->getOrdre()) : null,
                         'region' => $this->formatEntity($personne->getRegion()),
                         'district' => $this->formatEntity($personne->getDistrict()),
                         'commune' => $this->formatEntity($personne->getCommune()),
@@ -540,6 +542,7 @@ class ApiProfessionnelController extends ApiInterface
                         'professionnel' => $personne->getProfessionnel() ?? "",
                         'typeDiplome' => $this->formatEntity($personne->getTypeDiplome()) ?? "",
                         'civilite' => $this->formatEntity($personne->getCivilite()),
+                        'ordre' => $personne->getOrdre() ? $this->formatEntity($personne->getOrdre()) : null,
                         'region' => $this->formatEntity($personne->getRegion()),
                         'district' => $this->formatEntity($personne->getDistrict()),
                         'commune' => $this->formatEntity($personne->getCommune()),
@@ -863,6 +866,7 @@ class ApiProfessionnelController extends ApiInterface
                     'reason' => $personne->getReason() ?? "",
                     'professionnel' => $personne->getProfessionnel() ?? "",
                     'civilite' => $this->formatEntity($personne->getCivilite()),
+                    'ordre' => $personne->getOrdre() ? $this->formatEntity($personne->getOrdre()) : null,
                     'region' => $this->formatEntity($personne->getRegion()),
                     'district' => $this->formatEntity($personne->getDistrict()),
                     'lieuObtentionDiplome' => $personne->getLieuObtentionDiplome() ?  $this->formatEntity($personne->getLieuObtentionDiplome()) : null,
@@ -1349,7 +1353,8 @@ class ApiProfessionnelController extends ApiInterface
         OrganisationRepository $organisationRepository,
         LieuDiplomeRepository $lieuDiplomeRepository,
         TypeDiplomeRepository $typeDiplomeRepository,
-        StatusProRepository $statusProRepository
+        StatusProRepository $statusProRepository,
+        OrdreRepository $ordreRepository
     ): Response {
         try {
             $names = 'document_' . '01';
@@ -1515,9 +1520,19 @@ Situation professionnelle * */
                 }
 
                 if ($request->get('appartenirOrdre') == "oui") {
+                    
+                    $ordreId = $request->get('ordre');
+                    if ($ordreId) {
+                        $ordre = $ordreRepository->find($ordreId);
+                        if ($ordre) {
+                            $professionnel->setOrdre($ordre);
+                        }
+                    }
                     $professionnel->setNumeroInscription($request->get('numeroInscription'));
                 } else {
-                    $professionnel->setOrganisationNom("");
+                  
+                    $professionnel->setOrdre(null);
+                    $professionnel->setNumeroInscription("");
                 }
 
                 $professionnelRepository->add($professionnel, true);

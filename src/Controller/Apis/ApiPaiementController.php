@@ -906,15 +906,12 @@ class ApiPaiementController extends ApiInterface
         $professionnel->setAppartenirOrdre($request->get('appartenirOrdre'));
 
         if ($request->get('appartenirOrganisation') == "oui") {
-
-
             $professionnel->setOrganisationNom($request->get('organisationNom'));
         }
 
         if ($request->get('appartenirOrdre') == "oui") {
-
-
             $professionnel->setNumeroInscription($request->get('numeroInscription'));
+            $professionnel->setOrdre($request->get('ordre'));
         }
 
 

@@ -236,6 +236,9 @@ class TempProfessionnel
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $specialiteAutre = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $ordre = null;
+
 
     public function getReference(): ?string
     {
@@ -1063,6 +1066,18 @@ class TempProfessionnel
     public function setSpecialiteAutre(?string $specialiteAutre): static
     {
         $this->specialiteAutre = $specialiteAutre;
+
+        return $this;
+    }
+
+    public function getOrdre(): ?string
+    {
+        return $this->ordre;
+    }
+
+    public function setOrdre(?string $ordre): static
+    {
+        $this->ordre = $ordre;
 
         return $this;
     }
