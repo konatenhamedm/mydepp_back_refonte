@@ -16,6 +16,24 @@ class OrdreRepository extends ServiceEntityRepository
         parent::__construct($registry, Ordre::class);
     }
 
+       public function add(Ordre $entity, bool $flush = false): void
+    {
+        $this->getEntityManager()->persist($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    public function remove(Ordre $entity, bool $flush = false): void
+    {
+        $this->getEntityManager()->remove($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
     //    /**
     //     * @return Ordre[] Returns an array of Ordre objects
     //     */
