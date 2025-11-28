@@ -21,6 +21,7 @@ use App\Repository\CommuneRepository;
 use App\Repository\DistrictRepository;
 use App\Repository\GenreRepository;
 use App\Repository\LieuDiplomeRepository;
+use App\Repository\OrdreRepository;
 use App\Repository\OrganisationRepository;
 use App\Repository\PaysRepository;
 use App\Repository\ProfessionnelRepository;
@@ -1021,6 +1022,11 @@ class ApiProfessionnelController extends ApiInterface
 
                         new OA\Property(property: "appartenirOrganisation", type: "boolean"), // oui ou non
                         new OA\Property(property: "organisationNom", type: "string"),
+                        new OA\Property(property: "appartenirOrdre", type: "string"),
+                        new OA\Property(property: "ordre", type: "string"),
+                        new OA\Property(property: "numeroInscription", type: "string"),
+
+
                         /*  new OA\Property(property: "organisationNumero", type: "string"),
                         new OA\Property(property: "organisationAnnee", type: "string"), */
                         new OA\Property(property: "reference", type: "string"),
@@ -1062,7 +1068,8 @@ class ApiProfessionnelController extends ApiInterface
         StatusProRepository $statusProRepository,
         LieuDiplomeRepository $lieuDiplomeRepository,
         CodeGenerateurRepository $codeGenerateurRepository,
-        ProfessionRepository $professionRepository
+        ProfessionRepository $professionRepository,
+        OrdreRepository $ordreRepository
     ): Response {
 
 
@@ -1137,8 +1144,11 @@ class ApiProfessionnelController extends ApiInterface
                 $professionnel->setOrganisationNom($request->get('organisationNom'));
             }
             if ($request->get('appartenirOrdre') == "oui") {
-
-
+                
+                $ordre = $ordreRepository->find($request->get('ordre'));
+                if ($ordre) {
+                    $professionnel->setOrdre($ordre);
+                }
                 $professionnel->setNumeroInscription($request->get('numeroInscription'));
             }
 

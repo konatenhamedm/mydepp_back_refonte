@@ -201,6 +201,9 @@ class Professionnel extends Entite
     #[Group(["group_pro"])]
     private ?Profession $profession = null;
 
+    #[ORM\ManyToOne(inversedBy: 'professionnels')]
+    private ?Ordre $ordre = null;
+
   
 
     public function __construct()
@@ -725,6 +728,18 @@ class Professionnel extends Entite
     public function setProfession(?Profession $profession): static
     {
         $this->profession = $profession;
+
+        return $this;
+    }
+
+    public function getOrdre(): ?Ordre
+    {
+        return $this->ordre;
+    }
+
+    public function setOrdre(?Ordre $ordre): static
+    {
+        $this->ordre = $ordre;
 
         return $this;
     }
