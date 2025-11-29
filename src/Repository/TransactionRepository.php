@@ -133,12 +133,14 @@ class TransactionRepository extends ServiceEntityRepository
     {
         if ($type == 'admin') {
             $query = $this->createQueryBuilder('t')
+            ->innerJoin('t.user', 'u')
                 ->andWhere('t.user is not null')
                 ->andWhere('t.state = :state')
                 ->setParameter('state', 1)
                 ->orderBy('t.id', 'ASC');
         } else {
             $query = $this->createQueryBuilder('t')
+            ->innerJoin('t.user', 'u')
                 ->andWhere('t.user is not null')
                 ->andWhere('t.state = :state')
                 ->andWhere('t.typeUser = :type')
@@ -153,6 +155,7 @@ class TransactionRepository extends ServiceEntityRepository
     public function getAllTransactionByUser($user): array
     {
         return $this->createQueryBuilder('t')
+            ->innerJoin('t.user', 'u')
             ->andWhere('t.user = :user')
             ->andWhere('t.state = :state')
             ->setParameter('state', 1)
