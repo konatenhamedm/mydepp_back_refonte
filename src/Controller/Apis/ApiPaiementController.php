@@ -178,7 +178,7 @@ class ApiPaiementController extends ApiInterface
 
             $response = $this->responseData($formattedTransactions, 'group_user_trx', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
 
