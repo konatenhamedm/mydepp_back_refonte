@@ -323,6 +323,8 @@ class ApiProfessionnelController extends ApiInterface
                         'imputationData' => $personne->getImputation() ? [
                             'id' =>  $personne->getImputation()->getId(),
                             'username' =>  $personne->getImputation()->getUsername(),
+                            'nom'=> $personne->getImputation()->getPersonne()->getNom(),
+                            'prenoms'=> $personne->getImputation()->getPersonne()->getPrenoms(),
                             'email' =>  $personne->getImputation()->getEmail(),
                         ] : null,
                         'appartenirOrdre' => $personne->getAppartenirOrdre() ?? "",
@@ -394,7 +396,6 @@ class ApiProfessionnelController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'professionnel')]
-    // 
     public function index(ProfessionnelRepository $professionnelRepository, UserRepository $userRepository, ProfessionRepository $professionRepository): Response
     {
 
@@ -420,6 +421,8 @@ class ApiProfessionnelController extends ApiInterface
                         'imputationData' => $personne->getImputation() ? [
                             'id' =>  $personne->getImputation()->getId(),
                             'username' =>  $personne->getImputation()->getUsername(),
+                            'nom'=> $personne->getImputation()->getPersonne()->getNom(),
+                            'prenoms'=> $personne->getImputation()->getPersonne()->getPrenoms(),
                             'email' =>  $personne->getImputation()->getEmail(),
                         ] : null,
                         'appartenirOrdre' => $personne->getAppartenirOrdre() ?? "",
@@ -495,7 +498,6 @@ class ApiProfessionnelController extends ApiInterface
     )]
 
     #[OA\Tag(name: 'professionnel')]
-    // 
     public function indexEtat(ProfessionnelRepository $professionnelRepository, $status, UserRepository $userRepository, ProfessionRepository $professionRepository): Response
     {
         try {
@@ -524,6 +526,8 @@ class ApiProfessionnelController extends ApiInterface
                         'imputationData' => $personne->getImputation() ? [
                             'id' =>  $personne->getImputation()->getId(),
                             'username' =>  $personne->getImputation()->getUsername(),
+                            'nom'=> $personne->getImputation()->getPersonne()->getNom(),
+                            'prenoms'=> $personne->getImputation()->getPersonne()->getPrenoms(),
                             'email' =>  $personne->getImputation()->getEmail(),
                         ] : null,
                         'appartenirOrdre' => $personne->getAppartenirOrdre() ?? "",
