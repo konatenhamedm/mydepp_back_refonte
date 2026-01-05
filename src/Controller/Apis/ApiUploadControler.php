@@ -29,7 +29,7 @@ class ApiUploadControler extends ApiInterface
     private const ALLOWED_EXTENSIONS = ['xlsx', 'xls'];
     private const MAX_FILE_SIZE = 10485760; // 10MB
 
-    #[Route('/upload-excel/files/{professionSelected}', name: 'api_xlsx_ufr_examen', methods: ['POST'])]
+    #[Route('/upload-excel/files', name: 'api_xlsx_ufr_examen', methods: ['POST'])]
     public function uploadExamen(
         Request $request,
         ProfessionnelRepository $professionnelRepository,
