@@ -25,3 +25,11 @@
 /assets/vendor/
 ###< symfony/asset-mapper ###
 config/firebase_credentials.json
+
+
+vendor/
+.env.test.local
+.env.test
+/.env.test.php
+.env
+/.env.local
