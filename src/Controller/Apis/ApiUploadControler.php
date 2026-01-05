@@ -80,24 +80,19 @@ class ApiUploadControler extends ApiInterface
 
                 foreach ($sheetData as $index => $row) {
                     try {
-                        try {
-                            $dateAnniv = new \DateTime($row['E']);
-
-                        } catch (\Exception $e) {
+                        // Vérification des dates avec DateTime::createFromFormat
+                        $dateAnniv = \DateTime::createFromFormat('d/m/Y', $row['E']);
+                        if (!$dateAnniv || \DateTime::getLastErrors()['error_count'] > 0) {
                             $dateAnniv = new \DateTime("01-01-1970");
                         }
 
-                        try {
-                            $dateEnreg = new \DateTime($row['B']);
-
-                        } catch (\Exception $e) {
+                        $dateEnreg = \DateTime::createFromFormat('d/m/Y', $row['B']);
+                        if (!$dateEnreg || \DateTime::getLastErrors()['error_count'] > 0) {
                             $dateEnreg = new \DateTime("01-01-1970");
                         }
 
-                        try {
-                            $dateCommission = new \DateTime($row['J']);
-
-                        } catch (\Exception $e) {
+                        $dateCommission = \DateTime::createFromFormat('d/m/Y', $row['J']);
+                        if (!$dateCommission || \DateTime::getLastErrors()['error_count'] > 0) {
                             $dateCommission = new \DateTime("01-01-1970");
                         }
 
