@@ -3,6 +3,7 @@
 namespace App\Controller\Apis;
 
 use App\Controller\Apis\Config\ApiInterface;
+use App\Entity\Profession;
 use App\Entity\Professionnel;
 use App\Entity\User;
 use App\Repository\CiviliteRepository;
@@ -25,10 +26,10 @@ class ApiUploadControler extends ApiInterface
 
 
 
-   private const ALLOWED_EXTENSIONS = ['xlsx', 'xls'];
+    private const ALLOWED_EXTENSIONS = ['xlsx', 'xls'];
     private const MAX_FILE_SIZE = 10485760; // 10MB
 
-    #[Route('/upload-excel/ufr/examen', name: 'api_xlsx_ufr_examen', methods: ['POST'])]
+    #[Route('/upload-excel/files', name: 'api_xlsx_ufr_examen', methods: ['POST'])]
     public function uploadExamen(
         Request $request,
         ProfessionnelRepository $professionnelRepository,
@@ -38,14 +39,14 @@ class ApiUploadControler extends ApiInterface
         CiviliteRepository $civiliteRepository,
         ProfessionRepository $professionRepository
     ): JsonResponse {
-        
+
         try {
             // Validation du fichier
             $file = $request->files->get('path');
-            
-        
+
+
             // Upload du fichier
-            $fileFolder = $this->getParameter('kernel.project_dir') . '/public/uploads/';
+            $fileFolder = $this->getParameter('kernel.project_dir') . '/public/uploads/excel_files/';
             $filePathName = md5(uniqid()) . '_' . $file->getClientOriginalName();
 
             try {
@@ -60,8 +61,9 @@ class ApiUploadControler extends ApiInterface
             }
 
             // Traitement du fichier Excel
+
             $filePath = $fileFolder . $filePathName;
-            
+
             try {
                 $spreadsheet = IOFactory::load($filePath);
                 $sheet = $spreadsheet->getActiveSheet();
@@ -70,14 +72,16 @@ class ApiUploadControler extends ApiInterface
                 $sheet->removeRow(1, 3);
 
                 $sheetData = $sheet->toArray(null, true, true, true);
-                
-               /*  dd($sheetData); */
+
+                /*  dd($sheetData); */
                 $processedData = [];
                 $errors = [];
                 $successCount = 0;
 
                 foreach ($sheetData as $index => $row) {
                     try {
+                        
+                        // dump($row);
                         $rowData = [
                             'num' => $row['A'] ?? null,
                             'dateEnregistre' => $row['B'] ?? null,
@@ -90,25 +94,61 @@ class ApiUploadControler extends ApiInterface
                             'specialite' => $row['I'] ?? null,
                             'dateCommission' => $row['J'] ?? null,
                         ];
+                        //Je compte ajouter une ligne pour ajouter les professions au cas ou on voit pas l'id dans la bd ou une correspondance avec le mot donné, Je commence par verifier que le type du champ (un int ou un str), apres quoi si c'est un int on continue sinon on fait un enregistrement et on continue avec l'id generer
+                        if($rowData['specialite'] != null){
+                            if(!is_numeric($rowData['specialite'])){
+                                //On verifie si la profession existe deja
+                                $existingProfession = $professionRepository->findOneBy(['libelle' => $rowData['specialite']]);
+                                if(!$existingProfession){
+                                    $newProfession = new Profession();
+                                    $newProfession->setLibelle($rowData['specialite']);
+                                    $professionRepository->add($newProfession, true);
+                                    $rowData['specialite'] = $newProfession->getId();
+                                }else{
+                                    $rowData['specialite'] = $existingProfession->getId();
+                                }
+                            }
+                        }
 
-                    if($rowData['num'] != null && $rowData['dateEnregistre'] != null && $rowData['nom'] != null && $rowData['numId'] != null && $rowData['dateNaissance'] != null && $rowData['lieuNaissance'] != null && $rowData['sexe'] != null && $rowData['nationalite'] != null && $rowData['dateCommission'] != null){
-                        $personne = new Professionnel();
-                        $personne->setStatus("a_jour");
-                        $personne->setCivilite($civiliteRepository->findOneBy(['id' => $rowData['sexe']]));
-                        $personne->setNom($rowData['nom']);
-                        $personne->setPrenoms($rowData['nom']);
-                        $personne->setActived(true);
-                        $personne->setCode($rowData['numId']);
-                        $personne->setDateNaissance($rowData['dateNaissance']);
-                        $personne->setDateValidation(new \DateTime($rowData['dateCommission']));
-                        $personne->setNationate($nationaleRepository->findOneBy(['id' => $rowData['nationalite']]));
-                        $personne->setCreatedAtValue(new \DateTime($rowData['dateEnregistre']));
-                        $personne->setProfession($professionRepository->findOneBy(['id' =>  $rowData['specialite']]));
 
-                        $professionnelRepository->add($personne, true);
-                        $successCount++;
-                    }
-                      
+                        //Je verifie si le professionnel existe déjà pour eviter les doublons
+                        $rowData['numId'] != null ? $existingPerson = $professionnelRepository->findOneBy(['code' => $rowData['numId']]) : null;
+                        if ($existingPerson) {
+                            
+                            $errors[] = [
+                                'Numero' => $rowData['num'],
+                                'message' => 'Professionnel déjà existant'
+                            ];
+                        }else{
+                            if ($rowData['num'] != null && $rowData['dateEnregistre'] != null && $rowData['nom'] != null && $rowData['numId'] != null && $rowData['dateNaissance'] != null && $rowData['lieuNaissance'] != null && $rowData['sexe'] != null && $rowData['nationalite'] != null && $rowData['dateCommission'] != null) {
+                            $personne = new Professionnel();
+                            $personne->setStatus("a_jour");
+                            $personne->setCivilite($civiliteRepository->findOneBy(['id' => $rowData['sexe']]));
+                            $parts = explode(' ', $rowData['nom'], 2);
+                            $nom = $parts[0];
+                            $prenoms = isset($parts[1]) ? $parts[1] : '';
+                            $personne->setNom($nom);
+                            $personne->setPrenoms($prenoms);
+                            $personne->setActived(true);
+                            $personne->setCode($rowData['numId']);
+                            
+                            $personne->setDateNaissance(new \DateTime($rowData['dateNaissance']));
+                            $personne->setDateValidation(new \DateTime($rowData['dateCommission']));
+                            $personne->setNationate($nationaleRepository->findOneBy(['id' => $rowData['nationalite']]));
+                            $personne->setCreatedAtValue(new \DateTime($rowData['dateEnregistre']));
+                            $personne->setProfession($professionRepository->findOneBy(['id' =>  $rowData['specialite']]));
+                            // dd($personne);
+                            $professionnelRepository->add($personne, true);
+                            $successCount++;
+                        }else {
+                            $errors[] = [
+                                'ligne' => $index + 4,
+                                'message' => 'Données incomplètes'
+                            ];
+                        }
+                        }
+
+                        
                     } catch (\Exception $e) {
                         $errors[] = [
                             'message' => $e->getMessage()
@@ -132,7 +172,6 @@ class ApiUploadControler extends ApiInterface
                         'erreurs' => $errors
                     ]
                 ], Response::HTTP_OK);
-
             } catch (\Exception $e) {
                 // Suppression du fichier en cas d'erreur
                 if (file_exists($filePath)) {
@@ -146,7 +185,6 @@ class ApiUploadControler extends ApiInterface
                     'data' => null
                 ], Response::HTTP_INTERNAL_SERVER_ERROR);
             }
-
         } catch (\Exception $e) {
             return $this->json([
                 'statut' => 0,
@@ -156,7 +194,4 @@ class ApiUploadControler extends ApiInterface
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
-
-
 }

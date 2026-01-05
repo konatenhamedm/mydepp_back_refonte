@@ -60,13 +60,13 @@ class ApiProfessionnelController extends ApiInterface
 
 
 
-    #[Route('/check/code/existe/{code}/{nom}/{prenoms}', methods: ['GET'])]
+    #[Route('/check/code/existe/{code}', methods: ['GET'])]
     /**
      * Affiche un(e) specialite en offrant un identifiant.
      */
     #[OA\Response(
         response: 200,
-        description: 'Affiche etat paiement de la specialite',
+        description: 'Retourne si le code existe les informations du professionnel',
         content: new OA\JsonContent(
             type: 'array',
             items: new OA\Items(ref: new Model(type: User::class, groups: ['full']))
@@ -77,38 +77,43 @@ class ApiProfessionnelController extends ApiInterface
         in: 'query',
         schema: new OA\Schema(type: 'string')
     )]
-    #[OA\Parameter(
-        name: 'nom',
-        in: 'query',
-        schema: new OA\Schema(type: 'string')
-    )]
-    #[OA\Parameter(
-        name: 'prenoms',
-        in: 'query',
-        schema: new OA\Schema(type: 'string')
-    )]
+    // #[OA\Parameter(
+    //     name: 'nom',
+    //     in: 'query',
+    //     schema: new OA\Schema(type: 'string')
+    // )]
+    // #[OA\Parameter(
+    //     name: 'prenoms',
+    //     in: 'query',
+    //     schema: new OA\Schema(type: 'string')
+    // )]
     #[OA\Tag(name: 'specialite')]
-    public function codeExistes($code, $nom, $prenoms, ProfessionnelRepository $professionnelRepository)
+    public function codeExistes($code, ProfessionnelRepository $professionnelRepository, ProfessionRepository $professionRepository): Response
     {
         try {
 
             $pro = $professionnelRepository->findOneBy(['code' => $code]);
             if ($pro != null) {
-
-                $nomMatch = strtolower(trim($pro->getNom())) === strtolower(trim($nom));
-                $prenomsMatch = strtolower(trim($pro->getPrenoms())) === strtolower(trim($prenoms));
-
-                if ($nomMatch && $prenomsMatch) {
-                    $response = $this->response([
-                        'statut' => true,
-                        'id' => $pro->getId()
-                    ]);
-                } else {
-                    $response = $this->response([
-                        'statut' => false,
-                        'id' => null
-                    ]);
-                }
+                
+                // $nomMatch = strtolower(trim($pro->getNom())) === strtolower(trim($nom));
+                // $prenomsMatch = strtolower(trim($pro->getPrenoms())) === strtolower(trim($prenoms));
+                // dd($pro);
+                // if ($nomMatch && $prenomsMatch) {
+                $response = $this->response([
+                    'statut' => true,
+                    'id' => $pro->getId(),
+                    'nom' => $pro->getNom(),
+                    'prenoms' => $pro->getPrenoms(),
+                    'email' => $pro->getEmail(),
+                    // 'nationalite' => $pro->getNationate(),
+                    'profession' => $pro->getProfession()->getLibelle(),
+                ]);
+                // } else {
+                //     $response = $this->response([
+                //         'statut' => false,
+                //         'id' => null
+                //     ]);
+                // }
             } else {
 
                 $response = $this->response([
@@ -124,7 +129,7 @@ class ApiProfessionnelController extends ApiInterface
 
         return $response;
     }
-    
+
 
     #[Route('/update/imputation/{id}', methods: ['PUT', 'POST'])]
     #[OA\Post(
@@ -323,8 +328,8 @@ class ApiProfessionnelController extends ApiInterface
                         'imputationData' => $personne->getImputation() ? [
                             'id' =>  $personne->getImputation()->getId(),
                             'username' =>  $personne->getImputation()->getUsername(),
-                            'nom'=> $personne->getImputation()->getPersonne()->getNom(),
-                            'prenoms'=> $personne->getImputation()->getPersonne()->getPrenoms(),
+                            'nom' => $personne->getImputation()->getPersonne()->getNom(),
+                            'prenoms' => $personne->getImputation()->getPersonne()->getPrenoms(),
                             'email' =>  $personne->getImputation()->getEmail(),
                         ] : null,
                         'appartenirOrdre' => $personne->getAppartenirOrdre() ?? "",
@@ -421,8 +426,8 @@ class ApiProfessionnelController extends ApiInterface
                         'imputationData' => $personne->getImputation() ? [
                             'id' =>  $personne->getImputation()->getId(),
                             'username' =>  $personne->getImputation()->getUsername(),
-                            'nom'=> $personne->getImputation()->getPersonne()->getNom(),
-                            'prenoms'=> $personne->getImputation()->getPersonne()->getPrenoms(),
+                            'nom' => $personne->getImputation()->getPersonne()->getNom(),
+                            'prenoms' => $personne->getImputation()->getPersonne()->getPrenoms(),
                             'email' =>  $personne->getImputation()->getEmail(),
                         ] : null,
                         'appartenirOrdre' => $personne->getAppartenirOrdre() ?? "",
@@ -526,8 +531,8 @@ class ApiProfessionnelController extends ApiInterface
                         'imputationData' => $personne->getImputation() ? [
                             'id' =>  $personne->getImputation()->getId(),
                             'username' =>  $personne->getImputation()->getUsername(),
-                            'nom'=> $personne->getImputation()->getPersonne()->getNom(),
-                            'prenoms'=> $personne->getImputation()->getPersonne()->getPrenoms(),
+                            'nom' => $personne->getImputation()->getPersonne()->getNom(),
+                            'prenoms' => $personne->getImputation()->getPersonne()->getPrenoms(),
                             'email' =>  $personne->getImputation()->getEmail(),
                         ] : null,
                         'appartenirOrdre' => $personne->getAppartenirOrdre() ?? "",
@@ -1152,7 +1157,7 @@ class ApiProfessionnelController extends ApiInterface
                 $professionnel->setOrganisationNom($request->get('organisationNom'));
             }
             if ($request->get('appartenirOrdre') == "oui") {
-                
+
                 $ordre = $ordreRepository->find($request->get('ordre'));
                 if ($ordre) {
                     $professionnel->setOrdre($ordre);
@@ -1524,7 +1529,7 @@ Situation professionnelle * */
                 }
 
                 if ($request->get('appartenirOrdre') == "oui") {
-                    
+
                     $ordreId = $request->get('ordre');
                     if ($ordreId) {
                         $ordre = $ordreRepository->find($ordreId);
@@ -1534,7 +1539,7 @@ Situation professionnelle * */
                     }
                     $professionnel->setNumeroInscription($request->get('numeroInscription'));
                 } else {
-                  
+
                     $professionnel->setOrdre(null);
                     $professionnel->setNumeroInscription("");
                 }
