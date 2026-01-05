@@ -38,7 +38,6 @@ class ApiUploadControler extends ApiInterface
         PaysRepository $nationaleRepository,
         CiviliteRepository $civiliteRepository,
         ProfessionRepository $professionRepository,
-        $professionSelected
     ): JsonResponse {
 
         try {
