@@ -152,11 +152,11 @@ class ApiUploadControler extends ApiInterface
                                 $personne->setActived(true);
                                 $personne->setCode($rowData['numId']);
                                 
-                                $personne->setDateNaissance(new \DateTime(strval($rowData['dateNaissance'])));
+                                $personne->setDateNaissance($rowData['dateNaissance']);
 
-                                $personne->setDateValidation(new \DateTime(strval($rowData['dateCommission'])));
+                                $personne->setDateValidation($rowData['dateCommission']);
 
-                                $personne->setCreatedAtValue(new \DateTime(strval($rowData['dateEnregistre'])));
+                                $personne->setCreatedAtValue($rowData['dateEnregistre']);
 
                                 $personne->setNationate($nationaleRepository->findOneBy(['id' => $rowData['nationalite']]));
                                 $personne->setProfession($professionRepository->findOneBy(['id' =>  $rowData['specialite']]));
