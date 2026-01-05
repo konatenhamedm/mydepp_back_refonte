@@ -29,7 +29,7 @@ class ApiUploadControler extends ApiInterface
     private const ALLOWED_EXTENSIONS = ['xlsx', 'xls'];
     private const MAX_FILE_SIZE = 10485760; // 10MB
 
-    #[Route('/upload-excel/files', name: 'api_xlsx_ufr_examen', methods: ['POST'])]
+    #[Route('/upload-excel/files/{professionSelected}', name: 'api_xlsx_ufr_examen', methods: ['POST'])]
     public function uploadExamen(
         Request $request,
         ProfessionnelRepository $professionnelRepository,
@@ -37,14 +37,15 @@ class ApiUploadControler extends ApiInterface
         GenreRepository $genreRepository,
         PaysRepository $nationaleRepository,
         CiviliteRepository $civiliteRepository,
-        ProfessionRepository $professionRepository
+        ProfessionRepository $professionRepository,
+        $professionSelected
     ): JsonResponse {
 
         try {
             // Validation du fichier
             $file = $request->files->get('path');
-
-
+            $professionSelected = $request->request->get('professionSelected');
+            (dump($professionSelected));
             // Upload du fichier
             $fileFolder = $this->getParameter('kernel.project_dir') . '/public/uploads/excel_files/';
             $filePathName = md5(uniqid()) . '_' . $file->getClientOriginalName();
@@ -111,7 +112,7 @@ class ApiUploadControler extends ApiInterface
                             'lieuNaissance' => $row['F'] ?? null,
                             'sexe' => $row['G'] ?? null,
                             'nationalite' => $row['H'] ?? null,
-                            'specialite' => $row['I'] ?? null,
+                            'specialite' => $professionSelected ?? $row['I'] ?? null,
                             'dateCommission' => $dateCommission,
                         ];
                         //Je compte ajouter une ligne pour ajouter les professions au cas ou on voit pas l'id dans la bd ou une correspondance avec le mot donné, Je commence par verifier que le type du champ (un int ou un str), apres quoi si c'est un int on continue sinon on fait un enregistrement et on continue avec l'id generer
