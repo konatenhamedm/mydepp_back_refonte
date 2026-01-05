@@ -33,3 +33,5 @@ vendor/
 /.env.test.php
 .env
 /.env.local
+/.env
+.env/
