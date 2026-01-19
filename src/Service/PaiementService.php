@@ -227,7 +227,7 @@ class PaiementService
 
             if ($expiration < $now) {
                 // L'ancien est expiré
-                $dateRenouvellement = $now;
+                $dateRenouvellement = $now->add(new \DateInterval('P1Y'));
             } else {
                 // Encore actif, on prolonge à partir de la date d’expiration actuelle
                 $dateRenouvellement = $expiration;
@@ -243,7 +243,13 @@ class PaiementService
 
             $professionnel->setStatus("a_jour");
             $professionnel->setDateValidation($dateRenouvellement);
-            $professionnel->add($professionnel, true);
+            // $professionnel->add($professionnel,true );
+            $this->em->persist($professionnel);
+            $this->em->flush();
+            $response = [
+                'message' => 'Succès',
+                'code' => 200
+            ];
         } else {
             $response = [
                 'message' => 'Echec',
@@ -358,7 +364,7 @@ class PaiementService
             "quantite" => 1,
             "montant" => $montant,
             "lib_order" => "PAIEMENT ONMCI",
-            "Url_Retour" => "https://mydepp-front.pages.dev/site/dashboard_etablissement",
+            "Url_Retour" => "https://mydepp-front.pages.dev/dashboard_etablissement",
             "Url_Callback" => "https://backend.leadagro.net/api/paiement/info-paiement-oep"
         ];
 
@@ -418,7 +424,7 @@ class PaiementService
             "quantite" => 1,
             "montant" => $montant,
             "lib_order" => "PAIEMENT ONMCI",
-            "Url_Retour" => "https://mydepp-front.pages.dev/site/dashboard",
+            "Url_Retour" => "https://mydepp-front.pages.dev/dashboard",
             "Url_Callback" => "https://backend.leadagro.net/api/paiement/info-paiement-renouvellement"
         ];
 

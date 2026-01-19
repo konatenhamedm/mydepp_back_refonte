@@ -239,7 +239,7 @@ class ApiPaiementController extends ApiInterface
 
                     // Déterminer la date d'expiration
                     if ($user->getPersonne()->getDateValidation() !== null) {
-                        $expiration = (clone $user->getPersonne()->getDateValidation())->modify('+1 year');
+                        $expiration = (clone $user->getPersonne()->getDateValidation());
                     } else {
                         $expiration = (clone $dernierAbonnement->getCreatedAt())->modify('+1 year');
                     }

@@ -90,6 +90,19 @@ class AuthController extends ApiInterface
         $expire = true;
         $finRenouvelement = "";
 
+
+        $avatar = null;
+        if ($user->getTypeUser() === "PROFESSIONNEL") {
+            if ($user->getAvatar()) {
+                $avatar = $user->getAvatar()->getPath() . '/' . $user->getAvatar()->getAlt();
+            } elseif ($user->getPersonne() && $user->getPersonne()->getPhoto()) {
+                $avatar = $user->getPersonne()->getPhoto()->getPath() . '/' . $user->getPersonne()->getPhoto()->getAlt();
+            } else {
+                $avatar = "";
+            }
+        }
+        
+        
         return $this->responseData([
             'token' => $token,
             'data' => [
@@ -98,10 +111,7 @@ class AuthController extends ApiInterface
                 "expire" => $user->getPersonne()->getStatus() == "renouvellement" ? true : false,
                 "finRenouvellement" => $finRenouvelement,
                 'username' => $user->getTypeUser() == "ADMINISTRATEUR" ? $user->getUsername() : $user->getUserIdentifier(),
-                'avatar' => ($user->getTypeUser() == "PROFESSIONNEL") ? ($user->getAvatar()
-                    ? $user->getAvatar()->getPath() . '/' . $user->getAvatar()->getAlt()
-                    : $user->getPersonne()->getPhoto()->getPath() . '/' . $user->getPersonne()->getPhoto()->getAlt()
-                ) : null,
+                'avatar' => $avatar,
                 'status' =>  $user->getPersonne()->getStatus(),
                 'nom' => $user->getTypeUser() === "PROFESSIONNEL"
                     ? $user->getPersonne()->getNom() . " " . $user->getPersonne()->getPrenoms()
