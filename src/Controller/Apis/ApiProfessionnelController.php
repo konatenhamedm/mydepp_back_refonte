@@ -100,13 +100,14 @@ class ApiProfessionnelController extends ApiInterface
                 // dd($pro);
                 // if ($nomMatch && $prenomsMatch) {
                 $response = $this->response([
-                    'statut' => true,
+                     'statut' => true,
                     'id' => $pro->getId(),
                     'nom' => $pro->getNom(),
                     'prenoms' => $pro->getPrenoms(),
-                    'email' => $pro->getEmail(),
-                    // 'nationalite' => $pro->getNationate(),
+                    'nationalite' => $pro->getNationate()->getId(),
                     'profession' => $pro->getProfession()->getLibelle(),
+                    'sexe' => $pro->getCivilite()->getId(),
+                    'DateNaissance' => $pro->getDateNaissance() ? $pro->getDateNaissance()->format('d/m/Y') : null,
                 ]);
                 // } else {
                 //     $response = $this->response([
@@ -1475,7 +1476,7 @@ Situation professionnelle * */
                 $uploadedCv = $request->files->get('cv');
 
 
-                /*  if ($uploadedPhoto) {
+                  if ($uploadedPhoto) {
                     $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedPhoto, self::UPLOAD_PATH);
                     if ($fichier) {
                         $professionnel->setPhoto($fichier);
@@ -1510,7 +1511,7 @@ Situation professionnelle * */
                     if ($fichier) {
                         $professionnel->setCv($fichier);
                     }
-                } */
+                } 
                 if ($request->get('appartenirOrganisation') != null) {
 
                     $professionnel->setAppartenirOrganisation($request->get('appartenirOrganisation'));
@@ -1649,8 +1650,10 @@ Situation professionnelle * */
 
             $professionnel->setStatus("accepte");
 
-            $professionnelRepository->add($professionnel, true);
-
+            // $professionnelRepository->add($professionnel, true);
+            $this->em->persist($professionnel);
+            $this->em->flush();
+            
             $this->setMessage("Operation effectuées avec success");
             $response = $this->responseData([
                 'id' => $professionnel->getId(),
