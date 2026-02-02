@@ -297,7 +297,7 @@ class PaiementService
                 "quantite" => 1,
                 "montant" => $montant,
                 "lib_order" => "PAIEMENT ONMCI",
-                "Url_Retour" => "https://mydepp-front.pages.dev/inscription/" . $request->get('type'),
+                "Url_Retour" => "https://mydepps.net/inscription" . $request->get('type'),
                 "Url_Callback" => "https://backend.leadagro.net/api/paiement/info-paiement"
             ];
         } else {
@@ -311,7 +311,7 @@ class PaiementService
                 "quantite" => 1,
                 "montant" => $montant,
                 "lib_order" => "PAIEMENT ONMCI",
-                "Url_Retour" => "https://mydepp-front.pages.dev/inscription/" . $request->get('type'),
+                "Url_Retour" => "https://mydepps.net/inscription" . $request->get('type'),
                 "Url_Callback" => "https://backend.leadagro.net/api/paiement/info-paiement"
             ];
         }
@@ -369,7 +369,7 @@ class PaiementService
             "quantite" => 1,
             "montant" => $montant,
             "lib_order" => "PAIEMENT ONMCI",
-            "Url_Retour" => "https://mydepp-front.pages.dev/dashboard_etablissement",
+            "Url_Retour" => "https://mydepps.net/dashboard_etablissement",
             "Url_Callback" => "https://backend.leadagro.net/api/paiement/info-paiement-oep"
         ];
 
@@ -434,8 +434,7 @@ class PaiementService
             "quantite" => 1,
             "montant" => $montant * $yearDue,
             "lib_order" => "PAIEMENT ONMCI",
-            "Url_Retour" => "https://www.google.com",
-            // "Url_Callback" => "https://webhook.site/2c3ce713-73ba-47dc-acf7-b294baa357d6"
+            "Url_Retour" => "https://mydepps.net/dashboard",
             "Url_Callback" => "https://backend.leadagro.net/api/paiement/info-paiement-renouvellement"
         ];
 

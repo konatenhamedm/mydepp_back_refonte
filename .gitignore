@@ -36,3 +36,5 @@ vendor/
 .env.local
 /.env
 .env/
+vendor/
+vendor/*
