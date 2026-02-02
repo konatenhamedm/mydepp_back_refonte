@@ -208,29 +208,33 @@ class PaiementService
 
         $data = json_decode($request->getContent(), true);
         $transaction = $this->transactionRepository->findOneBy(['reference' => $data['codePaiement']]);
-
+    // dd($transaction);
         $professionnel = $this->userRepository->find($transaction->getUser())->getPersonne();
-
+// dd($professionnel);
         $transaction->setReferenceChannel($data['referencePaiement']);
 
         $dernierAbonnement = $this->transactionRepository->findOneBy(
             ['user' => $transaction->getUser(), 'state' => 1],
             ['createdAt' => 'DESC']
         );
+        // dd($dernierAbonnement);
 
         $now = new \DateTime();
+        // dd($now);
         if (!$dernierAbonnement) {
             // Aucun abonnement encore
             $dateRenouvellement = $now;
         } else {
             $expiration = (clone $dernierAbonnement->getCreatedAt())->modify('+1 year');
-
+    
             if ($expiration < $now) {
                 // L'ancien est expiré
                 $dateRenouvellement = $now->add(new \DateInterval('P1Y'));
+          
             } else {
                 // Encore actif, on prolonge à partir de la date d’expiration actuelle
                 $dateRenouvellement = $expiration;
+                
             }
         }
 
@@ -251,6 +255,7 @@ class PaiementService
                 'code' => 200
             ];
         } else {
+            
             $response = [
                 'message' => 'Echec',
                 'code' => 400
@@ -292,7 +297,7 @@ class PaiementService
                 "quantite" => 1,
                 "montant" => $montant,
                 "lib_order" => "PAIEMENT ONMCI",
-                "Url_Retour" => "https://mydepp-front.pages.dev/inscription/" . $request->get('type'),
+                "Url_Retour" => "https://mydepps.net/inscription" . $request->get('type'),
                 "Url_Callback" => "https://backend.leadagro.net/api/paiement/info-paiement"
             ];
         } else {
@@ -306,7 +311,7 @@ class PaiementService
                 "quantite" => 1,
                 "montant" => $montant,
                 "lib_order" => "PAIEMENT ONMCI",
-                "Url_Retour" => "https://mydepp-front.pages.dev/inscription/" . $request->get('type'),
+                "Url_Retour" => "https://mydepps.net/inscription" . $request->get('type'),
                 "Url_Callback" => "https://backend.leadagro.net/api/paiement/info-paiement"
             ];
         }
@@ -364,7 +369,7 @@ class PaiementService
             "quantite" => 1,
             "montant" => $montant,
             "lib_order" => "PAIEMENT ONMCI",
-            "Url_Retour" => "https://mydepp-front.pages.dev/dashboard_etablissement",
+            "Url_Retour" => "https://mydepps.net/dashboard_etablissement",
             "Url_Callback" => "https://backend.leadagro.net/api/paiement/info-paiement-oep"
         ];
 
@@ -398,12 +403,17 @@ class PaiementService
         $user = $this->em->getRepository(User::class)->find($data['user']);
 
        // $montant = $this->professionRepository->findOneByCode($user->getPersonne()->getProfession())->getMontantRenouvellement();
+    //    dd($user->getPersonne()->getProfession());
         $montant = $user->getPersonne()->getProfession()->getMontantRenouvellement();
+        $expiration = (clone $user->getPersonne()->getDateValidation());
+        $today = new \DateTime();
+        $yearDue = $today->diff($expiration)->y ;
+        // dd($yearDue);
 
         $transaction = new Transaction();
         $transaction->setChannel("");
         $transaction->setReference($this->genererNumero());
-        $transaction->setMontant($montant);
+        $transaction->setMontant($montant * $yearDue);
         $transaction->setReferenceChannel("");
         $transaction->setType("RENOUVELLEMENT");
         $transaction->setTypeUser($data['type']);
@@ -422,9 +432,9 @@ class PaiementService
             "email" => $data['email'],
             "libelle_article" => "RENOUVELLEMENT D'ADHESION",
             "quantite" => 1,
-            "montant" => $montant,
+            "montant" => $montant * $yearDue,
             "lib_order" => "PAIEMENT ONMCI",
-            "Url_Retour" => "https://mydepp-front.pages.dev/dashboard",
+            "Url_Retour" => "https://mydepps.net/dashboard",
             "Url_Callback" => "https://backend.leadagro.net/api/paiement/info-paiement-renouvellement"
         ];
 

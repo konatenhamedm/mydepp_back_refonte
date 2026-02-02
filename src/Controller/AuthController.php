@@ -101,8 +101,7 @@ class AuthController extends ApiInterface
                 $avatar = "";
             }
         }
-        
-        
+
         return $this->responseData([
             'token' => $token,
             'data' => [

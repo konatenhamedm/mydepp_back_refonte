@@ -91,7 +91,6 @@ class ApiProfessionnelController extends ApiInterface
     public function codeExistes($code, ProfessionnelRepository $professionnelRepository, ProfessionRepository $professionRepository): Response
     {
         try {
-
             $pro = $professionnelRepository->findOneBy(['code' => $code]);
             if ($pro != null) {
                 
@@ -162,7 +161,7 @@ class ApiProfessionnelController extends ApiInterface
                 $professionnel->setImputation($userRepository->find($data->imputation));
 
                 $professionnel->setUpdatedBy($this->getUser());
-                $professionnel->setUpdatedAt(new \DateTime());
+                $professionnel->setUpdatedAt(new \DateTime('now'));
                 $errorResponse = $this->errorResponse($professionnel);
 
                 if ($errorResponse !== null) {
@@ -742,8 +741,8 @@ class ApiProfessionnelController extends ApiInterface
             $validationWorkflow->setEtape($dto->status);
             $validationWorkflow->setRaison($dto->raison);
             $validationWorkflow->setPersonne($professionnel);
-            $validationWorkflow->setCreatedAtValue(new DateTime());
-            $validationWorkflow->setUpdatedAt(new DateTime());
+            $validationWorkflow->setCreatedAtValue(new DateTime('now'));
+            $validationWorkflow->setUpdatedAt(new DateTime('now'));
             $validationWorkflow->setCreatedBy($user);
             $validationWorkflow->setUpdatedBy($user);
 
