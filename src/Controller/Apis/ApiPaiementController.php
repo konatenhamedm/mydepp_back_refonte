@@ -217,6 +217,7 @@ class ApiPaiementController extends ApiInterface
         try {
             $expire = false;
             $etatPro = false;
+            $yearDue = 0;
             $finRenouvelement = "";
             $user = $userRepository->find($userId);
             $dernierAbonnement = $transactionRepository->findOneBy(
@@ -239,9 +240,11 @@ class ApiPaiementController extends ApiInterface
 
                     // Déterminer la date d'expiration
                     if ($user->getPersonne()->getDateValidation() !== null) {
-                        $expiration = (clone $user->getPersonne()->getDateValidation())->modify('+1 year');
+                        // $expiration = (clone $user->getPersonne()->getDateValidation())->modify('+1 year');
+                        $expiration = (clone $user->getPersonne()->getDateValidation());
                     } else {
-                        $expiration = (clone $dernierAbonnement->getCreatedAt())->modify('+1 year');
+                        // $expiration = (clone $dernierAbonnement->getCreatedAt())->modify('+1 year');
+                        $expiration = (clone $dernierAbonnement->getCreatedAt());
                     }
 
                     // Vérifier l'expiration
@@ -250,6 +253,8 @@ class ApiPaiementController extends ApiInterface
                     // Calculer les jours restants (0 si déjà expiré)
                     if ($expire) {
                         $joursRestants = 0;
+                        $yearDue = $today->diff($expiration)->y;
+                        // dd($yearDue);
                     } else {
                         $joursRestants = $today->diff($expiration)->days;
                     }
@@ -278,7 +283,7 @@ class ApiPaiementController extends ApiInterface
             $transactions = [
                 'expire' => $expire,
                 'etatPro' => $etatPro,
-                'montant' => $user->getTypeUser() == "PROFESSIONNEL" ? $user->getPersonne()->getProfession()->getMontantNouvelleDemande() : "",
+                'montant' => $user->getTypeUser() == "PROFESSIONNEL" ? $user->getPersonne()->getProfession()->getMontantNouvelleDemande()* $yearDue : "",
                 'date_expiration' => $expiration->format('Y-m-d'),
                 'jours_restants' => $joursRestants,
             ];

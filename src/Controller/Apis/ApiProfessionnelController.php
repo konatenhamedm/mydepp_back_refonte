@@ -91,7 +91,6 @@ class ApiProfessionnelController extends ApiInterface
     public function codeExistes($code, ProfessionnelRepository $professionnelRepository, ProfessionRepository $professionRepository): Response
     {
         try {
-
             $pro = $professionnelRepository->findOneBy(['code' => $code]);
             if ($pro != null) {
                 
@@ -104,9 +103,10 @@ class ApiProfessionnelController extends ApiInterface
                     'id' => $pro->getId(),
                     'nom' => $pro->getNom(),
                     'prenoms' => $pro->getPrenoms(),
-                    'email' => $pro->getEmail(),
-                    // 'nationalite' => $pro->getNationate(),
+                    'nationalite' => $pro->getNationate()->getLibelle(),
                     'profession' => $pro->getProfession()->getLibelle(),
+                    'sexe' => $pro->getCivilite()->getLibelle(),
+                    'DateNaissance' => $pro->getDateNaissance() ? $pro->getDateNaissance()->format('d/m/Y') : null,
                 ]);
                 // } else {
                 //     $response = $this->response([
@@ -161,7 +161,7 @@ class ApiProfessionnelController extends ApiInterface
                 $professionnel->setImputation($userRepository->find($data->imputation));
 
                 $professionnel->setUpdatedBy($this->getUser());
-                $professionnel->setUpdatedAt(new \DateTime());
+                $professionnel->setUpdatedAt(new \DateTime('now'));
                 $errorResponse = $this->errorResponse($professionnel);
 
                 if ($errorResponse !== null) {
@@ -741,8 +741,8 @@ class ApiProfessionnelController extends ApiInterface
             $validationWorkflow->setEtape($dto->status);
             $validationWorkflow->setRaison($dto->raison);
             $validationWorkflow->setPersonne($professionnel);
-            $validationWorkflow->setCreatedAtValue(new DateTime());
-            $validationWorkflow->setUpdatedAt(new DateTime());
+            $validationWorkflow->setCreatedAtValue(new DateTime('now'));
+            $validationWorkflow->setUpdatedAt(new DateTime('now'));
             $validationWorkflow->setCreatedBy($user);
             $validationWorkflow->setUpdatedBy($user);
 
@@ -1649,8 +1649,10 @@ Situation professionnelle * */
 
             $professionnel->setStatus("accepte");
 
-            $professionnelRepository->add($professionnel, true);
-
+            // $professionnelRepository->add($professionnel, true);
+            $this->em->persist($professionnel);
+            $this->em->flush();
+            // dd($this->em->getEventManager());
             $this->setMessage("Operation effectuées avec success");
             $response = $this->responseData([
                 'id' => $professionnel->getId(),

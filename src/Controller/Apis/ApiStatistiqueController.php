@@ -61,7 +61,7 @@ class ApiStatistiqueController extends ApiInterface
                     "renouvellement" => count($professionnelRepository->findBy(['status' => 'renouvellement']))
                 ],
                 "etablissement" => [
-                    "total"=>count($etablissementRepository->findAll()),
+                    "total" => count($etablissementRepository->findAll()),
                     "acp_attente_dossier_depot_service_courrier" => count($etablissementRepository->findBy(['status' => 'acp_attente_dossier_depot_service_courrier'])),
                     "acp_dossier_attente_validation_directrice" => count($etablissementRepository->findBy(['status' => 'acp_dossier_attente_validation_directrice'])),
                     "acp_dossier_valide_directrice" => count($etablissementRepository->findBy(['status' => 'acp_dossier_valide_directrice'])),
@@ -175,7 +175,13 @@ class ApiStatistiqueController extends ApiInterface
                 ];
             } elseif ($type == "COMPTABLE") {
 
-                //dd($transactionRepository->montantTotal());
+                $allTransactions = $transactionRepository->getHistorique();
+
+                // dd($allTransactions);
+
+                ///recupere les transactions ou le champ data n'est pas null
+                $dataValide = array_filter($allTransactions, fn ($transaction) => $transaction);
+                dd($dataValide);
                 $tab = [
                     'montantTotal' => $transactionRepository->montantTotal(),
                     'nombreSuccess' => count($transactionRepository->findBy(['state' => 1])),
