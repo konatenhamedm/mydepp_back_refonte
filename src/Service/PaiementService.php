@@ -223,7 +223,7 @@ class PaiementService
         // dd($now);
         if (!$dernierAbonnement) {
             // Aucun abonnement encore
-            $dateRenouvellement = $now;
+            $dateRenouvellement = $now->add(new \DateInterval('P1Y'));
         } else {
             $expiration = (clone $dernierAbonnement->getCreatedAt())->modify('+1 year');
     
