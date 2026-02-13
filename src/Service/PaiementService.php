@@ -233,7 +233,7 @@ class PaiementService
           
             } else {
                 // Encore actif, on prolonge à partir de la date d’expiration actuelle
-                $dateRenouvellement = $expiration;
+                $dateRenouvellement = $expiration->add(new \DateInterval('P1Y'));
                 
             }
         }
