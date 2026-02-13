@@ -407,7 +407,8 @@ class PaiementService
         $montant = $user->getPersonne()->getProfession()->getMontantRenouvellement();
         $expiration = (clone $user->getPersonne()->getDateValidation());
         $today = new \DateTime();
-        $yearDue = $today->diff($expiration)->y ;
+        // $yearDue = $today->diff($expiration)->y ;
+        $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
         // dd($yearDue);
 
         $transaction = new Transaction();
