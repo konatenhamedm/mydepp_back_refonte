@@ -12,7 +12,10 @@ use OpenApi\Analysers\DocBlockAnnotationFactory;
 use OpenApi\Analysers\ReflectionAnalyser;
 use OpenApi\Annotations as OA;
 use OpenApi\Loggers\DefaultLogger;
+use OpenApi\Type\LegacyTypeResolver;
+use OpenApi\Type\TypeInfoTypeResolver;
 use Psr\Log\LoggerInterface;
+use Radebatz\TypeInfoExtras\TypeResolver\StringTypeResolver;
 
 /**
  * OpenApi spec generator.
@@ -34,6 +37,7 @@ class Generator
 
     /** @var array<string,string> */
     public const DEFAULT_ALIASES = ['oa' => 'OpenApi\\Annotations'];
+
     /** @var array<string> */
     public const DEFAULT_NAMESPACES = ['OpenApi\\Annotations\\'];
 
@@ -49,6 +53,8 @@ class Generator
     protected array $config = [];
 
     protected ?Pipeline $processorPipeline = null;
+
+    protected ?TypeResolverInterface $typeResolver = null;
 
     protected ?LoggerInterface $logger = null;
 
@@ -70,9 +76,15 @@ class Generator
         $this->setNamespaces(self::DEFAULT_NAMESPACES);
     }
 
-    public static function isDefault($value): bool
+    public static function isDefault(...$value): bool
     {
-        return $value === Generator::UNDEFINED;
+        foreach ($value as $v) {
+            if ($v !== Generator::UNDEFINED) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -226,8 +238,10 @@ class Generator
                 new Processors\BuildPaths(),
                 new Processors\AugmentParameters(),
                 new Processors\AugmentRefs(),
+                new Processors\AugmentItems(),
                 new Processors\MergeJsonContent(),
                 new Processors\MergeXmlContent(),
+                new Processors\AugmentMediaType(),
                 new Processors\OperationId(),
                 new Processors\CleanUnmerged(),
                 new Processors\PathFilter(),
@@ -296,9 +310,27 @@ class Generator
         return $this->withProcessorPipeline($with);
     }
 
+    public function setTypeResolver(?TypeResolverInterface $typeResolver): Generator
+    {
+        $this->typeResolver = $typeResolver;
+
+        return $this;
+    }
+
+    public function getTypeResolver(): TypeResolverInterface
+    {
+        $this->typeResolver ??= class_exists(StringTypeResolver::class)
+                    ? new TypeInfoTypeResolver()
+                    : new LegacyTypeResolver();
+
+        return $this->typeResolver;
+    }
+
     public function getLogger(): ?LoggerInterface
     {
-        return $this->logger ?: new DefaultLogger();
+        $this->logger ??= new DefaultLogger();
+
+        return $this->logger;
     }
 
     public function getVersion(): ?string

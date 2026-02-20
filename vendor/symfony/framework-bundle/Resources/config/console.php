@@ -201,7 +201,7 @@ return static function (ContainerConfigurator $container) {
                 service('messenger.routable_message_bus'),
                 service('event_dispatcher'),
                 service('logger')->nullOnInvalid(),
-                service('messenger.transport.native_php_serializer')->nullOnInvalid(),
+                service('.messenger.transport.native_php_serializer')->nullOnInvalid(),
                 null,
             ])
             ->tag('console.command')
@@ -211,7 +211,7 @@ return static function (ContainerConfigurator $container) {
             ->args([
                 abstract_arg('Default failure receiver name'),
                 abstract_arg('Receivers'),
-                service('messenger.transport.native_php_serializer')->nullOnInvalid(),
+                service('.messenger.transport.native_php_serializer')->nullOnInvalid(),
             ])
             ->tag('console.command')
 
@@ -219,7 +219,7 @@ return static function (ContainerConfigurator $container) {
             ->args([
                 abstract_arg('Default failure receiver name'),
                 abstract_arg('Receivers'),
-                service('messenger.transport.native_php_serializer')->nullOnInvalid(),
+                service('.messenger.transport.native_php_serializer')->nullOnInvalid(),
             ])
             ->tag('console.command')
 
@@ -407,6 +407,6 @@ return static function (ContainerConfigurator $container) {
             ->args([
                 service('console.messenger.application'),
             ])
-            ->tag('messenger.message_handler')
+            ->tag('messenger.message_handler', ['sign' => true])
     ;
 };

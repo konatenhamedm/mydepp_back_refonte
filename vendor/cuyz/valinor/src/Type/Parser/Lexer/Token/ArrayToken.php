@@ -13,7 +13,6 @@ use CuyZ\Valinor\Type\Parser\Exception\Iterable\ShapedArrayClosingBracketMissing
 use CuyZ\Valinor\Type\Parser\Exception\Iterable\ShapedArrayColonTokenMissing;
 use CuyZ\Valinor\Type\Parser\Exception\Iterable\ShapedArrayCommaMissing;
 use CuyZ\Valinor\Type\Parser\Exception\Iterable\ShapedArrayElementTypeMissing;
-use CuyZ\Valinor\Type\Parser\Exception\Iterable\ShapedArrayEmptyElements;
 use CuyZ\Valinor\Type\Parser\Exception\Iterable\ShapedArrayUnexpectedTokenAfterSealedType;
 use CuyZ\Valinor\Type\Parser\Exception\Iterable\ShapedArrayWithoutElementsWithSealedType;
 use CuyZ\Valinor\Type\Parser\Lexer\TokenStream;
@@ -29,6 +28,7 @@ use CuyZ\Valinor\Type\Types\StringValueType;
 use CuyZ\Valinor\Type\Types\UnionType;
 use CuyZ\Valinor\Type\Types\UnresolvableType;
 
+use function array_map;
 use function implode;
 
 /** @internal */
@@ -43,7 +43,7 @@ final class ArrayToken implements TraversingToken
     private function __construct(
         /** @var class-string<ArrayType|NonEmptyArrayType|IterableType> */
         private string $arrayType,
-        private string $symbol
+        private string $symbol,
     ) {}
 
     public static function array(): self
@@ -261,10 +261,6 @@ final class ArrayToken implements TraversingToken
             if ($stream->done()) {
                 throw new ShapedArrayClosingBracketMissing($elements);
             }
-        }
-
-        if ($elements === []) {
-            throw new ShapedArrayEmptyElements();
         }
 
         return ShapedArrayType::from($elements, $isUnsealed, $unsealedType);

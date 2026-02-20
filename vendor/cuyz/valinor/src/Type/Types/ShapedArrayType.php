@@ -18,10 +18,13 @@ use CuyZ\Valinor\Utility\Polyfill;
 use function array_diff_key;
 use function array_flip;
 use function array_key_exists;
+use function array_keys;
 use function array_map;
+use function array_shift;
 use function array_values;
 use function assert;
 use function count;
+use function function_exists;
 use function implode;
 use function in_array;
 use function is_array;
@@ -29,6 +32,8 @@ use function is_array;
 /** @internal */
 final class ShapedArrayType implements CompositeType, DumpableType
 {
+    private ?string $signature = null;
+
     public function __construct(
         /** @var array<ShapedArrayElement> */
         public readonly array $elements,
@@ -266,6 +271,11 @@ final class ShapedArrayType implements CompositeType, DumpableType
     }
 
     public function toString(): string
+    {
+        return $this->signature ??= $this->buildSignature();
+    }
+
+    private function buildSignature(): string
     {
         $signature = 'array{';
         $signature .= implode(', ', array_map(static fn (ShapedArrayElement $element) => $element->toString(), $this->elements));

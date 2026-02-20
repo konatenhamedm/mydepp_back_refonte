@@ -132,7 +132,7 @@ trait DocblockTrait
      */
     public function extractCommentSummary(string $content): string
     {
-        if ($content === Generator::UNDEFINED) {
+        if (Generator::isDefault($content)) {
             return Generator::UNDEFINED;
         }
 
@@ -159,12 +159,12 @@ trait DocblockTrait
      */
     public function extractCommentDescription(string $content): string
     {
-        if ($content === Generator::UNDEFINED) {
+        if (Generator::isDefault($content)) {
             return Generator::UNDEFINED;
         }
 
         $summary = $this->extractCommentSummary($content);
-        if ($summary === Generator::UNDEFINED) {
+        if (Generator::isDefault($summary)) {
             return Generator::UNDEFINED;
         }
 
@@ -185,12 +185,15 @@ trait DocblockTrait
     {
         $comment = str_replace("\r\n", "\n", (string) $docblock);
         $comment = preg_replace('/\*\/[ \t]*$/', '', $comment); // strip '*/'
-        preg_match('/@var\s+(?<type>[^\s]+)([ \t])?(?<description>.+)?$/im', $comment, $matches);
 
-        return array_merge(
+        preg_match('/@var\s+(?<type>[^\s]+)([ \t])?(?<description>.+)?+$/im', $comment, $matches);
+
+        $result = array_merge(
             ['type' => null, 'description' => null],
             array_filter($matches, fn ($key): bool => in_array($key, ['type', 'description']), ARRAY_FILTER_USE_KEY)
         );
+
+        return array_map(fn (?string $value): ?string => null !== $value ? trim($value) : null, $result);
     }
 
     /**
@@ -198,7 +201,7 @@ trait DocblockTrait
      */
     public function extractExampleDescription(string $docblock): ?string
     {
-        if (!$docblock || $docblock === Generator::UNDEFINED) {
+        if (!$docblock || Generator::isDefault($docblock)) {
             return null;
         }
 
@@ -212,7 +215,7 @@ trait DocblockTrait
      */
     public function isDeprecated(?string $docblock): bool
     {
-        if (!$docblock || $docblock === Generator::UNDEFINED) {
+        if (!$docblock || Generator::isDefault($docblock)) {
             return false;
         }
 

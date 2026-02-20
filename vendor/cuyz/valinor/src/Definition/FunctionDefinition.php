@@ -9,23 +9,38 @@ use CuyZ\Valinor\Type\Types\Generics;
 use CuyZ\Valinor\Utility\TypeHelper;
 
 /** @internal */
-final class FunctionDefinition
+final readonly class FunctionDefinition
 {
     public function __construct(
         /** @var non-empty-string */
-        public readonly string $name,
+        public string $name,
         /** @var non-empty-string */
-        public readonly string $signature,
-        public readonly Attributes $attributes,
+        public string $signature,
+        public Attributes $attributes,
         /** @var non-empty-string|null */
-        public readonly ?string $fileName,
+        public ?string $fileName,
         /** @var class-string|null */
-        public readonly ?string $class,
-        public readonly bool $isStatic,
-        public readonly bool $isClosure,
-        public readonly Parameters $parameters,
-        public readonly Type $returnType,
+        public ?string $class,
+        public bool $isStatic,
+        public bool $isClosure,
+        public Parameters $parameters,
+        public Type $returnType,
     ) {}
+
+    public function forCallable(callable $callable): self
+    {
+        return new self(
+            $this->name,
+            $this->signature,
+            $this->attributes->forCallable($callable),
+            $this->fileName,
+            $this->class,
+            $this->isStatic,
+            $this->isClosure,
+            $this->parameters->forCallable($callable),
+            $this->returnType
+        );
+    }
 
     public function assignGenerics(Generics $generics): self
     {

@@ -33,7 +33,7 @@ class AugmentRefs
         $updatedRefs = [];
         foreach ($schemas as $schema) {
             if (!Generator::isDefault($schema->allOf)) {
-                // do we have to keep track of properties refs that need updating?
+                // do we have to keep track of property refs that need updating?
                 foreach ($schema->allOf as $ii => $allOfSchema) {
                     if (!Generator::isDefault($allOfSchema->properties)) {
                         $updatedRefs[OA\Components::ref($schema->schema . '/properties', false)] = OA\Components::ref($schema->schema . '/allOf/' . $ii . '/properties', false);
@@ -91,7 +91,7 @@ class AugmentRefs
                     if (!Generator::isDefault($allOfSchema->ref)) {
                         if (in_array($allOfSchema->ref, $refs)) {
                             $dupes[] = $allOfSchema->ref;
-                            $analysis->annotations->detach($allOfSchema);
+                            $analysis->annotations->offsetUnset($allOfSchema);
                             unset($schema->allOf[$ii]);
                             continue;
                         }

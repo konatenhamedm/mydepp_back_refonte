@@ -17,10 +17,10 @@ use Nelmio\ApiDocBundle\Model\Model;
 use Nelmio\ApiDocBundle\OpenApiPhp\Util;
 use OpenApi\Annotations\Schema;
 use OpenApi\Generator;
-use Symfony\Component\PropertyInfo\Type as LegacyType;
 use Symfony\Component\TypeInfo\Type;
 use Symfony\Component\TypeInfo\Type\ObjectType;
 use Symfony\Component\Uid\AbstractUid;
+use Symfony\Component\Uid\Ulid;
 use Symfony\Contracts\Translation\TranslatableInterface;
 
 /**
@@ -34,6 +34,13 @@ final class ClassDescriber implements TypeDescriberInterface, ModelRegistryAware
 
     public function describe(Type $type, Schema $schema, array $context = []): void
     {
+        if (is_a($type->getClassName(), Ulid::class, true)) {
+            $schema->type = 'string';
+            $schema->format = 'ulid';
+
+            return;
+        }
+
         if (is_a($type->getClassName(), AbstractUid::class, true)) {
             $schema->type = 'string';
             $schema->format = 'uuid';
@@ -67,7 +74,7 @@ final class ClassDescriber implements TypeDescriberInterface, ModelRegistryAware
         }
 
         $schema->ref = $this->modelRegistry->register(
-            new Model(new LegacyType('object', false, $type->getClassName()), serializationContext: $context)
+            new Model($type, serializationContext: $context)
         );
     }
 

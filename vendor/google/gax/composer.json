@@ -7,7 +7,7 @@
     "license": "BSD-3-Clause",
     "require": {
         "php": "^8.1",
-        "google/auth": "^1.45",
+        "google/auth": "^1.49",
         "google/grpc-gcp": "^0.4",
         "grpc/grpc": "^1.13",
         "google/protobuf": "^4.31",
@@ -36,7 +36,9 @@
         "psr-4": {
             "Google\\ApiCore\\Dev\\": "dev/src",
             "Google\\ApiCore\\Tests\\": "tests",
-            "GPBMetadata\\Google\\": "metadata/Google"
+            "GPBMetadata\\Google\\": "metadata/Google",
+            "Google\\Showcase\\": "tests/Conformance/src",
+            "GPBMetadata\\Google\\Showcase\\": "tests/Conformance/metadata"
         }
     },
     "scripts": {

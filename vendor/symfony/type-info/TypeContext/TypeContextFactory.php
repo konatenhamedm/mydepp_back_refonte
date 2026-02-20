@@ -43,12 +43,12 @@ final class TypeContextFactory
     private static array $reflectionClassCache = [];
 
     /**
-     * @var array<string,array<string,TypeContext>
+     * @var array<string,array<string,TypeContext>>
      */
     private array $intermediateTypeContextCache = [];
 
     /**
-     * @var array<string,array<string,TypeContext>
+     * @var array<string,array<string,TypeContext>>
      */
     private array $typeContextCache = [];
 
@@ -86,7 +86,7 @@ final class TypeContextFactory
             return null;
         }
 
-        $typeContext = $this->createIntermediateTypeContext($declaringClassReflection->getShortName(), $declaringClassReflection);
+        $typeContext = $this->createIntermediateTypeContext($declaringClassReflection->getName(), $declaringClassReflection);
 
         $templates = match (true) {
             $reflection instanceof \ReflectionFunctionAbstract => $this->collectTemplates($reflection, $typeContext) + $this->collectTemplates($declaringClassReflection, $typeContext),
@@ -117,8 +117,8 @@ final class TypeContextFactory
         $calledClassNameReflection = self::$reflectionClassCache[$calledClassName] ??= new \ReflectionClass($calledClassName);
         $declaringClassReflection = self::$reflectionClassCache[$declaringClassName] ??= new \ReflectionClass($declaringClassName);
 
-        $calledClassTypeContext = $this->createIntermediateTypeContext($calledClassNameReflection->getShortName(), $calledClassNameReflection);
-        $typeContext = $this->createIntermediateTypeContext($calledClassNameReflection->getShortName(), $declaringClassReflection);
+        $calledClassTypeContext = $this->createIntermediateTypeContext($calledClassNameReflection->getName(), $calledClassNameReflection);
+        $typeContext = $this->createIntermediateTypeContext($calledClassNameReflection->getName(), $declaringClassReflection);
 
         $typeContext = new TypeContext(
             $typeContext->calledClassName,
@@ -138,13 +138,13 @@ final class TypeContextFactory
         );
     }
 
-    private function createIntermediateTypeContext(string $calledClassShortName, \ReflectionClass $declaringClassReflection): TypeContext
+    private function createIntermediateTypeContext(string $calledClassName, \ReflectionClass $declaringClassReflection): TypeContext
     {
         $declaringClassName = $declaringClassReflection->getName();
 
-        return $this->intermediateTypeContextCache[$declaringClassName][$calledClassShortName] ??= new TypeContext(
-            $calledClassShortName,
-            $declaringClassReflection->getShortName(),
+        return $this->intermediateTypeContextCache[$declaringClassName][$calledClassName] ??= new TypeContext(
+            $calledClassName,
+            $declaringClassReflection->getName(),
             trim($declaringClassReflection->getNamespaceName(), '\\'),
             $this->collectUses($declaringClassReflection),
         );
@@ -160,7 +160,7 @@ final class TypeContextFactory
             return [];
         }
 
-        if (false === $lines = @file($fileName, \FILE_IGNORE_NEW_LINES)) {
+        if (false === $lines = @file($fileName, \FILE_IGNORE_NEW_LINES | \FILE_SKIP_EMPTY_LINES)) {
             throw new RuntimeException(\sprintf('Unable to read file "%s".', $fileName));
         }
 

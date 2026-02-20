@@ -15,6 +15,7 @@ use CuyZ\Valinor\Type\Types\StringValueType;
 use IteratorAggregate;
 use Traversable;
 
+use function array_diff_key;
 use function array_keys;
 use function array_map;
 use function array_values;
@@ -25,16 +26,33 @@ use function count;
  *
  * @implements IteratorAggregate<Argument>
  */
-final class Arguments implements IteratorAggregate, Countable
+final readonly class Arguments implements IteratorAggregate, Countable
 {
     /** @var array<string, Argument> */
-    private array $arguments = [];
+    private array $arguments;
+
+    private ShapedArrayType $shapedArray;
 
     public function __construct(Argument ...$arguments)
     {
+        $args = [];
         foreach ($arguments as $argument) {
-            $this->arguments[$argument->name()] = $argument;
+            $args[$argument->name()] = $argument;
         }
+        $this->arguments = $args;
+        $this->shapedArray = new ShapedArrayType(
+            elements: array_map(
+                static fn (Argument $argument) => new ShapedArrayElement(
+                    key: new StringValueType($argument->name()),
+                    type: $argument->type(),
+                    optional: ! $argument->isRequired(),
+                    attributes: $argument->attributes(),
+                ),
+                $this->arguments,
+            ),
+            isUnsealed: false,
+            unsealedType: null,
+        );
     }
 
     public static function fromParameters(Parameters $parameters): self
@@ -76,19 +94,7 @@ final class Arguments implements IteratorAggregate, Countable
 
     public function toShapedArray(): ShapedArrayType
     {
-        return new ShapedArrayType(
-            elements: array_map(
-                static fn (Argument $argument) => new ShapedArrayElement(
-                    key: new StringValueType($argument->name()),
-                    type: $argument->type(),
-                    optional: ! $argument->isRequired(),
-                    attributes: $argument->attributes(),
-                ),
-                $this->arguments,
-            ),
-            isUnsealed: false,
-            unsealedType: null,
-        );
+        return $this->shapedArray;
     }
 
     /**

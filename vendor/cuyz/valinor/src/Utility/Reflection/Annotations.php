@@ -12,9 +12,15 @@ use ReflectionProperty;
 
 use function array_filter;
 use function array_merge;
+use function array_pop;
+use function array_shift;
+use function array_unshift;
 use function array_values;
 use function current;
+use function end;
 use function in_array;
+use function preg_replace;
+use function str_starts_with;
 use function trim;
 
 /** @internal */
@@ -63,7 +69,7 @@ final class Annotations
     }
 
     /**
-     * @param ReflectionClass<object>|ReflectionFunctionAbstract $reflection
+     * @param ReflectionClass<covariant object>|ReflectionFunctionAbstract $reflection
      * @return list<TokenizedAnnotation>
      */
     public static function forTemplates(ReflectionClass|ReflectionFunctionAbstract $reflection): array

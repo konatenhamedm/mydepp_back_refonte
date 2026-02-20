@@ -73,6 +73,7 @@ class SymfonyRuntime extends GenericRuntime
     private readonly ConsoleOutput $output;
     private readonly Application $console;
     private readonly Command $command;
+    private readonly Request $request;
 
     /**
      * @param array{
@@ -88,6 +89,7 @@ class SymfonyRuntime extends GenericRuntime
      *   error_handler?: string|false,
      *   env_var_name?: string,
      *   debug_var_name?: string,
+     *   project_dir_var?: string|false,
      *   dotenv_overload?: ?bool,
      *   dotenv_extra_paths?: ?string[],
      *   worker_loop_max?: int, // Use 0 or a negative integer to never restart the worker. Default: 500
@@ -109,6 +111,14 @@ class SymfonyRuntime extends GenericRuntime
         } elseif (empty($_GET) && isset($_SERVER['argv']) && class_exists(ArgvInput::class)) {
             $this->options = $options;
             $this->getInput();
+        }
+
+        if (isset($options['project_dir']) && $projectDirVar = $options['project_dir_var'] ?? 'APP_PROJECT_DIR') {
+            $_SERVER[$projectDirVar] = $_ENV[$projectDirVar] = $options['project_dir'];
+
+            if ($options['use_putenv'] ?? false) {
+                putenv($projectDirVar.'='.$options['project_dir']);
+            }
         }
 
         if (!($options['disable_dotenv'] ?? false) && isset($options['project_dir']) && !class_exists(MissingDotenv::class, false)) {
@@ -163,7 +173,7 @@ class SymfonyRuntime extends GenericRuntime
                 return new FrankenPhpWorkerRunner($application, $this->options['worker_loop_max']);
             }
 
-            return new HttpKernelRunner($application, Request::createFromGlobals(), $this->options['debug'] ?? false);
+            return new HttpKernelRunner($application, $this->request ??= Request::createFromGlobals(), $this->options['debug'] ?? false);
         }
 
         if ($application instanceof Response) {
@@ -208,7 +218,7 @@ class SymfonyRuntime extends GenericRuntime
     protected function getArgument(\ReflectionParameter $parameter, ?string $type): mixed
     {
         return match ($type) {
-            Request::class => Request::createFromGlobals(),
+            Request::class => $this->request ??= Request::createFromGlobals(),
             InputInterface::class => $this->getInput(),
             OutputInterface::class => $this->output ??= new ConsoleOutput(),
             Application::class => $this->console ??= new Application(),

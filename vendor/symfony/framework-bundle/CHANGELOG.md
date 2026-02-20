@@ -4,6 +4,7 @@ CHANGELOG
 7.4
 ---
 
+ * Auto-generate `config/reference.php` to assist in writing and discovering app's configuration
  * Auto-register routes from attributes found on controller services
  * Add `ControllerHelper`; the helpers from AbstractController as a standalone service
  * Allow using their name without added suffix when using `#[Target]` for custom services
@@ -17,6 +18,9 @@ CHANGELOG
  * Add support for union types with `Symfony\Component\EventDispatcher\Attribute\AsEventListener`
  * Add `framework.allowed_http_method_override` option
  * Initialize `router.request_context`'s `_locale` parameter to `%kernel.default_locale%`
+ * Deprecate `ConfigBuilderCacheWarmer`, return PHP arrays from your config instead
+ * Add support for selecting the appropriate error renderer based on the `APP_RUNTIME_MODE` env var
+ * Add `KernelInterface::getShareDir()`, `APP_SHARE_DIR` and `%kernel.share_dir%` to store application data that are shared between all front-end servers
 
 7.3
 ---

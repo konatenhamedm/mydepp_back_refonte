@@ -23,9 +23,10 @@ use Nelmio\ApiDocBundle\Describer\ModelRegistryAwareTrait;
 use Nelmio\ApiDocBundle\Model\Model;
 use Nelmio\ApiDocBundle\ModelDescriber\Annotations\AnnotationsReader;
 use Nelmio\ApiDocBundle\OpenApiPhp\Util;
+use Nelmio\ApiDocBundle\Util\LegacyTypeConverter;
 use OpenApi\Annotations as OA;
 use OpenApi\Generator;
-use Symfony\Component\PropertyInfo\Type;
+use Symfony\Component\TypeInfo\Type\ObjectType;
 
 /**
  * Uses the JMS metadata factory to extract input/output model information.
@@ -82,7 +83,12 @@ class JMSModelDescriber implements ModelDescriberInterface, ModelRegistryAwareIn
 
     public function describe(Model $model, OA\Schema $schema): void
     {
-        $className = $model->getType()->getClassName();
+        $type = $model->getTypeInfo();
+        if (!$type instanceof ObjectType) {
+            return;
+        }
+
+        $className = $type->getClassName();
         $metadata = $this->factory->getMetadataForClass($className);
         if (!$metadata instanceof ClassMetadata) {
             throw new \InvalidArgumentException(\sprintf('No metadata found for class %s.', $className));
@@ -140,13 +146,13 @@ class JMSModelDescriber implements ModelDescriberInterface, ModelRegistryAwareIn
             if (null !== $item->getter) {
                 try {
                     $reflections[] = new \ReflectionMethod($item->class, $item->getter);
-                } catch (\ReflectionException $ignored) {
+                } catch (\ReflectionException) {
                 }
             }
             if (null !== $item->setter) {
                 try {
                     $reflections[] = new \ReflectionMethod($item->class, $item->setter);
-                } catch (\ReflectionException $ignored) {
+                } catch (\ReflectionException) {
                 }
             }
 
@@ -161,7 +167,7 @@ class JMSModelDescriber implements ModelDescriberInterface, ModelRegistryAwareIn
             if (true === $item->inline && isset($item->type['name'])) {
                 // currently array types can not be documented :-/
                 if (!\in_array($item->type['name'], ['array', 'ArrayCollection'], true)) {
-                    $inlineModel = new Model(new Type(Type::BUILTIN_TYPE_OBJECT, false, $item->type['name']), $groups);
+                    $inlineModel = new Model(LegacyTypeConverter::createType($item->type['name']), $groups);
                     $this->describe($inlineModel, $schema);
                 }
                 $context->popPropertyMetadata();
@@ -262,13 +268,18 @@ class JMSModelDescriber implements ModelDescriberInterface, ModelRegistryAwareIn
             return false;
         }
 
-        $className = $model->getType()->getClassName();
+        $type = $model->getTypeInfo();
+        if (!$type instanceof ObjectType) {
+            return false;
+        }
+
+        $className = $type->getClassName();
 
         try {
             if (null !== $this->factory->getMetadataForClass($className)) {
                 return true;
             }
-        } catch (\ReflectionException $e) {
+        } catch (\ReflectionException) {
         }
 
         return false;
@@ -346,7 +357,7 @@ class JMSModelDescriber implements ModelDescriberInterface, ModelRegistryAwareIn
             $groups = $this->computeGroups($context, $type);
             unset($serializationContext['groups']);
 
-            $model = new Model(new Type(Type::BUILTIN_TYPE_OBJECT, false, $type['name']), $groups, [], $serializationContext);
+            $model = new Model(LegacyTypeConverter::createType($type['name']), $groups, [], $serializationContext);
             $modelRef = $this->modelRegistry->register($model);
 
             $customFields = (array) $property->jsonSerialize();
@@ -398,7 +409,7 @@ class JMSModelDescriber implements ModelDescriberInterface, ModelRegistryAwareIn
             $metadata = $this->factory->getMetadataForClass($type['name']);
 
             foreach ($metadata->propertyMetadata as $item) {
-                if (isset($item->groups) && $item->groups != [GroupsExclusionStrategy::DEFAULT_GROUP]) {
+                if (property_exists($item, 'groups') && $item->groups !== [GroupsExclusionStrategy::DEFAULT_GROUP]) {
                     $this->propertyTypeUseGroupsCache[$type['name']] = true;
 
                     return true;
@@ -407,7 +418,7 @@ class JMSModelDescriber implements ModelDescriberInterface, ModelRegistryAwareIn
             $this->propertyTypeUseGroupsCache[$type['name']] = false;
 
             return false;
-        } catch (\ReflectionException $e) {
+        } catch (\ReflectionException) {
             $this->propertyTypeUseGroupsCache[$type['name']] = null;
 
             return null;

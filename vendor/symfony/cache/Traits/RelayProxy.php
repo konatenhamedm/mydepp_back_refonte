@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Cache\Traits;
 
+use Symfony\Component\Cache\Traits\Relay\Relay20Trait;
 use Symfony\Component\VarExporter\LazyObjectInterface;
 use Symfony\Contracts\Service\ResetInterface;
 
@@ -27,6 +28,7 @@ class RelayProxy extends \Relay\Relay implements ResetInterface, LazyObjectInter
     use RedisProxyTrait {
         resetLazyObject as reset;
     }
+    use Relay20Trait;
 
     public function __construct($host = null, $port = 6379, $connect_timeout = 0.0, $command_timeout = 0.0, #[\SensitiveParameter] $context = [], $database = 0)
     {
@@ -643,6 +645,11 @@ class RelayProxy extends \Relay\Relay implements ResetInterface, LazyObjectInter
         return $this->initializeLazyObject()->hget(...\func_get_args());
     }
 
+    public function hgetWithMeta($hash, $member): \Relay\Relay|array|false
+    {
+        return $this->initializeLazyObject()->getWithMeta(...\func_get_args());
+    }
+
     public function hgetall($hash): \Relay\Relay|array|false
     {
         return $this->initializeLazyObject()->hgetall(...\func_get_args());
@@ -1223,7 +1230,7 @@ class RelayProxy extends \Relay\Relay implements ResetInterface, LazyObjectInter
         return $this->initializeLazyObject()->sdiffstore(...\func_get_args());
     }
 
-    public function select($db): \Relay\Relay|bool
+    public function select($db): \Relay\Relay|bool|string
     {
         return $this->initializeLazyObject()->select(...\func_get_args());
     }
@@ -1498,7 +1505,7 @@ class RelayProxy extends \Relay\Relay implements ResetInterface, LazyObjectInter
         return $this->initializeLazyObject()->waitaof(...\func_get_args());
     }
 
-    public function watch($key, ...$other_keys): \Relay\Relay|bool
+    public function watch($key, ...$other_keys): \Relay\Relay|bool|string
     {
         return $this->initializeLazyObject()->watch(...\func_get_args());
     }

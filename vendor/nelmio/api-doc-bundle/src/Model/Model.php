@@ -11,7 +11,9 @@
 
 namespace Nelmio\ApiDocBundle\Model;
 
-use Symfony\Component\PropertyInfo\Type;
+use Nelmio\ApiDocBundle\Util\LegacyTypeConverter;
+use Symfony\Component\PropertyInfo\Type as LegacyType;
+use Symfony\Component\TypeInfo\Type;
 
 final class Model
 {
@@ -22,20 +24,59 @@ final class Model
      * @param non-empty-string|null $name                 An optional custom name for the generated schema
      */
     public function __construct(
-        private Type $type,
+        private LegacyType|Type $type,
         ?array $groups = null,
         private array $options = [],
         private array $serializationContext = [],
         public readonly ?string $name = null,
     ) {
+        if ($type instanceof LegacyType) {
+            trigger_deprecation(
+                'nelmio/api-doc-bundle',
+                '5.8.0',
+                'Using Symfony\Component\PropertyInfo\Type as type in %s is deprecated, use Symfony\Component\TypeInfo\Type instead.',
+                __METHOD__
+            );
+        }
+
         if (null !== $groups) {
             $this->serializationContext['groups'] = $groups;
         }
     }
 
-    public function getType(): Type
+    /**
+     * @deprecated use {@see getTypeInfo()} instead
+     */
+    public function getType(): LegacyType
     {
+        trigger_deprecation(
+            'nelmio/api-doc-bundle',
+            '5.8.0',
+            'The %s method is deprecated, use %s::getTypeInfo() instead.',
+            __METHOD__,
+            self::class,
+        );
+
+        if ($this->type instanceof Type) {
+            return LegacyTypeConverter::toLegacyType($this->type);
+        }
+
         return $this->type;
+    }
+
+    public function getTypeInfo(): Type
+    {
+        if ($this->type instanceof Type) {
+            return $this->type;
+        }
+
+        $converted = LegacyTypeConverter::toTypeInfoType([$this->type]);
+
+        if (null === $converted) {
+            throw new \LogicException('Could not convert legacy type to TypeInfo type.');
+        }
+
+        return $converted;
     }
 
     /**
@@ -56,7 +97,9 @@ final class Model
 
     public function getHash(): string
     {
-        return md5(serialize([$this->type, $this->getSerializationContext(), $this->name]));
+        $type = $this->getTypeInfo()->__toString();
+
+        return md5(serialize([$type, $this->getSerializationContext(), $this->name]));
     }
 
     /**

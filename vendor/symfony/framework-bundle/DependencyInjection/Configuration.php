@@ -378,7 +378,7 @@ class Configuration implements ConfigurationInterface
                     ->beforeNormalization()
                         ->ifArray()
                         ->then(static function ($v) {
-                            if (true === ($v['enabled'] ?? false)) {
+                            if (true === $v['enabled']) {
                                 $workflows = $v;
                                 unset($workflows['enabled']);
 
@@ -463,8 +463,19 @@ class Configuration implements ConfigurationInterface
                                         ->cannotBeEmpty()
                                     ->end()
                                     ->arrayNode('initial_marking')
-                                        ->acceptAndWrap(['string'])
+                                        ->acceptAndWrap(['backed-enum', 'string'])
                                         ->defaultValue([])
+                                        ->beforeNormalization()
+                                            ->ifArray()
+                                            ->then(static function ($markings) {
+                                                $normalizedMarkings = [];
+                                                foreach ($markings as $marking) {
+                                                    $normalizedMarkings[] = $marking instanceof \BackedEnum ? $marking->value : $marking;
+                                                }
+
+                                                return $normalizedMarkings;
+                                            })
+                                        ->end()
                                         ->prototype('scalar')->end()
                                     ->end()
                                     ->arrayNode('events_to_dispatch', 'event_to_dispatch')
@@ -588,22 +599,18 @@ class Configuration implements ConfigurationInterface
                                                         ->then($workflowNormalizeArcs = static function ($arcs) {
                                                             // Fix XML parsing, when only one arc is defined
                                                             if (\array_key_exists('value', $arcs) && \array_key_exists('weight', $arcs)) {
-                                                                return [[
+                                                                $arcs = [[
                                                                     'place' => $arcs['value'],
                                                                     'weight' => $arcs['weight'],
                                                                 ]];
+                                                            } elseif (\array_key_exists('place', $arcs)) {
+                                                                $arcs = [$arcs];
                                                             }
 
                                                             $normalizedArcs = [];
                                                             foreach ($arcs as $arc) {
-                                                                if ($arc instanceof \BackedEnum) {
-                                                                    $arc = $arc->value;
-                                                                }
-                                                                if (\is_string($arc)) {
-                                                                    $arc = [
-                                                                        'place' => $arc,
-                                                                        'weight' => 1,
-                                                                    ];
+                                                                if (\is_string($arc) || $arc instanceof \BackedEnum) {
+                                                                    $arc = ['place' => $arc];
                                                                 } elseif (!\is_array($arc)) {
                                                                     throw new InvalidConfigurationException('The "from" arcs must be a list of strings or arrays in workflow configuration.');
                                                                 } elseif (\array_key_exists('value', $arc) && \array_key_exists('weight', $arc)) {
@@ -612,6 +619,10 @@ class Configuration implements ConfigurationInterface
                                                                         'place' => $arc['value'],
                                                                         'weight' => $arc['weight'],
                                                                     ];
+                                                                }
+
+                                                                if (($arc['place'] ?? null) instanceof \BackedEnum) {
+                                                                    $arc['place'] = $arc['place']->value;
                                                                 }
 
                                                                 $normalizedArcs[] = $arc;
@@ -628,7 +639,8 @@ class Configuration implements ConfigurationInterface
                                                                 ->cannotBeEmpty()
                                                             ->end()
                                                             ->integerNode('weight')
-                                                                ->isRequired()
+                                                                ->defaultValue(1)
+                                                                ->min(1)
                                                             ->end()
                                                         ->end()
                                                     ->end()
@@ -648,7 +660,8 @@ class Configuration implements ConfigurationInterface
                                                                 ->cannotBeEmpty()
                                                             ->end()
                                                             ->integerNode('weight')
-                                                                ->isRequired()
+                                                                ->defaultValue(1)
+                                                                ->min(1)
                                                             ->end()
                                                         ->end()
                                                     ->end()
@@ -1383,7 +1396,7 @@ class Configuration implements ConfigurationInterface
                             ->info('System related cache pools configuration.')
                             ->defaultValue('cache.adapter.system')
                         ->end()
-                        ->scalarNode('directory')->defaultValue('%kernel.cache_dir%/pools/app')->end()
+                        ->scalarNode('directory')->defaultValue('%kernel.share_dir%/pools/app')->end()
                         ->scalarNode('default_psr6_provider')->end()
                         ->scalarNode('default_redis_provider')->defaultValue('redis://localhost')->end()
                         ->scalarNode('default_valkey_provider')->defaultValue('valkey://localhost')->end()
@@ -1975,6 +1988,7 @@ class Configuration implements ConfigurationInterface
                                 ->end()
                                 ->arrayNode('vars', 'var')
                                     ->info('Associative array: the default vars used to expand the templated URI.')
+                                    ->useAttributeAsKey('name')
                                     ->normalizeKeys(false)
                                     ->variablePrototype()->end()
                                 ->end()
@@ -2053,6 +2067,7 @@ class Configuration implements ConfigurationInterface
                                 ->end()
                                 ->arrayNode('extra')
                                     ->info('Extra options for specific HTTP client.')
+                                    ->useAttributeAsKey('name')
                                     ->normalizeKeys(false)
                                     ->variablePrototype()->end()
                                 ->end()
@@ -2074,7 +2089,7 @@ class Configuration implements ConfigurationInterface
                                 ->acceptAndWrap(['string'], 'base_uri')
                                 ->validate()
                                     ->ifTrue(static fn () => !class_exists(HttpClient::class))
-                                    ->then(static fn () => 'HttpClient support cannot be enabled as the component is not installed. Try running "composer require symfony/http-client".')
+                                    ->then(static fn () => throw new LogicException('HttpClient support cannot be enabled as the component is not installed. Try running "composer require symfony/http-client".'))
                                 ->end()
                                 ->validate()
                                     ->ifTrue(static fn ($v) => !isset($v['scope']) && !isset($v['base_uri']))
@@ -2199,6 +2214,7 @@ class Configuration implements ConfigurationInterface
                                     ->end()
                                     ->arrayNode('extra')
                                         ->info('Extra options for specific HTTP client.')
+                                        ->useAttributeAsKey('name')
                                         ->normalizeKeys(false)
                                         ->variablePrototype()->end()
                                     ->end()

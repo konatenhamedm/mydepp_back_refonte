@@ -11,6 +11,7 @@ use Traversable;
 
 use function array_map;
 use function array_values;
+use function count;
 
 /**
  * @internal
@@ -68,6 +69,14 @@ final class Parameters implements IteratorAggregate, Countable
     public function count(): int
     {
         return count($this->parameters);
+    }
+
+    public function forCallable(callable $callable): self
+    {
+        return new self(...array_map(
+            fn (ParameterDefinition $parameter) => $parameter->forCallable($callable),
+            $this->parameters
+        ));
     }
 
     /**

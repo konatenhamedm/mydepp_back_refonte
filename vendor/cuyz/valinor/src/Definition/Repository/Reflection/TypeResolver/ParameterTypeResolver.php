@@ -11,6 +11,8 @@ use CuyZ\Valinor\Type\Types\UnresolvableType;
 use CuyZ\Valinor\Utility\Reflection\Annotations;
 use ReflectionParameter;
 
+use function array_search;
+
 /** @internal */
 final class ParameterTypeResolver
 {
@@ -67,7 +69,7 @@ final class ParameterTypeResolver
             $parameterName = $tokens[$dollarSignKey + 1] ?? null;
 
             if ($parameterName === $reflection->name) {
-                return $annotation->splice($dollarSignKey);
+                return $annotation->raw();
             }
         }
 

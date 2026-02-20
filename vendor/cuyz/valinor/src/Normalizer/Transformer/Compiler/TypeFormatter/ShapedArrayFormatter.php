@@ -13,6 +13,8 @@ use CuyZ\Valinor\Type\Types\MixedType;
 use CuyZ\Valinor\Type\Types\ShapedArrayType;
 use WeakMap;
 
+use function hash;
+
 /** @internal */
 final class ShapedArrayFormatter implements TypeFormatter
 {
@@ -97,6 +99,6 @@ final class ShapedArrayFormatter implements TypeFormatter
      */
     private function methodName(): string
     {
-        return 'transform_shaped_array_' . hash('xxh128', $this->type->toString());
+        return 'transform_shaped_array_' . hash('crc32', $this->type->toString());
     }
 }

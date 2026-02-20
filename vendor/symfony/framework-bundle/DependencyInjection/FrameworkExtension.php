@@ -47,6 +47,7 @@ use Symfony\Component\Cache\DependencyInjection\CachePoolPass;
 use Symfony\Component\Cache\Marshaller\MarshallerInterface;
 use Symfony\Component\Cache\ResettableInterface;
 use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Config\Builder\ConfigBuilderGenerator;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Loader\LoaderInterface;
@@ -296,6 +297,9 @@ class FrameworkExtension extends Extension
         }
         if (!class_exists(IsSignatureValidAttributeListener::class)) {
             $container->removeDefinition('controller.is_signature_valid_attribute_listener');
+        }
+        if (!class_exists(ConfigBuilderGenerator::class)) {
+            $container->removeDefinition('config_builder.warmer');
         }
 
         if ($this->hasConsole()) {
@@ -642,7 +646,7 @@ class FrameworkExtension extends Extension
             $this->registerNotifierConfiguration($config['notifier'], $container, $loader, $this->readConfigEnabled('webhook', $container, $config['webhook']));
         }
 
-        // profiler depends on form, validation, translation, messenger, mailer, http-client, notifier, serializer being registered
+        // profiler depends on form, validation, translation, messenger, mailer, http-client, notifier, serializer being registered. console is optional
         $this->registerProfilerConfiguration($config['profiler'], $container, $loader);
 
         if ($this->readConfigEnabled('webhook', $container, $config['webhook'])) {
@@ -775,32 +779,13 @@ class FrameworkExtension extends Extension
 
         $container->registerAttributeForAutoconfiguration(AsEventListener::class, static function (ChildDefinition $definition, AsEventListener $attribute, \ReflectionClass|\ReflectionMethod $reflector) {
             $tagAttributes = get_object_vars($attribute);
-
-            if (!$reflector instanceof \ReflectionMethod) {
-                $definition->addTag('kernel.event_listener', $tagAttributes);
-
-                return;
-            }
-
-            if (isset($tagAttributes['method'])) {
-                throw new LogicException(\sprintf('AsEventListener attribute cannot declare a method on "%s::%s()".', $reflector->class, $reflector->name));
-            }
-
-            $tagAttributes['method'] = $reflector->getName();
-
-            if (!$eventArg = $reflector->getParameters()[0] ?? null) {
-                throw new LogicException(\sprintf('AsEventListener attribute requires the first argument of "%s::%s()" to be an event object.', $reflector->class, $reflector->name));
-            }
-
-            $types = ($type = $eventArg->getType() instanceof \ReflectionUnionType ? $eventArg->getType()->getTypes() : [$eventArg->getType()]) ?: [];
-
-            foreach ($types as $type) {
-                if ($type instanceof \ReflectionNamedType && !$type->isBuiltin()) {
-                    $tagAttributes['event'] = $type->getName();
-
-                    $definition->addTag('kernel.event_listener', $tagAttributes);
+            if ($reflector instanceof \ReflectionMethod) {
+                if (isset($tagAttributes['method'])) {
+                    throw new LogicException(\sprintf('AsEventListener attribute cannot declare a method on "%s::%s()".', $reflector->class, $reflector->name));
                 }
+                $tagAttributes['method'] = $reflector->getName();
             }
+            $definition->addTag('kernel.event_listener', $tagAttributes);
         });
         $container->registerAttributeForAutoconfiguration(AsController::class, static function (ChildDefinition $definition, AsController $attribute): void {
             $definition->addTag('controller.service_arguments');
@@ -1068,7 +1053,7 @@ class FrameworkExtension extends Extension
         }
 
         if (false === $config['collect_serializer_data']) {
-            trigger_deprecation('symfony/framework-bundle', '7.3', 'Setting the "framework.profiler.collect_serializer_data" config option to "false" is deprecated.');
+            trigger_deprecation('symfony/framework-bundle', '7.3', 'Not setting the "framework.profiler.collect_serializer_data" config option to "true" is deprecated.');
         }
 
         if ($this->isInitializedConfigEnabled('serializer') && $config['collect_serializer_data']) {
@@ -1093,11 +1078,11 @@ class FrameworkExtension extends Extension
         $container->getDefinition('profiler_listener')
             ->addArgument($config['collect_parameter']);
 
-        if (!$container->getParameter('kernel.debug') || !class_exists(CliRequest::class) || !$container->has('debug.stopwatch')) {
+        if (!$container->getParameter('kernel.debug') || !$this->hasConsole() || !class_exists(CliRequest::class) || !$container->has('debug.stopwatch')) {
             $container->removeDefinition('console_profiler_listener');
         }
 
-        if (!class_exists(CommandDataCollector::class)) {
+        if (!$this->hasConsole() || !class_exists(CommandDataCollector::class)) {
             $container->removeDefinition('.data_collector.command');
         }
     }
@@ -1810,11 +1795,11 @@ class FrameworkExtension extends Extension
 
         foreach ($config['providers'] as $provider) {
             if ($provider['locales']) {
-                $locales += $provider['locales'];
+                $locales = array_merge($locales, $provider['locales']);
             }
         }
 
-        $locales = array_unique($locales);
+        $locales = array_values(array_unique($locales));
 
         $container->getDefinition('console.command.translation_pull')
             ->replaceArgument(4, array_merge($transPaths, [$config['default_path']]))
@@ -1869,13 +1854,12 @@ class FrameworkExtension extends Extension
         // And when runtime-discovery of attributes is enabled, we can skip compile-time autoconfiguration in debug mode.
         if (class_exists(ValidatorAttributeMetadataPass::class) && (!($config['enable_attributes'] ?? false) || !$container->getParameter('kernel.debug')) && trait_exists(ArgumentTrait::class)) {
             // The $reflector argument hints at where the attribute could be used
-            $container->registerAttributeForAutoconfiguration(Constraint::class, function (ChildDefinition $definition, Constraint $attribute, \ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflector) {
-                $definition->addTag('validator.attribute_metadata')
-                    ->addTag('container.excluded', ['source' => 'because it\'s a validator constraint extension']);
+            $container->registerAttributeForAutoconfiguration(Constraint::class, static function (ChildDefinition $definition, Constraint $attribute, \ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflector) {
+                $definition->addTag('validator.attribute_metadata');
             });
         }
 
-        $container->registerAttributeForAutoconfiguration(ExtendsValidationFor::class, function (ChildDefinition $definition, ExtendsValidationFor $attribute) {
+        $container->registerAttributeForAutoconfiguration(ExtendsValidationFor::class, static function (ChildDefinition $definition, ExtendsValidationFor $attribute) {
             $definition->addTag('validator.attribute_metadata', ['for' => $attribute->class])
                 ->addTag('container.excluded', ['source' => 'because it\'s a validator constraint extension']);
         });
@@ -2135,13 +2119,13 @@ class FrameworkExtension extends Extension
         // And when runtime-discovery of attributes is enabled, we can skip compile-time autoconfiguration in debug mode.
         if (class_exists(SerializerAttributeMetadataPass::class) && (!($config['enable_attributes'] ?? false) || !$container->getParameter('kernel.debug'))) {
             // The $reflector argument hints at where the attribute could be used
-            $configurator = function (ChildDefinition $definition, object $attribute, \ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflector) {
+            $configurator = static function (ChildDefinition $definition, object $attribute, \ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflector) {
                 $definition->addTag('serializer.attribute_metadata');
             };
             $container->registerAttributeForAutoconfiguration(SerializerMapping\Context::class, $configurator);
             $container->registerAttributeForAutoconfiguration(SerializerMapping\Groups::class, $configurator);
 
-            $configurator = function (ChildDefinition $definition, object $attribute, \ReflectionMethod|\ReflectionProperty $reflector) {
+            $configurator = static function (ChildDefinition $definition, object $attribute, \ReflectionMethod|\ReflectionProperty $reflector) {
                 $definition->addTag('serializer.attribute_metadata');
             };
             $container->registerAttributeForAutoconfiguration(SerializerMapping\Ignore::class, $configurator);
@@ -2149,7 +2133,7 @@ class FrameworkExtension extends Extension
             $container->registerAttributeForAutoconfiguration(SerializerMapping\SerializedName::class, $configurator);
             $container->registerAttributeForAutoconfiguration(SerializerMapping\SerializedPath::class, $configurator);
 
-            $container->registerAttributeForAutoconfiguration(SerializerMapping\DiscriminatorMap::class, function (ChildDefinition $definition) {
+            $container->registerAttributeForAutoconfiguration(SerializerMapping\DiscriminatorMap::class, static function (ChildDefinition $definition) {
                 $definition->addTag('serializer.attribute_metadata');
             });
         }
@@ -2221,7 +2205,7 @@ class FrameworkExtension extends Extension
 
         $container->setParameter('.serializer.named_serializers', $config['named_serializers'] ?? []);
 
-        $container->registerAttributeForAutoconfiguration(ExtendsSerializationFor::class, function (ChildDefinition $definition, ExtendsSerializationFor $attribute) {
+        $container->registerAttributeForAutoconfiguration(ExtendsSerializationFor::class, static function (ChildDefinition $definition, ExtendsSerializationFor $attribute) {
             $definition->addTag('serializer.attribute_metadata', ['for' => $attribute->class])
                 ->addTag('container.excluded', ['source' => 'because it\'s a serializer metadata extension']);
         });
@@ -2271,7 +2255,7 @@ class FrameworkExtension extends Extension
             $definition->addTag('property_info.constructor_extractor', ['priority' => -1000]);
         }
 
-        if (ContainerBuilder::willBeAvailable('phpdocumentor/reflection-docblock', DocBlockFactoryInterface::class, ['symfony/framework-bundle', 'symfony/property-info'], true)) {
+        if (ContainerBuilder::willBeAvailable('phpdocumentor/reflection-docblock', DocBlockFactoryInterface::class, ['symfony/framework-bundle', 'symfony/property-info'])) {
             $definition = $container->register('property_info.php_doc_extractor', PhpDocExtractor::class);
             $definition->addTag('property_info.description_extractor', ['priority' => -1000]);
             $definition->addTag('property_info.type_extractor', ['priority' => -1001]);
@@ -2568,6 +2552,7 @@ class FrameworkExtension extends Extension
         $senderAliases = [];
         $transportRetryReferences = [];
         $transportRateLimiterReferences = [];
+        $serializerIds = [];
         foreach ($config['transports'] as $name => $transport) {
             $serializerId = $transport['serializer'] ?? 'messenger.default_serializer';
             $tags = [
@@ -2584,6 +2569,7 @@ class FrameworkExtension extends Extension
             ;
             $container->setDefinition($transportId = 'messenger.transport.'.$name, $transportDefinition);
             $senderAliases[$name] = $transportId;
+            $serializerIds[$transportId] = $serializerId;
 
             if (null !== $transport['retry_strategy']['service']) {
                 $transportRetryReferences[$name] = new Reference($transport['retry_strategy']['service']);
@@ -2611,13 +2597,11 @@ class FrameworkExtension extends Extension
         }
 
         $senderReferences = [];
-        // alias => service_id
-        foreach ($senderAliases as $alias => $serviceId) {
-            $senderReferences[$alias] = new Reference($serviceId);
+        foreach ($senderAliases as $alias => $transportId) {
+            $senderReferences[$alias] = new Reference($transportId);
         }
-        // service_id => service_id
-        foreach ($senderAliases as $serviceId) {
-            $senderReferences[$serviceId] = new Reference($serviceId);
+        foreach ($senderAliases as $transportId) {
+            $senderReferences[$transportId] = new Reference($transportId);
         }
 
         foreach ($config['transports'] as $name => $transport) {
@@ -2628,7 +2612,7 @@ class FrameworkExtension extends Extension
             }
         }
 
-        $failureTransportReferencesByTransportName = array_map(fn ($failureTransportName) => $senderReferences[$failureTransportName], $failureTransportsByName);
+        $failureTransportReferencesByTransportName = array_map(static fn ($failureTransportName) => $senderReferences[$failureTransportName], $failureTransportsByName);
 
         $messageToSendersMapping = [];
         foreach ($config['routing'] as $message => $messageConfiguration) {
@@ -2656,6 +2640,18 @@ class FrameworkExtension extends Extension
             ->replaceArgument(0, $messageToSendersMapping)
             ->replaceArgument(1, $sendersServiceLocator)
         ;
+
+        $messageToSerializersMapping = [];
+        foreach ($messageToSendersMapping as $message => $senders) {
+            foreach ($senders as $sender) {
+                $serializerId = $serializerIds[$senderAliases[$sender] ?? $sender];
+                $messageToSerializersMapping[$message][$serializerId] = $serializerId;
+            }
+            $messageToSerializersMapping[$message] = array_keys($messageToSerializersMapping[$message]);
+        }
+
+        $container->getDefinition('messenger.signing_serializer')
+            ->replaceArgument(2, $messageToSerializersMapping);
 
         $container->getDefinition('messenger.retry.send_failed_message_for_retry_listener')
             ->replaceArgument(0, $sendersServiceLocator)
@@ -2873,22 +2869,33 @@ class FrameworkExtension extends Extension
             $retryOptions = $scopeConfig['retry_failed'] ?? ['enabled' => false];
             unset($scopeConfig['retry_failed']);
 
+            // This "transport" service is decorated in the following order:
+            // 1. ThrottlingHttpClient (5) -> throttles requests
+            // 2. UriTemplateHttpClient (10) -> expands URI templates
+            // 3. ScopingHttpClient (15) -> resolves relative URLs and applies scope configuration
+            // 4. CachingHttpClient (20) -> caches responses
+            // 5. RetryableHttpClient (25) -> retries requests
+            // 6. TraceableHttpClient (100) -> traces requests
+            $container->register($name, HttpClientInterface::class)
+                ->setFactory('current')
+                ->setArguments([[new Reference('http_client.transport')]])
+                ->addTag('http_client.client')
+            ;
+
+            $scopingDefinition = $container->register($name.'.scoping', ScopingHttpClient::class)
+                ->setDecoratedService($name, null, 15)
+                ->addTag('kernel.reset', ['method' => 'reset', 'on_invalid' => 'ignore']);
+
             if (null === $scope) {
                 $baseUri = $scopeConfig['base_uri'];
                 unset($scopeConfig['base_uri']);
 
-                $container->register($name, ScopingHttpClient::class)
+                $scopingDefinition
                     ->setFactory([ScopingHttpClient::class, 'forBaseUri'])
-                    ->setArguments([new Reference('http_client.transport'), $baseUri, $scopeConfig])
-                    ->addTag('http_client.client')
-                    ->addTag('kernel.reset', ['method' => 'reset', 'on_invalid' => 'ignore'])
-                ;
+                    ->setArguments([new Reference('.inner'), $baseUri, $scopeConfig]);
             } else {
-                $container->register($name, ScopingHttpClient::class)
-                    ->setArguments([new Reference('http_client.transport'), [$scope => $scopeConfig], $scope])
-                    ->addTag('http_client.client')
-                    ->addTag('kernel.reset', ['method' => 'reset', 'on_invalid' => 'ignore'])
-                ;
+                $scopingDefinition
+                    ->setArguments([new Reference('.inner'), [$scope => $scopeConfig], $scope]);
             }
 
             if ($this->readConfigEnabled('http_client.scoped_clients.'.$name.'.caching', $container, $cachingOptions)) {
@@ -2905,9 +2912,9 @@ class FrameworkExtension extends Extension
 
             $container
                 ->register($name.'.uri_template', UriTemplateHttpClient::class)
-                ->setDecoratedService($name, null, 7) // Between TraceableHttpClient (5) and RetryableHttpClient (10)
+                ->setDecoratedService($name, null, 10)
                 ->setArguments([
-                    new Reference($name.'.uri_template.inner'),
+                    new Reference('.inner'),
                     new Reference('http_client.uri_template_expander', ContainerInterface::NULL_ON_INVALID_REFERENCE),
                     $defaultUriTemplateVars,
                 ]);
@@ -2931,7 +2938,7 @@ class FrameworkExtension extends Extension
 
         if ($responseFactoryId = $config['mock_response_factory'] ?? null) {
             $container->register('http_client.mock_client', MockHttpClient::class)
-                ->setDecoratedService('http_client.transport', null, -10)  // lower priority than TraceableHttpClient (5)
+                ->setDecoratedService('http_client.transport', null, -10)
                 ->setArguments([new Reference($responseFactoryId)]);
         }
     }
@@ -2939,14 +2946,14 @@ class FrameworkExtension extends Extension
     private function registerCachingHttpClient(array $options, array $defaultOptions, string $name, ContainerBuilder $container): void
     {
         if (!class_exists(ChunkCacheItemNotFoundException::class)) {
-            throw new LogicException('Caching cannot be enabled as version 7.3+ of the HttpClient component is required.');
+            throw new LogicException('Caching cannot be enabled as version 7.4+ of the HttpClient component is required.');
         }
 
         $container
             ->register($name.'.caching', CachingHttpClient::class)
-            ->setDecoratedService($name, null, 13) // between RetryableHttpClient (10) and ThrottlingHttpClient (15)
+            ->setDecoratedService($name, null, 20)
             ->setArguments([
-                new Reference($name.'.caching.inner'),
+                new Reference('.inner'),
                 new Reference($options['cache_pool']),
                 $defaultOptions,
                 $options['shared'],
@@ -2969,8 +2976,8 @@ class FrameworkExtension extends Extension
 
         $container
             ->register($name.'.throttling', ThrottlingHttpClient::class)
-            ->setDecoratedService($name, null, 15) // higher priority than RetryableHttpClient (10)
-            ->setArguments([new Reference($name.'.throttling.inner'), new Reference($name.'.throttling.limiter')]);
+            ->setDecoratedService($name, null, 5)
+            ->setArguments([new Reference('.inner'), new Reference($name.'.throttling.limiter')]);
     }
 
     private function registerRetryableHttpClient(array $options, string $name, ContainerBuilder $container): void
@@ -3001,8 +3008,8 @@ class FrameworkExtension extends Extension
 
         $container
             ->register($name.'.retryable', RetryableHttpClient::class)
-            ->setDecoratedService($name, null, 10) // higher priority than TraceableHttpClient (5)
-            ->setArguments([new Reference($name.'.retryable.inner'), $retryStrategy, $options['max_retries'], new Reference('logger')])
+            ->setDecoratedService($name, null, 25)
+            ->setArguments([new Reference('.inner'), $retryStrategy, $options['max_retries'], new Reference('logger')])
             ->addTag('monolog.logger', ['channel' => 'http_client']);
     }
 

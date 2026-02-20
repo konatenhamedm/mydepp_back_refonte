@@ -182,7 +182,7 @@ final class PhpStanExtractor implements PropertyDescriptionExtractorInterface, P
         trigger_deprecation('symfony/property-info', '7.3', 'The "%s()" method is deprecated, use "%s::getTypeFromConstructor()" instead.', __METHOD__, self::class);
 
         if (null === $tagDocNode = $this->getDocBlockFromConstructor($class, $property)) {
-            return null;
+            return $this->getTypes($class, $property);
         }
 
         $types = [];
@@ -247,7 +247,7 @@ final class PhpStanExtractor implements PropertyDescriptionExtractorInterface, P
     {
         $declaringClass = $class;
         if (!$tagDocNode = $this->getDocBlockFromConstructor($declaringClass, $property)) {
-            return null;
+            return $this->getType($class, $property);
         }
 
         $typeContext = $this->typeContextFactory->createFromClassName($class, $declaringClass);
@@ -490,22 +490,27 @@ final class PhpStanExtractor implements PropertyDescriptionExtractorInterface, P
     {
         $prefixes = self::ACCESSOR === $type ? $this->accessorPrefixes : $this->mutatorPrefixes;
         $prefix = null;
+        $method = null;
 
         foreach ($prefixes as $prefix) {
             $methodName = $prefix.$ucFirstProperty;
 
             try {
-                $reflectionMethod = new \ReflectionMethod($class, $methodName);
-                if ($reflectionMethod->isStatic()) {
+                $method = new \ReflectionMethod($class, $methodName);
+                if ($method->isStatic()) {
+                    continue;
+                }
+
+                if (self::ACCESSOR === $type && \in_array((string) $method->getReturnType(), ['void', 'never'], true)) {
                     continue;
                 }
 
                 if (
                     (
-                        (self::ACCESSOR === $type && 0 === $reflectionMethod->getNumberOfRequiredParameters())
-                        || (self::MUTATOR === $type && $reflectionMethod->getNumberOfParameters() >= 1)
+                        (self::ACCESSOR === $type && !$method->getNumberOfRequiredParameters())
+                        || (self::MUTATOR === $type && $method->getNumberOfParameters() >= 1)
                     )
-                    && $this->canAccessMemberBasedOnItsVisibility($reflectionMethod)
+                    && $this->canAccessMemberBasedOnItsVisibility($method)
                 ) {
                     break;
                 }
@@ -514,17 +519,17 @@ final class PhpStanExtractor implements PropertyDescriptionExtractorInterface, P
             }
         }
 
-        if (!isset($reflectionMethod)) {
+        if (!$method) {
             return null;
         }
 
-        if (null === $rawDocNode = $reflectionMethod->getDocComment() ?: null) {
+        if (null === $rawDocNode = $method->getDocComment() ?: null) {
             return null;
         }
 
         $phpDocNode = $this->getPhpDocNode($rawDocNode);
 
-        return [$phpDocNode, $prefix, $reflectionMethod->class];
+        return [$phpDocNode, $prefix, $method->class];
     }
 
     private function getPhpDocNode(string $rawDocNode): PhpDocNode

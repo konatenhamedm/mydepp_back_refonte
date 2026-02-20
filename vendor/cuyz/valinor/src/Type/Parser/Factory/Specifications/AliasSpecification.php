@@ -14,6 +14,7 @@ use Reflector;
 
 use function array_shift;
 use function explode;
+use function implode;
 use function in_array;
 use function strtolower;
 
@@ -21,7 +22,7 @@ use function strtolower;
 final class AliasSpecification implements TypeParserSpecification
 {
     public function __construct(
-        /** @var ReflectionClass<object>|ReflectionFunction */
+        /** @var ReflectionClass<covariant object>|ReflectionFunction */
         private Reflector $reflection,
     ) {}
 

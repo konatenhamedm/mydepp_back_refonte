@@ -17,6 +17,8 @@ use Psr\Link\LinkInterface;
 use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
+use Symfony\Component\Form\Flow\FormFlowInterface;
+use Symfony\Component\Form\Flow\FormFlowTypeInterface;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
@@ -146,6 +148,10 @@ class ControllerHelper implements ServiceSubscriberInterface
             ], $context));
 
             return new JsonResponse($json, $status, $headers, true);
+        }
+
+        if (null === $data) {
+            return new JsonResponse('null', $status, $headers, true);
         }
 
         return new JsonResponse($data, $status, $headers);
@@ -338,6 +344,8 @@ class ControllerHelper implements ServiceSubscriberInterface
 
     /**
      * Creates and returns a Form instance from the type of the form.
+     *
+     * @return ($type is class-string<FormFlowTypeInterface> ? FormFlowInterface : FormInterface)
      */
     public function createForm(string $type, mixed $data = null, array $options = []): FormInterface
     {

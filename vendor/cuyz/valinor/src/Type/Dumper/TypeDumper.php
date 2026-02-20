@@ -12,9 +12,9 @@ use CuyZ\Valinor\Mapper\Object\Factory\ObjectBuilderFactory;
 use CuyZ\Valinor\Mapper\Object\ObjectBuilder;
 use CuyZ\Valinor\Mapper\Tree\Builder\InterfaceInferringContainer;
 use CuyZ\Valinor\Mapper\Tree\Exception\ObjectImplementationCallbackError;
+use CuyZ\Valinor\Type\DumpableType;
 use CuyZ\Valinor\Type\FixedType;
 use CuyZ\Valinor\Type\ObjectType;
-use CuyZ\Valinor\Type\DumpableType;
 use CuyZ\Valinor\Type\Type;
 use CuyZ\Valinor\Type\Types\EnumType;
 use CuyZ\Valinor\Type\Types\InterfaceType;
@@ -22,20 +22,36 @@ use CuyZ\Valinor\Type\Types\NativeClassType;
 use CuyZ\Valinor\Type\VacantType;
 use CuyZ\Valinor\Utility\TypeHelper;
 
+use function array_map;
+use function array_reduce;
+use function array_shift;
 use function count;
+use function hash;
+use function is_string;
+use function ksort;
+use function serialize;
+use function sprintf;
 use function usort;
 
 /** @internal */
 final class TypeDumper
 {
+    /** @var array<string, string> */
+    private array $dumpedTypes = [];
+
     public function __construct(
-        private readonly ClassDefinitionRepository $classDefinitionRepository,
-        private readonly ObjectBuilderFactory $objectBuilderFactory,
+        private ClassDefinitionRepository $classDefinitionRepository,
+        private ObjectBuilderFactory $objectBuilderFactory,
         private InterfaceInferringContainer $interfaceInferringContainer,
         private FunctionsContainer $constructors,
     ) {}
 
     public function dump(Type $type): string
+    {
+        return $this->dumpedTypes[$type->toString()] ??= $this->dumpAndQuote($type);
+    }
+
+    private function dumpAndQuote(Type $type): string
     {
         $context = $this->doDump($type, new TypeDumpContext());
 

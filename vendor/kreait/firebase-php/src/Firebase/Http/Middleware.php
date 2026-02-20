@@ -28,6 +28,8 @@ final class Middleware
 {
     /**
      * Ensures that the ".json" suffix is added to URIs and that the content type is set correctly.
+     *
+     * @return callable(callable): Closure
      */
     public static function ensureJsonSuffix(): callable
     {
@@ -46,6 +48,8 @@ final class Middleware
 
     /**
      * @param array<string, mixed>|null $override
+     *
+     * @return callable(callable): Closure
      */
     public static function addDatabaseAuthVariableOverride(?array $override): callable
     {
@@ -60,6 +64,9 @@ final class Middleware
         };
     }
 
+    /**
+     * @return callable(callable): Closure
+     */
     public static function log(LoggerInterface $logger, MessageFormatter $formatter, string $logLevel, string $errorLogLevel): callable
     {
         return static fn(callable $handler): Closure => static fn($request, array $options) => $handler($request, $options)->then(

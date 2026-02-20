@@ -353,7 +353,7 @@ abstract class AbstractAnnotation implements \JsonSerializable
         if (isset($data->ref)) {
             // Only specific https://github.com/OAI/OpenAPI-Specification/blob/3.1.0/versions/3.1.0.md#reference-object
             $ref = ['$ref' => $data->ref];
-            if ($this->_context->isVersion('3.1.x')) {
+            if (!$this->_context->isVersion('3.0.x')) {
                 foreach (['summary', 'description'] as $prop) {
                     if (property_exists($data, $prop)) {
                         $ref[$prop] = $data->{$prop};
@@ -362,7 +362,7 @@ abstract class AbstractAnnotation implements \JsonSerializable
             }
             if (property_exists($this, 'nullable') && $this->nullable === true) {
                 $ref = ['oneOf' => [$ref]];
-                if ($this->_context->isVersion('3.1.x')) {
+                if (!$this->_context->isVersion('3.0.x')) {
                     $ref['oneOf'][] = ['type' => 'null'];
                 } else {
                     $ref['nullable'] = $data->nullable;
@@ -391,15 +391,26 @@ abstract class AbstractAnnotation implements \JsonSerializable
             if (isset($data->type) && is_array($data->type)) {
                 if (in_array('null', $data->type)) {
                     $data->nullable = true;
-                    $data->type = array_filter($data->type, fn ($v): bool => $v !== 'null');
+                    $data->type = array_filter($data->type, fn ($t): bool => 'null' !== $t);
                     if (1 === count($data->type)) {
                         $data->type = array_pop($data->type);
                     }
                 }
             }
+
+            if (isset($data->type) && is_array($data->type)) {
+                if (1 === count($data->type)) {
+                    $data->type = array_pop($data->type);
+                } else {
+                    unset($data->type);
+                }
+            }
+
+            unset($data->unevaluatedProperties);
+            unset($data->unevaluatedItems);
         }
 
-        if ($this->_context->isVersion('3.1.x')) {
+        if (!$this->_context->isVersion('3.0.x')) {
             if (isset($data->nullable)) {
                 if (true === $data->nullable) {
                     if (isset($data->oneOf)) {
@@ -408,7 +419,7 @@ abstract class AbstractAnnotation implements \JsonSerializable
                         $data->anyOf[] = ['type' => 'null'];
                     } elseif (isset($data->allOf)) {
                         $data->allOf[] = ['type' => 'null'];
-                    } else {
+                    } elseif (isset($data->type)) {
                         $data->type = (array) $data->type;
                         $data->type[] = 'null';
                     }

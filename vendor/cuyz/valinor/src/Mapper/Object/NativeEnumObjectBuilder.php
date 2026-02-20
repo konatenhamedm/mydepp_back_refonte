@@ -3,8 +3,8 @@
 namespace CuyZ\Valinor\Mapper\Object;
 
 use BackedEnum;
-use CuyZ\Valinor\Type\Types\Factory\ValueTypeFactory;
 use CuyZ\Valinor\Type\Types\EnumType;
+use CuyZ\Valinor\Type\Types\Factory\ValueTypeFactory;
 use CuyZ\Valinor\Type\Types\UnionType;
 
 /** @internal */
@@ -39,6 +39,7 @@ class NativeEnumObjectBuilder implements ObjectBuilder
 
     public function buildObject(array $arguments): object
     {
+        // @phpstan-ignore offsetAccess.invalidOffset (we know the `value` offset exists)
         return $this->enum->cases()[$arguments['value']];
     }
 

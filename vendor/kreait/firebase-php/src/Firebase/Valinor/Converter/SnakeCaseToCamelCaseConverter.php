@@ -15,18 +15,14 @@ final class SnakeCaseToCamelCaseConverter
 {
     /**
      * @template T of object
-     * @param array<mixed> $value
-     * @param callable(array<mixed>): T $next
+     * @param iterable<mixed> $values
+     * @param callable(iterable<mixed>): T $next
      * @return T
      */
-    public function __invoke(mixed $values, callable $next): object
+    public function __invoke(iterable $values, callable $next): object
     {
         if ($values instanceof Traversable) {
             $values = iterator_to_array($values);
-        }
-
-        if (!is_array($values)) {
-            return $next($values);
         }
 
         $camelCaseConverted = array_combine(
