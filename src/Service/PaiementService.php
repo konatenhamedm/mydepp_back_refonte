@@ -369,7 +369,7 @@ class PaiementService
             "quantite" => 1,
             "montant" => $montant,
             "lib_order" => "PAIEMENT ONMCI",
-            "Url_Retour" => "https://mydepps.net/dashboard_etablissement",
+            "Url_Retour" => "https://mydepps.net/dashboard",
             "Url_Callback" => "https://backend.leadagro.net/api/paiement/info-paiement-oep"
         ];
 
