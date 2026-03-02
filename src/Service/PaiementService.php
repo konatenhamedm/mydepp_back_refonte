@@ -223,7 +223,7 @@ class PaiementService
         // dd($now);
         if (!$dernierAbonnement) {
             // Aucun abonnement encore
-            $dateRenouvellement = $now;
+            $dateRenouvellement = $now->add(new \DateInterval('P1Y'));
         } else {
             $expiration = (clone $dernierAbonnement->getCreatedAt())->modify('+1 year');
     
@@ -233,7 +233,7 @@ class PaiementService
           
             } else {
                 // Encore actif, on prolonge à partir de la date d’expiration actuelle
-                $dateRenouvellement = $expiration;
+                $dateRenouvellement = $expiration->add(new \DateInterval('P1Y'));
                 
             }
         }
@@ -369,7 +369,7 @@ class PaiementService
             "quantite" => 1,
             "montant" => $montant,
             "lib_order" => "PAIEMENT ONMCI",
-            "Url_Retour" => "https://mydepps.net/dashboard/etablissement",
+            "Url_Retour" => "https://mydepps.net/dashboard",
             "Url_Callback" => "https://backend.leadagro.net/api/paiement/info-paiement-oep"
         ];
 
@@ -407,7 +407,8 @@ class PaiementService
         $montant = $user->getPersonne()->getProfession()->getMontantRenouvellement();
         $expiration = (clone $user->getPersonne()->getDateValidation());
         $today = new \DateTime();
-        $yearDue = $today->diff($expiration)->y ;
+        // $yearDue = $today->diff($expiration)->y ;
+        $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
         // dd($yearDue);
 
         $transaction = new Transaction();
