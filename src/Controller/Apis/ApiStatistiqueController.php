@@ -184,7 +184,6 @@ class ApiStatistiqueController extends ApiInterface
 
                 ///recupere les transactions ou le champ data n'est pas null
                 $dataValide = array_filter($allTransactions, fn($transaction) => $transaction);
-                dd($dataValide);
                 $tab = [
                     'montantTotal' => $transactionRepository->montantTotal(),
                     'nombreSuccess' => count($transactionRepository->findBy(['state' => 1])),
