@@ -13,7 +13,9 @@ use App\Controller\Apis\Config\ApiInterface;
 use App\Entity\Document;
 use App\Entity\DocumentOepTemp;
 use App\Entity\DocumentTemporaire;
+use App\Entity\Etablissement;
 use App\Entity\LibelleGroupe;
+use App\Entity\Professionnel;
 use App\Entity\TempEtablissement;
 use App\Entity\TempProfessionnel;
 use App\Entity\Transaction;
@@ -414,7 +416,46 @@ class ApiPaiementController extends ApiInterface
             }
 
             $personne = $transactions->getUser()->getPersonne();
-            $profession = $personne->getProfession() ? $personne->getProfession() : null;
+            $profession = null;
+            if ($personne instanceof \App\Entity\Professionnel) {
+                $profession = $personne->getProfession();
+            }
+
+            $personneData = [
+                'id' => $personne->getId(),
+                "status" => $personne->getStatus(),
+                "createdAt" => $personne->getCreatedAt() ? $personne->getCreatedAt()->format('Y-m-d H:i:s') : null,
+            ];
+
+            if ($personne instanceof \App\Entity\Professionnel) {
+                $personneData = array_merge($personneData, [
+                    'profession' => $profession ? [
+                        'libelle' => $profession->getLibelle() ?? "",
+                        'id' => $profession->getId(),
+                        'code' => $profession->getCode(),
+                        'montantNouvelleDemande' => $profession->getMontantNouvelleDemande(),
+                        'montantRenouvellement' => $profession->getMontantRenouvellement(),
+                    ] : null,
+                    "code" => $personne->getCode(),
+                    "poleSanitaire" => $personne->getPoleSanitaire(),
+                    "nom" => $personne->getNom(),
+                    "prenoms" => $personne->getPrenoms(),
+                    "lieuExercicePro" => $personne->getLieuExercicePro(),
+                    "email" => $personne->getEmail(),
+                    "number" => $personne->getNumber(),
+                    "quartier" => $personne->getQuartier(),
+                ]);
+            } elseif ($personne instanceof \App\Entity\Etablissement) {
+                $personneData = array_merge($personneData, [
+                    "denomination" => $personne->getDenomination(),
+                    "nom" => $personne->getNom(),
+                    "prenoms" => $personne->getPrenoms(),
+                    "code" => $personne->getCode(),
+                    "email" => $personne->getEmail() ?? $personne->getEmailAutre(),
+                    "telephone" => $personne->getTelephone(),
+                    "adresse" => $personne->getAdresse(),
+                ]);
+            }
 
             $data = [
                 'user' => [
@@ -422,25 +463,7 @@ class ApiPaiementController extends ApiInterface
                     "username" => $transactions->getUser()->getUsername(),
                     "email" => $transactions->getUser()->getUserIdentifier(),
                     "typeUser" => $transactions->getUser()->getTypeUser(),
-                    'personne' => [
-                        'profession' => $profession ? [
-                            'libelle' => $profession->getLibelle() ?? "",
-                            'id' => $profession->getId(),
-                            'code' => $profession->getCode(),
-                            'montantNouvelleDemande' => $profession->getMontantNouvelleDemande(),
-                            'montantRenouvellement' => $profession->getMontantRenouvellement(),
-                        ] : null,
-                        "code" => $personne->getCode(),
-                        "poleSanitaire" => $personne->getPoleSanitaire(),
-                        "nom" => $personne->getNom(),
-                        "prenoms" => $personne->getPrenoms(),
-                        "lieuExercicePro" => $personne->getLieuExercicePro(),
-                        "email" => $personne->getEmail(),
-                        "number" => $personne->getNumber(),
-                        "quartier" => $personne->getQuartier(),
-                        "id" => $personne->getId(),
-                        "createdAt" => $personne->getCreatedAt()->format('Y-m-d H:i:s')
-                    ] ?? null,
+                    'personne' => $personneData,
                 ],
                 "montant" => $transactions->getMontant(),
                 "reference" => $transactions->getReference(),
@@ -449,7 +472,7 @@ class ApiPaiementController extends ApiInterface
                 "type" => $transactions->getType(),
                 "state" => $transactions->getState(),
                 "typeUser" => $transactions->getUser()->getTypeUser(),
-                "createdAt" => $transactions->getCreatedAt()->format('Y-m-d H:i:s'),
+                "createdAt" => $transactions->getCreatedAt() ? $transactions->getCreatedAt()->format('Y-m-d H:i:s') : null,
                 "email" => $transactions->getUser()->getEmail(),
             ];
 

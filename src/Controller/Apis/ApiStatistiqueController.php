@@ -11,6 +11,7 @@ use Nelmio\ApiDocBundle\Attribute\Model;
 use Symfony\Component\HttpFoundation\Request;
 use App\Controller\Apis\Config\ApiInterface;
 use App\Entity\Etablissement;
+use App\Entity\Professionnel;
 use App\Entity\Transaction;
 use App\Entity\User;
 use App\Repository\CiviliteRepository;
@@ -155,26 +156,32 @@ class ApiStatistiqueController extends ApiInterface
 • Combien de dossiers sont traités et refusés et imprimable
 • Faire un état des personnes inscrite par profession */
             if ($type == "INSTRUCTEUR") {
-                $dataAccepte = $professionnelRepository->findBy(['status' => 'accepte', 'imputation' => $idUser]);
-                $dataAttente = $professionnelRepository->findBy(['status' => 'attente', 'imputation' => $idUser]);
-                $dataRejet = $professionnelRepository->findBy(['status' => 'rejete', 'imputation' => $idUser]);
-                $dataRefuse = $professionnelRepository->findBy(['status' => 'refuse', 'imputation' => $idUser]);
-                $dataValide = $professionnelRepository->findBy(['status' => 'valide', 'imputation' => $idUser]);
+                $pAccepte = $professionnelRepository->findBy(['status' => 'accepte', 'imputation' => $idUser]);
+                $pAttente = $professionnelRepository->findBy(['status' => 'attente', 'imputation' => $idUser]);
+                $pRejet = $professionnelRepository->findBy(['status' => 'rejete', 'imputation' => $idUser]);
+                $pRefuse = $professionnelRepository->findBy(['status' => 'refuse', 'imputation' => $idUser]);
+                $pValide = $professionnelRepository->findBy(['status' => 'valide', 'imputation' => $idUser]);
+
+                $eAccepte = $etablissementRepository->findBy(['status' => 'accepte', 'imputation' => $idUser]);
+                $eAttente = $etablissementRepository->findBy(['status' => 'attente', 'imputation' => $idUser]);
+                $eRejet = $etablissementRepository->findBy(['status' => 'rejete', 'imputation' => $idUser]);
+                $eRefuse = $etablissementRepository->findBy(['status' => 'refuse', 'imputation' => $idUser]);
+                $eValide = $etablissementRepository->findBy(['status' => 'valide', 'imputation' => $idUser]);
 
                 $tab = [
-                    'atttente' => $dataAttente ?  count($dataAttente) : 0,
-                    'accepte' => $dataAccepte ?  count($dataAccepte) : 0,
-                    'rejete' => $dataRejet ?  count($dataRejet) : 0,
-                    'valide' => $dataValide ?  count($dataValide) : 0,
-                    'refuse' => $dataRefuse ?  count($dataRefuse) : 0,
+                    'atttente' => count($pAttente) + count($eAttente),
+                    'accepte' => count($pAccepte) + count($eAccepte),
+                    'rejete' => count($pRejet) + count($eRejet),
+                    'valide' => count($pValide) + count($eValide),
+                    'refuse' => count($pRefuse) + count($eRefuse),
                 ];
             } elseif ($type == "SOUS-DIRECTEUR") {
                 $tab = [
-                    'atttente' => count($professionnelRepository->findBy(['status' => 'attente'])),
-                    'accepte' => count($professionnelRepository->findBy(['status' => 'accepte'])),
-                    'rejete' => count($professionnelRepository->findBy(['status' => 'rejete'])),
-                    'valide' => count($professionnelRepository->findBy(['status' => 'valide'])),
-                    'refuse' => count($professionnelRepository->findBy(['status' => 'refuse']))
+                    'atttente' => count($professionnelRepository->findBy(['status' => 'attente'])) + count($etablissementRepository->findBy(['status' => 'attente'])),
+                    'accepte' => count($professionnelRepository->findBy(['status' => 'accepte'])) + count($etablissementRepository->findBy(['status' => 'accepte'])),
+                    'rejete' => count($professionnelRepository->findBy(['status' => 'rejete'])) + count($etablissementRepository->findBy(['status' => 'rejete'])),
+                    'valide' => count($professionnelRepository->findBy(['status' => 'valide'])) + count($etablissementRepository->findBy(['status' => 'valide'])),
+                    'refuse' => count($professionnelRepository->findBy(['status' => 'refuse'])) + count($etablissementRepository->findBy(['status' => 'refuse']))
                 ];
             } elseif ($type == "COMPTABLE") {
 
@@ -196,7 +203,12 @@ class ApiStatistiqueController extends ApiInterface
                 $tab = [
                     'countEtablissement' => count($etablissementRepository->findAll()),
                     'countProfessionnel' => count($professionnelRepository->findAll()),
-                    'professionnelAjour' => count($professionnelRepository->allProfAjour())
+                    'professionnelAjour' => count($professionnelRepository->allProfAjour()),
+                    'atttente' => count($professionnelRepository->findBy(['status' => 'attente'])),
+                    'accepte' => count($professionnelRepository->findBy(['status' => 'accepte'])),
+                    'rejete' => count($professionnelRepository->findBy(['status' => 'rejete'])),
+                    'valide' => count($professionnelRepository->findBy(['status' => 'valide'])),
+                    'refuse' => count($professionnelRepository->findBy(['status' => 'refuse']))
                 ];
             }
 
