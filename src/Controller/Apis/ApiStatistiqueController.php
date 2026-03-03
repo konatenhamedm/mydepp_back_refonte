@@ -578,6 +578,11 @@ class ApiStatistiqueController extends ApiInterface
     }
 
     #[Route('/admin/general', methods: ['GET'])]
+    #[OA\Response(
+        response: 200,
+        description: 'Statistiques générales pour l’administrateur (comptes, transactions, dossiers)',
+        content: new OA\JsonContent(type: 'object')
+    )]
     #[OA\Tag(name: 'statistiques')]
     public function indexAdminGeneral(
         UserRepository $userRepository,
@@ -592,40 +597,43 @@ class ApiStatistiqueController extends ApiInterface
                 return $this->setStatusCode(403)->setMessage("Cette ressource est réservée aux administrateurs.")->response('[]');
             }
 
-            $totalUsers = $userRepository->count(['deleteAt' => null]);
-            $totalProfessionnels = $userRepository->count(['typeUser' => 'PROFESSIONNEL', 'deleteAt' => null]);
-            $totalEtablissements = $userRepository->count(['typeUser' => 'ETABLISSEMENT', 'deleteAt' => null]);
-            $totalAdministrateurs = $userRepository->count(['typeUser' => 'ADMINISTRATEUR', 'deleteAt' => null]);
-
-            $totalSuccessfulAmount = $transactionRepository->montantTotal();
-            $transactionStats = [
-                'success' => $transactionRepository->count(['state' => 1]),
-                'failed' => $transactionRepository->count(['state' => 0]),
+            // 1. Analyse des Utilisateurs
+            $users = [
+                'total' => $userRepository->count(['deleteAt' => null]),
+                'professionnels' => $userRepository->count(['typeUser' => 'PROFESSIONNEL', 'deleteAt' => null]),
+                'etablissements' => $userRepository->count(['typeUser' => 'ETABLISSEMENT', 'deleteAt' => null]),
+                'administrateurs' => $userRepository->count(['typeUser' => 'ADMINISTRATEUR', 'deleteAt' => null]),
             ];
 
-            $proStats = [
+            // 2. Analyse des Transactions (Chiffre d'Affaires)
+            $totalSuccessfulAmount = (int)$transactionRepository->montantTotal();
+            $transactions = [
+                'montant_total' => $totalSuccessfulAmount,
+                'succes' => $transactionRepository->count(['state' => 1]),
+                'echec' => $transactionRepository->count(['state' => 0]),
+            ];
+
+            // 3. Dossiers Professionnels
+            $professionnels = [
                 'total' => $professionnelRepository->count([]),
                 'ajour' => count($professionnelRepository->allProfAjour()),
+                'attente' => $professionnelRepository->count(['status' => 'attente']),
+                'rejete' => $professionnelRepository->count(['status' => 'rejete']),
+                'accepte' => $professionnelRepository->count(['status' => 'accepte']),
             ];
 
-            $etabStats = [
+            // 4. Dossiers Établissements
+            $etablissements = [
                 'total' => $etablissementRepository->count([]),
+                'validés' => $etablissementRepository->count(['status' => 'accepte']), // Adapté selon les statuts réels
+                'en_attente' => $etablissementRepository->count(['status' => 'attente']),
             ];
 
             $tab = [
-                'utilisateurs' => [
-                    'total' => $totalUsers,
-                    'professionnels' => $totalProfessionnels,
-                    'etablissements' => $totalEtablissements,
-                    'administrateurs' => $totalAdministrateurs,
-                ],
-                'transactions' => [
-                    'montant_total' => (int)$totalSuccessfulAmount,
-                    'nombre_succes' => $transactionStats['success'],
-                    'nombre_echec' => $transactionStats['failed'],
-                ],
-                'professionnels' => $proStats,
-                'etablissements' => $etabStats,
+                'utilisateurs' => $users,
+                'transactions' => $transactions,
+                'professionnels' => $professionnels,
+                'etablissements' => $etablissements,
             ];
 
             return $this->responseData($tab, 'group_user', ['Content-Type' => 'application/json']);
