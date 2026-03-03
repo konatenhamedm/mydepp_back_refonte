@@ -173,6 +173,7 @@ class ApiStatistiqueController extends ApiInterface
                     'accepte' => count($pAccepte) + count($eAccepte),
                     'rejete' => count($pRejet) + count($eRejet),
                     'valide' => count($pValide) + count($eValide),
+                    'a_jour' => count($pValide) + count($eValide),
                     'refuse' => count($pRefuse) + count($eRefuse),
                 ];
             } elseif ($type == "SOUS-DIRECTEUR") {
@@ -181,6 +182,7 @@ class ApiStatistiqueController extends ApiInterface
                     'accepte' => count($professionnelRepository->findBy(['status' => 'accepte'])) + count($etablissementRepository->findBy(['status' => 'accepte'])),
                     'rejete' => count($professionnelRepository->findBy(['status' => 'rejete'])) + count($etablissementRepository->findBy(['status' => 'rejete'])),
                     'valide' => count($professionnelRepository->findBy(['status' => 'valide'])) + count($etablissementRepository->findBy(['status' => 'valide'])),
+                    'a_jour' => count($professionnelRepository->findBy(['status' => 'valide'])) + count($etablissementRepository->findBy(['status' => 'valide'])),
                     'refuse' => count($professionnelRepository->findBy(['status' => 'refuse'])) + count($etablissementRepository->findBy(['status' => 'refuse']))
                 ];
             } elseif ($type == "COMPTABLE") {
@@ -637,8 +639,10 @@ class ApiStatistiqueController extends ApiInterface
             // 4. Dossiers Établissements
             $etablissements = [
                 'total' => $etablissementRepository->count([]),
-                'validés' => $etablissementRepository->count(['status' => 'accepte']), // Adapté selon les statuts réels
+                'valides' => $etablissementRepository->count(['status' => 'accepte']), // Adapté selon les statuts réels
+                'ajour' => $etablissementRepository->count(['status' => 'accepte']),
                 'en_attente' => $etablissementRepository->count(['status' => 'attente']),
+                'rejete' => $etablissementRepository->count(['status' => 'rejete']),
             ];
 
             $tab = [

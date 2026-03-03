@@ -409,7 +409,17 @@ class ApiPaiementController extends ApiInterface
     {
         try {
 
-            $transactions = $transactionRepository->findLastTransactionByUser($userId);
+            $user = $this->userRepository->find($userId);
+            if (!$user) {
+                // Si l'ID fourni est l'ID de la personne au lieu de l'user
+                $user = $this->userRepository->findOneBy(['personne' => $userId]);
+            }
+
+            if (!$user) {
+                return $this->responseData(null, 'group_user_trx', ['Content-Type' => 'application/json']);
+            }
+
+            $transactions = $transactionRepository->findLastTransactionByUser($user->getId());
 
             if (!$transactions) {
                 return $this->responseData(null, 'group_user_trx', ['Content-Type' => 'application/json']);
