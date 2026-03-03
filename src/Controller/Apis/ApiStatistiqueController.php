@@ -30,6 +30,7 @@ class ApiStatistiqueController extends ApiInterface
     public function webSiteStatistique(EtablissementRepository $etablissementRepository, ProfessionnelRepository $professionnelRepository)
     {
         try {
+            //iiiiiiii
             $tab = [
                 'countEtablissement' => count($etablissementRepository->findAll()),
                 'countProfessionnel' => count($professionnelRepository->findAll()),
