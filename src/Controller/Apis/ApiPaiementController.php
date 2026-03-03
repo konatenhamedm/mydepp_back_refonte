@@ -283,7 +283,7 @@ class ApiPaiementController extends ApiInterface
             $transactions = [
                 'expire' => $expire,
                 'etatPro' => $etatPro,
-                'montant' => $user->getTypeUser() == "PROFESSIONNEL" ? $user->getPersonne()->getProfession()->getMontantNouvelleDemande()* $yearDue : "",
+                'montant' => $user->getTypeUser() == "PROFESSIONNEL" ? $user->getPersonne()->getProfession()->getMontantNouvelleDemande() * $yearDue : "",
                 'date_expiration' => $expiration->format('Y-m-d'),
                 'jours_restants' => $joursRestants,
             ];
@@ -409,6 +409,10 @@ class ApiPaiementController extends ApiInterface
 
             $transactions = $transactionRepository->findLastTransactionByUser($userId);
 
+            if (!$transactions) {
+                return $this->responseData(null, 'group_user_trx', ['Content-Type' => 'application/json']);
+            }
+
             $personne = $transactions->getUser()->getPersonne();
             $profession = $personne->getProfession() ? $personne->getProfession() : null;
 
@@ -452,7 +456,7 @@ class ApiPaiementController extends ApiInterface
 
             $response = $this->responseData($data, 'group_user_trx', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("yuyuyu");
+            $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
 
