@@ -12,12 +12,14 @@ use Symfony\Component\HttpFoundation\Request;
 use App\Controller\Apis\Config\ApiInterface;
 use App\Entity\Etablissement;
 use App\Entity\Transaction;
+use App\Entity\User;
 use App\Repository\CiviliteRepository;
 use App\Repository\EtablissementRepository;
 use App\Repository\ProfessionnelRepository;
 use App\Repository\ProfessionRepository;
 use App\Repository\SpecialiteRepository;
 use App\Repository\TransactionRepository;
+use App\Repository\UserRepository;
 
 #[Route('/api/statistique')]
 class ApiStatistiqueController extends ApiInterface
@@ -180,7 +182,7 @@ class ApiStatistiqueController extends ApiInterface
                 // dd($allTransactions);
 
                 ///recupere les transactions ou le champ data n'est pas null
-                $dataValide = array_filter($allTransactions, fn ($transaction) => $transaction);
+                $dataValide = array_filter($allTransactions, fn($transaction) => $transaction);
                 dd($dataValide);
                 $tab = [
                     'montantTotal' => $transactionRepository->montantTotal(),
@@ -573,5 +575,63 @@ class ApiStatistiqueController extends ApiInterface
 
         // On envoie la réponse
         return $response;
+    }
+
+    #[Route('/admin/general', methods: ['GET'])]
+    #[OA\Tag(name: 'statistiques')]
+    public function indexAdminGeneral(
+        UserRepository $userRepository,
+        TransactionRepository $transactionRepository,
+        ProfessionnelRepository $professionnelRepository,
+        EtablissementRepository $etablissementRepository
+    ): Response {
+        try {
+            /** @var User $userConnected */
+            $userConnected = $this->getUser();
+            if (!$userConnected || $userConnected->getTypeUser() !== 'ADMINISTRATEUR') {
+                return $this->setStatusCode(403)->setMessage("Cette ressource est réservée aux administrateurs.")->response('[]');
+            }
+
+            $totalUsers = $userRepository->count(['deleteAt' => null]);
+            $totalProfessionnels = $userRepository->count(['typeUser' => 'PROFESSIONNEL', 'deleteAt' => null]);
+            $totalEtablissements = $userRepository->count(['typeUser' => 'ETABLISSEMENT', 'deleteAt' => null]);
+            $totalAdministrateurs = $userRepository->count(['typeUser' => 'ADMINISTRATEUR', 'deleteAt' => null]);
+
+            $totalSuccessfulAmount = $transactionRepository->montantTotal();
+            $transactionStats = [
+                'success' => $transactionRepository->count(['state' => 1]),
+                'failed' => $transactionRepository->count(['state' => 0]),
+            ];
+
+            $proStats = [
+                'total' => $professionnelRepository->count([]),
+                'ajour' => count($professionnelRepository->allProfAjour()),
+            ];
+
+            $etabStats = [
+                'total' => $etablissementRepository->count([]),
+            ];
+
+            $tab = [
+                'utilisateurs' => [
+                    'total' => $totalUsers,
+                    'professionnels' => $totalProfessionnels,
+                    'etablissements' => $totalEtablissements,
+                    'administrateurs' => $totalAdministrateurs,
+                ],
+                'transactions' => [
+                    'montant_total' => (int)$totalSuccessfulAmount,
+                    'nombre_succes' => $transactionStats['success'],
+                    'nombre_echec' => $transactionStats['failed'],
+                ],
+                'professionnels' => $proStats,
+                'etablissements' => $etabStats,
+            ];
+
+            return $this->responseData($tab, 'group_user', ['Content-Type' => 'application/json']);
+        } catch (\Exception $exception) {
+            $this->setMessage($exception->getMessage());
+            return $this->response('[]');
+        }
     }
 }
