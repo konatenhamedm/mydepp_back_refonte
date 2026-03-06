@@ -1,286 +1,171 @@
 <?php
 
+
 namespace App\Controller;
 
 use App\Controller\Apis\Config\ApiInterface;
 use App\Repository\TransactionRepository;
 use App\Repository\UserRepository;
+use App\Service\PaiementProService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Ramsey\Uuid\Uuid;
+
 #[Route('/api/paiement2')]
 class PaymentProController extends ApiInterface
 {
-    private HttpClientInterface $httpClient;
-    
-    private TransactionRepository $transactionRepository;
+    public function __construct(
+        private PaiementProService $paiementServices,
+    ) {}
 
-    public function __construct(HttpClientInterface $httpClient, UserRepository $userRepository, TransactionRepository $transactionRepository)
+    #[Route('/paiement', name: 'new_paiement', methods: ['POST'])]
+    public function paiement(Request $request): JsonResponse
     {
-        $this->httpClient = $httpClient;
-        $this->userRepository = $userRepository;
-        $this->transactionRepository = $transactionRepository;
-        
-    }
+        $data = json_decode($request->getContent(), true);
 
-    #[Route('/paymentmomo', name: 'api_payment_momo', methods: ['POST', 'OPTIONS'])]
-    public function processPayment(Request $request): JsonResponse
-    {
-
-        // Gérer les requêtes OPTIONS (CORS preflight)
-        if ($request->getMethod() === 'OPTIONS') {
-            return $this->createCorsResponse();
+        // Valider les données requises
+        if (!isset($data['amount'], $data['phoneNumber'], $data['user'], $data['type'])) {
+            return $this->json(['error' => 'Données manquantes'], 400);
         }
 
-        try {
-            // Credentials
-            $username = '8e10c4a7-bcae-4f64-ba50-7b5cfe338366';
-            $password = 'b73936c9c1c449c9b6fcebf12aee00f2';
-            $basicToken = base64_encode("$username:$password");
-            
-            // Récupérer la clé primaire depuis les variables d'environnement
-            $momoPrimaryKey = $_ENV['MOMO_PRIMARY_KEY'] ?? '';
-            $momoSubscriptionKey = 'f42e9a3ae31842fba6e8c2fea23fa0d7';
-            
-            // Étape 1: Obtenir le token
-            $tokenResponse = $this->httpClient->request('POST', 'https://proxy.momoapi.mtn.com/collection/token/', [
-                'headers' => [
-                    'Authorization' => "Basic $basicToken",
-                    'Cache-Control' => 'no-cache',
-                    'Ocp-Apim-Subscription-Key' => $momoSubscriptionKey,
-                ],
-            ]);
+        // 1. Récupérer le token Momo
+        $token = $this->paiementServices->getMomoToken();
+        if (!$token) {
+            return $this->json(['error' => 'Erreur lors de la récupération du token'], 500);
+        }
 
-            if ($tokenResponse->getStatusCode() !== 200) {
-                return $this->createCorsResponse(
-                    ['error' => 'Erreur lors de la récupération du token'],
-                    500
-                );
-            }
+        // 2. Préparer la requête de paiement
+        $referenceId = $this->paiementServices->generateReferenceId();
+        $body = [
+            'amount' => (string) $data['amount'],
+            'currency' => 'XOF',
+            'externalId' => $referenceId,
+            'payer' => [
+                'partyIdType' => 'MSISDN',
+                'partyId' => '225' . $data['phoneNumber'],
+            ],
+            'payerMessage' => 'Paiement',
+            'payeeNote' => 'Paiement',
+        ];
 
-            $tokenData = $tokenResponse->toArray();
-            $token = $tokenData['access_token'];
+        // 3. Appeler l'API Momo
+        $result = $this->paiementServices->initiateMomoPayment($token, $body, $referenceId);
 
-            // Récupérer les données du corps de la requête
-            $data = json_decode($request->getContent(), true);
-            // Si le body JSON est vide, récupérer depuis form-data
-            if (!$data || !is_array($data)) {
-                $data = [
-                    'amount' => $request->get('amount'),
-                    'phoneNumber' => $request->get('phoneNumber'),
-                    'user' => $request->get('user'),
-                    'profession' => $request->get('profession'),
-                ];
-                dd( $request , $data);
-            }
-
-            $amount = $data['amount'] ?? null;
-            $phoneNumber = $data['phoneNumber'] ?? null;
-
-            if (!$amount || !$phoneNumber) {
-                return $this->createCorsResponse(
-                    ['error' => 'Montant et numéro de téléphone requis'],
-                    400
-                );
-            }
-
-            // Générer UUID
-            $myUuid = Uuid::uuid4()->toString();
-
-            // Construire le body pour la requête de paiement
-            $paymentBody = [
-                'amount' => (string) $amount,
-                'currency' => 'XOF',
-                'externalId' => $myUuid,
-                'payer' => [
-                    'partyIdType' => 'MSISDN',
-                    'partyId' => "225$phoneNumber",
-                ],
-                'payerMessage' => 'string',
-                'payeeNote' => 'string',
-            ];
-
-
-            // Étape 2: Initier le paiement
-            $paymentResponse = $this->httpClient->request(
-                'POST',
-                'https://proxy.momoapi.mtn.com/collection/v1_0/requesttopay',
-                [
-                    'headers' => [
-                        'Authorization' => "Bearer $token",
-                        'X-Callback-Url' => 'https://webhook.site/#!/view/3b1651b5-677b-4034-8c6a-e37ce123869e',
-                        'X-Reference-Id' => $myUuid,
-                        'X-Target-Environment' => 'mtnivorycoast',
-                        'Content-Type' => 'application/json',
-                        'Cache-Control' => 'no-cache',
-                        'Ocp-Apim-Subscription-Key' => $momoSubscriptionKey,
-                    ],
-                    'json' => $paymentBody,
-                ]
-            );
-
-            if ($paymentResponse->getStatusCode() === 202 || $paymentResponse->getStatusCode() === 200) {
-                // Enregistrer la transaction dans la base
-                // dd($paymentResponse->getStatusCode(), $paymentResponse->getHeaders());
-                $transaction = new \App\Entity\Transaction();
-                if (isset($data['user'])) {
-                    $transaction->setUser($this->userRepository->find($data['user']));
-                }
-                $transaction->setChannel('momo');
-                $transaction->setReference($myUuid);
-                $transaction->setMontant($amount);
-                $transaction->setReferenceChannel($myUuid);
-                $transaction->setType("PAIEMENT MOMO");
-                $transaction->setTypeUser('etablissement');
-                $transaction->setState(0);
-                $transaction->setCreatedAtValue(new \DateTimeImmutable());
-                $transaction->setUpdatedAt(new \DateTimeImmutable());
-                $this->transactionRepository->add($transaction, true);
-
-                return $this->createCorsResponse(
-                    [
-                        'success' => true,
-                        'message' => 'Paiement initié avec succès',
-                        'referenceId' => $myUuid,
-                    ],
-                    200
-                );
+        // 4. Enregistrer la transaction selon le type
+        if ($result['success']) {
+            if ($data['type'] === 'professionnel') {
+                $this->paiementServices->createProfessionnelTemp($data, $referenceId);
             } else {
-                return $this->createCorsResponse(
-                    ['error' => 'Erreur lors de l\'initiation du paiement'],
-                    500
-                );
+                $this->paiementServices->createEtablissementTemp($data, $referenceId);
             }
-
-        } catch (\Exception $e) {
-            return $this->createCorsResponse(
-                [
-                    'error' => 'Erreur serveur',
-                    'message' => $e->getMessage(),
-                ],
-                500
-            );
+            return $this->json([
+                'success' => true,
+                'message' => 'Paiement initié avec succès',
+                'reference' => $referenceId
+            ], 201);
+        } else {
+            return $this->json(['error' => $result['error'] ?? 'Erreur lors de l\'initiation du paiement'], 500);
         }
     }
 
-    #[Route('/verif-status', name: 'api_verif_status', methods: ['POST', 'OPTIONS'])]
-    public function verifyPaymentStatus(Request $request): JsonResponse
+    #[Route('/paiement/{referenceId}/statut', name: 'check_payment_status', methods: ['GET'])]
+    public function verifierStatut(string $referenceId): JsonResponse
     {
-        // Gérer les requêtes OPTIONS (CORS preflight)
-        if ($request->getMethod() === 'OPTIONS') {
-            return $this->createCorsResponse();
-        }
+        $result = $this->paiementServices->verifierStatutPaiementPro($referenceId);
 
-        try {
-            // Credentials
-            $username = '8e10c4a7-bcae-4f64-ba50-7b5cfe338366';
-            $password = 'b73936c9c1c449c9b6fcebf12aee00f2';
-            $basicToken = base64_encode("$username:$password");
-            
-            // Récupérer la clé primaire depuis les variables d'environnement
-            $momoPrimaryKey =  'f42e9a3ae31842fba6e8c2fea23fa0d7';
-
-            // Étape 1: Obtenir le token
-            $tokenResponse = $this->httpClient->request('POST', 'https://proxy.momoapi.mtn.com/collection/token/', [
-                'headers' => [
-                    'Authorization' => "Basic $basicToken",
-                    'Cache-Control' => 'no-cache',
-                    'Ocp-Apim-Subscription-Key' => $momoPrimaryKey,
-                ],
+        if ($result['success'] ?? false) {
+            return $this->json([
+                'success' => true,
+                'status' => $result['status'],
+                'data' => $result['data'] ?? [],
             ]);
-
-            if ($tokenResponse->getStatusCode() !== 200) {
-                return $this->createCorsResponse(
-                    ['error' => 'Erreur lors de la récupération du token'],
-                    500
-                );
-            }
-
-            $tokenData = $tokenResponse->toArray();
-            $token = $tokenData['access_token'];
-
-            // Récupérer les données du corps de la requête
-            $data = json_decode($request->getContent(), true);
-            $referenceId = $data['referenceId'] ?? null;
-
-            if (!$referenceId) {
-                return $this->createCorsResponse(
-                    ['error' => 'Reference ID requis'],
-                    400
-                );
-            }
-
-            // Étape 2: Vérifier le statut du paiement
-            $statusResponse = $this->httpClient->request(
-                'GET',
-                "https://proxy.momoapi.mtn.com/collection/v1_0/requesttopay/$referenceId",
-                [
-                    'headers' => [
-                        'Authorization' => "Bearer $token",
-                        'X-Target-Environment' => 'mtnivorycoast',
-                        'Cache-Control' => 'no-cache',
-                        'Ocp-Apim-Subscription-Key' => $momoPrimaryKey,
-                    ],
-                ]
-            );
-
-            $statusCode = $statusResponse->getStatusCode();
-
-            if ($statusCode === 200) {
-                $statusData = $statusResponse->toArray();
-                // Mettre à jour le statut de la transaction
-                $transaction = $this->transactionRepository->findOneBy(['reference_channel' => $referenceId]);
-                if ($transaction) {
-                    if (($statusData['status'] ?? null) === 'FAILED') {
-                        $transaction->setState(0); // failed
-                    } elseif (($statusData['status'] ?? null) !== 'FAILED' && ($statusData['status'] ?? null) !== 'PENDING') {
-                        $transaction->setState(1); // completed
-                    }
-                    $transaction->setUpdatedAt(new \DateTimeImmutable());
-                    $this->transactionRepository->add($transaction, true);
-                }
-                return $this->createCorsResponse(
-                    [
-                        'success' => true,
-                        'message' => 'Paiement traité avec succès',
-                        'status' => $statusData['status'] ?? null,
-                        'reason' => $statusData['reason'] ?? null,
-                        'data' => $statusData,
-                    ],
-                    200
-                );
-            } else {
-                return $this->createCorsResponse(
-                    ['error' => 'Erreur lors de la vérification du statut'],
-                    303
-                );
-            }
-
-        } catch (\Exception $e) {
-            return $this->createCorsResponse(
-                [
-                    'error' => 'Erreur serveur',
-                    'message' => $e->getMessage(),
-                ],
-                303
-            );
+        } else {
+            return $this->json(['error' => $result['error'] ?? 'Erreur lors de la vérification'], 500);
         }
     }
 
-    /**
-     * Créer une réponse avec les headers CORS
-     */
-    private function createCorsResponse($data = null, int $status = 200): JsonResponse
+    #[Route('/paiement/{referenceId}/transaction', name: 'get_transaction', methods: ['GET'])]
+    public function getTransaction(string $referenceId): JsonResponse
     {
-        $response = new JsonResponse($data, $status);
-        
-        $response->headers->set('Access-Control-Allow-Origin', '*');
-        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Ocp-Apim-Subscription-Key, X-Callback-Url, X-Reference-Id, X-Target-Environment');
-        
-        return $response;
+        $transaction = $this->paiementServices->getTransactionByReference($referenceId);
+
+        if (!$transaction) {
+            return $this->json(['error' => 'Transaction non trouvée'], 404);
+        }
+
+        return $this->json([
+            'success' => true,
+            'transaction' => [
+                'reference' => $transaction->getReference(),
+                'montant' => $transaction->getMontant(),
+                'type' => $transaction->getType(),
+                'typeUser' => $transaction->getTypeUser(),
+                'state' => $transaction->getState(),
+                'channel' => $transaction->getChannel(),
+                'createdAt' => $transaction->getCreatedAt()?->format('Y-m-d H:i:s'),
+                'updatedAt' => $transaction->getUpdatedAt()?->format('Y-m-d H:i:s'),
+            ]
+        ]);
+    }
+
+    #[Route('/paiement/webhook/momo', name: 'momo_webhook', methods: ['POST'])]
+    public function momoWebhook(Request $request): JsonResponse
+    {
+        $webhookData = json_decode($request->getContent(), true);
+
+        $result = $this->paiementServices->traiterWebhookMomo($webhookData);
+
+        if ($result['success'] ?? false) {
+            return $this->json([
+                'success' => true,
+                'message' => $result['message'] ?? 'Webhook traité',
+                'status' => $result['status'] ?? null,
+            ], 200);
+        } else {
+            return $this->json(['error' => $result['error'] ?? 'Erreur lors du traitement du webhook'], 500);
+        }
+    }
+
+    #[Route('/paiement/{referenceId}/mise-a-jour', name: 'update_payment_status', methods: ['POST'])]
+    public function mettreAJourStatut(string $referenceId): JsonResponse
+    {
+        $result = $this->paiementServices->verifierEtMettreAJourStatut($referenceId);
+
+        if ($result['success'] ?? false) {
+            return $this->json([
+                'success' => true,
+                'message' => 'Statut mis à jour',
+                'status' => $result['status'],
+                'data' => $result['data'] ?? [],
+            ]);
+        } else {
+            return $this->json(['error' => $result['error'] ?? 'Erreur lors de la mise à jour'], 500);
+        }
+    }
+
+    #[Route('/paiement/initier', name: 'initier_paiement', methods: ['POST'])]
+    public function initierPaiement(Request $request): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        // Valider les données requises
+        if (!isset($data['amount'], $data['phoneNumber'], $data['user'])) {
+            return $this->json(['error' => 'Données manquantes (amount, phoneNumber, user)'], 400);
+        }
+
+        $result = $this->paiementServices->initierPaiementPro($data);
+
+        if ($result['success'] ?? false) {
+            return $this->json([
+                'success' => true,
+                'message' => $result['message'],
+                'referenceId' => $result['referenceId'],
+            ], 201);
+        } else {
+            return $this->json(['error' => $result['error'] ?? 'Erreur lors de l\'initiation du paiement'], 500);
+        }
     }
 }
