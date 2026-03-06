@@ -35,6 +35,13 @@ class PaiementServiceHub2
         $this->environment = $params->get('HUB2_ENVIRONMENT') ?? 'sandbox'; */
     }
 
+
+    //1 initier payment intent
+    //2 create temp
+    //3 verifier le statut si ok on cree le professionnel et le user  et on met a jour la transaction
+// sinon on supprime la temps et on met a jour la transaction
+
+
     /**
      * MÉTHODE 1: Créer Payment Intent + Initier Paiement (Tout-en-un)
      * Cette méthode fait tout en une seule fois :

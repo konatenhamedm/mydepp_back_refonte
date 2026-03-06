@@ -427,7 +427,7 @@ class ApiPaiementController extends ApiInterface
 
             $personne = $transactions->getUser()->getPersonne();
             $profession = null;
-            if ($personne instanceof \App\Entity\Professionnel) {
+            if ($personne instanceof Professionnel) {
                 $profession = $personne->getProfession();
             }
 
@@ -437,7 +437,7 @@ class ApiPaiementController extends ApiInterface
                 "createdAt" => $personne->getCreatedAt() ? $personne->getCreatedAt()->format('Y-m-d H:i:s') : null,
             ];
 
-            if ($personne instanceof \App\Entity\Professionnel) {
+            if ($personne instanceof Professionnel) {
                 $personneData = array_merge($personneData, [
                     'profession' => $profession ? [
                         'libelle' => $profession->getLibelle() ?? "",
@@ -455,7 +455,7 @@ class ApiPaiementController extends ApiInterface
                     "number" => $personne->getNumber(),
                     "quartier" => $personne->getQuartier(),
                 ]);
-            } elseif ($personne instanceof \App\Entity\Etablissement) {
+            } elseif ($personne instanceof Etablissement) {
                 $personneData = array_merge($personneData, [
                     "denomination" => $personne->getDenomination(),
                     "nom" => $personne->getNom(),

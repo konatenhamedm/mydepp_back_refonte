@@ -4,13 +4,16 @@
 namespace App\Controller;
 
 use App\Controller\Apis\Config\ApiInterface;
+use App\Repository\NiveauInterventionRepository;
+use App\Repository\ProfessionnelRepository;
+use App\Repository\ProfessionRepository;
 use App\Repository\TransactionRepository;
 use App\Repository\UserRepository;
 use App\Service\PaiementProService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Ramsey\Uuid\Uuid;
 
@@ -22,12 +25,12 @@ class PaymentProController extends ApiInterface
     ) {}
 
     #[Route('/paiement', name: 'new_paiement', methods: ['POST'])]
-    public function paiement(Request $request): JsonResponse
+    public function paiement(Request $request, ProfessionnelRepository $professionnelRepository, NiveauInterventionRepository $niveauInterventionRepository, ProfessionRepository $professionRepository): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
 
         // Valider les données requises
-        if (!isset($data['amount'], $data['phoneNumber'], $data['user'], $data['type'])) {
+        if (!$request->get('phoneNumber') || !$request->get('type')) {
             return $this->json(['error' => 'Données manquantes'], 400);
         }
 
@@ -39,13 +42,16 @@ class PaymentProController extends ApiInterface
 
         // 2. Préparer la requête de paiement
         $referenceId = $this->paiementServices->generateReferenceId();
+
+        $montant = $request->get('type') == "professionnel" ? $professionRepository->findOneByCode($request->get('profession'))->getMontantNouvelleDemande() : $niveauInterventionRepository->find($request->get('niveauIntervention'))->getMontant();
+
         $body = [
-            'amount' => (string) $data['amount'],
+            'amount' => (string) $montant,
             'currency' => 'XOF',
             'externalId' => $referenceId,
             'payer' => [
                 'partyIdType' => 'MSISDN',
-                'partyId' => '225' . $data['phoneNumber'],
+                'partyId' => '225' . $request->get('phoneNumber'),
             ],
             'payerMessage' => 'Paiement',
             'payeeNote' => 'Paiement',
@@ -56,11 +62,9 @@ class PaymentProController extends ApiInterface
 
         // 4. Enregistrer la transaction selon le type
         if ($result['success']) {
-            if ($data['type'] === 'professionnel') {
-                $this->paiementServices->createProfessionnelTemp($data, $referenceId);
-            } else {
-                $this->paiementServices->createEtablissementTemp($data, $referenceId);
-            }
+
+            $this->paiementServices->initTransactionTemp($request, $montant, $referenceId);
+
             return $this->json([
                 'success' => true,
                 'message' => 'Paiement initié avec succès',
@@ -77,6 +81,7 @@ class PaymentProController extends ApiInterface
         $result = $this->paiementServices->verifierStatutPaiementPro($referenceId);
 
         if ($result['success'] ?? false) {
+
             return $this->json([
                 'success' => true,
                 'status' => $result['status'],
@@ -130,8 +135,11 @@ class PaymentProController extends ApiInterface
     }
 
     #[Route('/paiement/{referenceId}/mise-a-jour', name: 'update_payment_status', methods: ['POST'])]
-    public function mettreAJourStatut(string $referenceId): JsonResponse
+    public function mettreAJourStatut(Request $request, string $referenceId): JsonResponse
     {
+        $data = json_decode($request->getContent(), true);
+
+
         $result = $this->paiementServices->verifierEtMettreAJourStatut($referenceId);
 
         if ($result['success'] ?? false) {

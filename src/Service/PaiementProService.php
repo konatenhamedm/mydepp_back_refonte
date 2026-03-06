@@ -3,19 +3,33 @@
 
 namespace App\Service;
 
+use App\Controller\FileTrait;
+use App\Entity\TempProfessionnel;
 use App\Entity\Transaction;
 use App\Entity\User;
+use App\Repository\ProfessionnelRepository;
+use App\Repository\TempProfessionnelRepository;
 use App\Repository\TransactionRepository;
 use App\Repository\UserRepository;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
+use DateTimeImmutable;
+use Doctrine\ORM\EntityManagerInterface;
 use Ramsey\Uuid\Uuid;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class PaiementProService
-{
+{ 
+    
+    use FileTrait;
     public function __construct(
         private TransactionRepository $transactionRepository,
         private UserRepository $userRepository,
         private HttpClientInterface $httpClient,
+        private Utils $utils,
+        private ProfessionnelRepository $professionnelRepository,
+        private EntityManagerInterface $em,
+        private TempProfessionnelRepository $tempProfessionnelRepository,
+        private PaiementService $paiementService
     ) {}
 
     /**
@@ -89,8 +103,8 @@ class PaiementProService
         $transaction->setType('PAIEMENT MOMO PRO');
         $transaction->setTypeUser('professionnel');
         $transaction->setState(0);
-        $transaction->setCreatedAtValue(new \DateTimeImmutable());
-        $transaction->setUpdatedAt(new \DateTimeImmutable());
+        $transaction->setCreatedAtValue();
+        $transaction->setUpdatedAt();
         $this->transactionRepository->add($transaction, true);
         return [
             'success' => true,
@@ -139,13 +153,25 @@ class PaiementProService
         $statusData = $statusResponse->toArray();
         $transaction = $this->transactionRepository->findOneBy(['reference' => $referenceId]);
         if ($transaction) {
-            if (($statusData['status'] ?? null) === 'FAILED') {
-                $transaction->setState(-1);
-            } elseif (($statusData['status'] ?? null) !== 'FAILED' && ($statusData['status'] ?? null) !== 'PENDING') {
-                $transaction->setState(1);
+            
+            if (($statusData['status'] ?? null) !== 'FAILED' && ($statusData['status'] ?? null) !== 'PENDING') {
+                
+                $response = $transaction->getTypeUser() == "professionnel" ?  $this->paiementService->updateProfessionnel($referenceId) :  null;
             }
-            $transaction->setUpdatedAt(new \DateTimeImmutable());
-            $this->transactionRepository->add($transaction, true);
+
+
+            if ($response) {
+                if ($transaction->getTypeUser() == "professionnel") {
+                    $temp =  $this->tempProfessionnelRepository->findOneBy(['reference' => $referenceId]);
+                    $this->tempProfessionnelRepository->remove($temp, true);
+                } else {
+                   // $temp =  $this->tempEtablissementRepository->findOneBy(['reference' => $data['codePaiement']]);
+                   // $this->tempEtablissementRepository->remove($temp, true);
+                }
+            }
+
+
+
         }
         return [
             'success' => true,
@@ -229,40 +255,171 @@ class PaiementProService
     /**
      * Crée une transaction temporaire pour un professionnel
      */
-    public function createProfessionnelTemp(array $data, string $referenceId): void
+    public function initTransactionTemp(Request $request, $montant, string $referenceId): void
     {
         $transaction = new Transaction();
-        $transaction->setUser($this->userRepository->find($data['user']));
+       // $transaction->setUser($this->userRepository->find($request->get('user')));
         $transaction->setChannel('momo');
         $transaction->setReference($referenceId);
-        $transaction->setMontant($data['amount']);
+        $transaction->setMontant($montant);
         $transaction->setReferenceChannel($referenceId);
         $transaction->setType('PAIEMENT MOMO PRO');
-        $transaction->setTypeUser('professionnel');
+        $transaction->setTypeUser($request->get('type'));
         $transaction->setState(0);
-        $transaction->setCreatedAtValue(new \DateTimeImmutable());
-        $transaction->setUpdatedAt(new \DateTimeImmutable());
+        $transaction->setCreatedAtValue();
+        $transaction->setUpdatedAt();
         $this->transactionRepository->add($transaction, true);
+
+        $request->get('type')   == 'professionnel' ? $this->createProfessionnelTemp($request,$referenceId) : null;
+
+         /* return  [
+            'message' => 'Professionnel bien enregistré',
+           /*  'data' => $data */
+        /* ]; */ 
     }
 
-    /**
-     * Crée une transaction temporaire pour un établissement
-     */
-    public function createEtablissementTemp(array $data, string $referenceId): void
+
+
+
+    public function createProfessionnelTemp(Request $request,$referenceId)
     {
-        $transaction = new Transaction();
-        $transaction->setUser($this->userRepository->find($data['user']));
-        $transaction->setChannel('momo');
-        $transaction->setReference($referenceId);
-        $transaction->setMontant($data['amount']);
-        $transaction->setReferenceChannel($referenceId);
-        $transaction->setType('PAIEMENT MOMO PRO');
-        $transaction->setTypeUser('etablissement');
-        $transaction->setState(0);
-        $transaction->setCreatedAtValue(new \DateTimeImmutable());
-        $transaction->setUpdatedAt(new \DateTimeImmutable());
-        $this->transactionRepository->add($transaction, true);
+
+        $names = 'document_' . '01';
+        $filePrefix  = str_slug($names);
+        $filePath = $this->getUploadDir('media_deeps', true);
+        $professionnel = new TempProfessionnel();
+
+        //etape 1
+
+        $professionnel->setPassword($request->get('password'));
+        $professionnel->setCode($request->get('code'));
+        $professionnel->setEmail($request->get('email'));
+        $professionnel->setUsername($request->get('nom') . " " . $request->get('prenoms'));
+
+        // etatpe 2
+
+        $professionnel->setPoleSanitaire($request->get('poleSanitaire'));
+        $professionnel->setRegion($request->get('region'));
+        $professionnel->setDistrict($request->get('district'));
+        $professionnel->setVille($request->get('ville'));
+        $professionnel->setCommune($request->get('commune'));
+        $professionnel->setQuartier($request->get('quartier'));
+
+        $professionnel->setNom($request->get('nom'));
+        $professionnel->setProfessionnel($request->get('professionnel'));
+        $professionnel->setPrenoms($request->get('prenoms'));
+        $professionnel->setLieuExercicePro($request->get('lieuExercicePro'));
+        $professionnel->setSpecialiteAutre($request->get('specialiteAutre'));
+
+        // etatpe 3
+        $professionnel->setStatusPro($request->get('statusPro'));
+        $professionnel->setTypeDiplome($request->get('typeDiplome'));
+
+        $professionnel->setProfession($request->get('profession'));
+        $professionnel->setEmailAutre($request->get('emailAutre'));
+        $professionnel->setCivilite($request->get('civilite'));
+        $professionnel->setEmailPro($request->get('emailPro'));
+        $professionnel->setDateDiplome($request->get('dateDiplome'));
+        $professionnel->setDateNaissance($request->get('dateNaissance'));
+        $professionnel->setNumber($request->get('numero'));
+        $professionnel->setLieuDiplome($request->get('lieuDiplome'));
+        $professionnel->setLieuObtentionDiplome($request->get('lieuObtentionDiplome'));
+        $professionnel->setNationate($request->get('nationalite'));
+        $professionnel->setSituation($request->get('situation'));
+        $professionnel->setDatePremierDiplome(new DateTimeImmutable($request->get('datePremierDiplome')));
+        $professionnel->setPoleSanitairePro($request->get('poleSanitairePro'));
+        $professionnel->setDiplome($request->get('diplome'));
+        $professionnel->setSituationPro($request->get('situationPro'));
+        $professionnel->setAppartenirOrganisation($request->get('appartenirOrganisation'));
+        $professionnel->setAppartenirOrdre($request->get('appartenirOrdre'));
+
+        if ($request->get('appartenirOrganisation') == "oui") {
+            $professionnel->setOrganisationNom($request->get('organisationNom'));
+        }
+
+        if ($request->get('appartenirOrdre') == "oui") {
+            $professionnel->setNumeroInscription($request->get('numeroInscription'));
+            $professionnel->setOrdre($request->get('ordre'));
+        }
+
+
+        $professionnel->setReference($referenceId);
+        $professionnel->setTypeUser(User::TYPE['PROFESSIONNEL']);
+
+        // etatpe 4
+
+        $uploadedPhoto = $request->files->get('photo');
+        $uploadedCasier = $request->files->get('casier');
+        $uploadedCni = $request->files->get('cni');
+        $uploadedDiplome = $request->files->get('diplomeFile');
+        $uploadedCertificat = $request->files->get('certificat');
+        $uploadedCv = $request->files->get('cv');
+
+
+        if ($uploadedPhoto) {
+            $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedPhoto, 'media_deeps');
+            if ($fichier) {
+                $professionnel->setPhoto($fichier);
+            }
+        }
+        if ($uploadedCasier) {
+            $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCasier, 'media_deeps');
+            if ($fichier) {
+                $professionnel->setCasier($fichier);
+            }
+        }
+        if ($uploadedCni) {
+            $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCni, 'media_deeps');
+            if ($fichier) {
+                $professionnel->setCni($fichier);
+            }
+        }
+        if ($uploadedDiplome) {
+            $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedDiplome, 'media_deeps');
+            if ($fichier) {
+                $professionnel->setDiplomeFile($fichier);
+            }
+        }
+        if ($uploadedCertificat) {
+            $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCertificat, 'media_deeps');
+            if ($fichier) {
+                $professionnel->setCertificat($fichier);
+            }
+        }
+        if ($uploadedCv) {
+            $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCv, 'media_deeps');
+            if ($fichier) {
+                $professionnel->setCv($fichier);
+            }
+        }
+
+        // etatpe 5
+
+
+
+
+      /*   $errorResponse = $this->errorResponse($professionnel);
+        if ($errorResponse !== null) {
+            return $errorResponse; // Retourne la réponse d'erreur si des erreurs sont présentes
+        } else {
+
+            $this->em->persist($professionnel);
+            $this->em->flush();
+        }
+ */
+
+/* 
+            $this->em->persist($professionnel);
+            $this->em->flush(); */
+
+            $this->tempProfessionnelRepository->add($professionnel, true);
+
+
+       
     }
+
+
+
 
     /**
      * Traite le webhook de notification de paiement Momo
@@ -380,4 +537,5 @@ class PaiementProService
     {
         return $this->transactionRepository->findOneBy(['reference' => $referenceId]);
     }
+
 }

@@ -581,8 +581,8 @@ class PaiementService
         $professionnel->setCni($dataTemp->getCni());
         $professionnel->setDiplomeFile($dataTemp->getDiplomeFile());
         $professionnel->setCertificat($dataTemp->getCertificat());
-        $professionnel->setUpdatedAt(new DateTime());
-        $professionnel->setCreatedAtValue(new DateTime());
+        $professionnel->setUpdatedAt();
+        $professionnel->setCreatedAtValue();
 
         $this->em->persist($professionnel);
         $this->em->flush();
@@ -598,8 +598,8 @@ class PaiementService
         $user->setPayement(User::PAYEMENT['payed']);
         $user->setCreatedBy($user);
         $user->setUpdatedBy($user);
-        $user->setUpdatedAt(new DateTime());
-        $user->setCreatedAtValue(new DateTime());
+        $user->setUpdatedAt();
+        $user->setCreatedAtValue();
         $this->em->persist($user);
         $this->em->flush();
 
@@ -609,6 +609,7 @@ class PaiementService
         $this->em->flush();
 
         $transaction->setUser($user);
+        $transaction->setState(1);
         $transaction->setCreatedBy($user);
         $transaction->setUpdatedBy($user);
         $this->transactionRepository->add($transaction, true);
