@@ -37,11 +37,11 @@ class PaiementProService
      */
     public function initierPaiementPro(array $data): array
     {
-        $username = '8e10c4a7-bcae-4f64-ba50-7b5cfe338366';
-        $password = 'b73936c9c1c449c9b6fcebf12aee00f2';
+        $username = $_ENV['MOMO_USERNAME'];
+        $password = $_ENV['MOMO_PASSWORD'];
         $basicToken = base64_encode("$username:$password");
-        $momoPrimaryKey = $_ENV['MOMO_PRIMARY_KEY'] ?? '';
-        $momoSubscriptionKey = $_ENV['MOMO_SUBSCRIPTION_KEY'] ?? 'f42e9a3ae31842fba6e8c2fea23fa0d7';
+        $momoPrimaryKey = $_ENV['MOMO_PRIMARY_KEY'];
+        $momoSubscriptionKey = $_ENV['MOMO_SUBSCRIPTION_KEY'] ;
 
         // Obtenir le token
         $tokenResponse = $this->httpClient->request('POST', 'https://proxy.momoapi.mtn.com/collection/token/', [
@@ -118,8 +118,8 @@ class PaiementProService
      */
     public function verifierStatutPaiementPro(string $referenceId): array
     {
-        $username = '8e10c4a7-bcae-4f64-ba50-7b5cfe338366';
-        $password = 'b73936c9c1c449c9b6fcebf12aee00f2';
+        $username = $_ENV['MOMO_USERNAME'];
+        $password = $_ENV['MOMO_PASSWORD'];
         $basicToken = base64_encode("$username:$password");
         $momoPrimaryKey = $_ENV['MOMO_PRIMARY_KEY'] ?? '';
         // Obtenir le token
@@ -184,8 +184,8 @@ class PaiementProService
 
     public function getMomoToken(): ?string
     {
-        $username = '8e10c4a7-bcae-4f64-ba50-7b5cfe338366';
-        $password = 'b73936c9c1c449c9b6fcebf12aee00f2';
+        $username = $_ENV['MOMO_USERNAME'];
+        $password = $_ENV['MOMO_PASSWORD'];
         $basicToken = base64_encode("$username:$password");
         $momoPrimaryKey = $_ENV['MOMO_PRIMARY_KEY'] ?? '';
 
@@ -462,8 +462,8 @@ class PaiementProService
      */
     public function verifierEtMettreAJourStatut(string $referenceId): array
     {
-        $username = '8e10c4a7-bcae-4f64-ba50-7b5cfe338366';
-        $password = 'b73936c9c1c449c9b6fcebf12aee00f2';
+        $username = $_ENV['MOMO_USERNAME'];
+        $password = $_ENV['MOMO_PASSWORD'];
         $basicToken = base64_encode("$username:$password");
         $momoPrimaryKey = $_ENV['MOMO_PRIMARY_KEY'] ?? '';
 
