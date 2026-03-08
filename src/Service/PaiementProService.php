@@ -538,4 +538,194 @@ class PaiementProService
         return $this->transactionRepository->findOneBy(['reference' => $referenceId]);
     }
 
+    /**
+     * Initie un paiement pour le renouvellement d'abonnement professionnel
+     */
+    public function initierRenouvellementAbonnement(array $data): array
+    {
+        $phoneNumber = $data['phoneNumber'] ?? null;
+        $userId = $data['user'] ?? null;
+
+        if (!$phoneNumber || !$userId) {
+            return ['error' => 'Numéro de téléphone et user requis'];
+        }
+
+        // Récupérer l'utilisateur et son professionnel
+        $user = $this->userRepository->find($userId);
+        if (!$user) {
+            return ['error' => 'Utilisateur non trouvé'];
+        }
+
+        $professionnel = $user->getPersonne();
+        if (!$professionnel) {
+            return ['error' => 'Professionnel non trouvé'];
+        }
+
+        // Vérifier que la profession existe
+        $profession = $professionnel->getProfession();
+        if (!$profession) {
+            return ['error' => 'Profession non définie pour ce professionnel'];
+        }
+
+        // Calculer le montant basé sur la profession et les années dues
+        $montant = $profession->getMontantRenouvellement();
+        if (!$montant) {
+            return ['error' => 'Montant de renouvellement non défini'];
+        }
+
+        $dateValidation = $professionnel->getDateValidation();
+        if (!$dateValidation) {
+            return ['error' => 'Date de validation non définie'];
+        }
+
+        $expiration = clone $dateValidation;
+        $today = new \DateTime();
+        $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
+        
+        if ($yearDue < 1) {
+            $yearDue = 1; // Au minimum 1 an
+        }
+        
+        $montantTotal = $montant * $yearDue;
+
+        // Obtenir le token Momo
+        $token = $this->getMomoToken();
+        if (!$token) {
+            return ['error' => 'Erreur lors de la récupération du token Momo'];
+        }
+
+        // Générer une référence unique
+        $referenceId = $this->generateReferenceId();
+
+        // Créer le corps de la requête de paiement
+        $paymentBody = [
+            'amount' => (string) $montantTotal,
+            'currency' => 'XOF',
+            'externalId' => $referenceId,
+            'payer' => [
+                'partyIdType' => 'MSISDN',
+                'partyId' => "225$phoneNumber",
+            ],
+            'payerMessage' => 'Renouvellement abonnement professionnel',
+            'payeeNote' => 'Renouvellement abonnement',
+        ];
+
+        // Initier le paiement Momo
+        $paymentResult = $this->initiateMomoPayment($token, $paymentBody, $referenceId);
+
+        if (!$paymentResult['success']) {
+            return ['error' => $paymentResult['error'] ?? 'Erreur lors de l\'initiation du paiement'];
+        }
+
+        // Enregistrer la transaction
+        $transaction = new Transaction();
+        $transaction->setUser($user);
+        $transaction->setChannel('momo');
+        $transaction->setReference($referenceId);
+        $transaction->setMontant($montantTotal);
+        $transaction->setReferenceChannel($referenceId);
+        $transaction->setType('RENOUVELLEMENT');
+        $transaction->setTypeUser('professionnel');
+        $transaction->setState(0);
+        $transaction->setCreatedAtValue();
+        $transaction->setUpdatedAt();
+        $this->transactionRepository->add($transaction, true);
+
+        return [
+            'success' => true,
+            'message' => 'Paiement de renouvellement initié avec succès',
+            'referenceId' => $referenceId,
+            'montant' => $montantTotal,
+            'yearDue' => $yearDue,
+        ];
+    }
+
+    /**
+     * Initie un paiement OEP (Ouverture d'Exploitation) pour établissement
+     */
+    public function initierOepInscription(array $data): array
+    {
+        $phoneNumber = $data['phoneNumber'] ?? null;
+        $userId = $data['user'] ?? null;
+        $montant = $data['amount'] ?? null;
+
+        if (!$phoneNumber || !$userId) {
+            return ['error' => 'Numéro de téléphone et user requis'];
+        }
+
+        // Récupérer l'utilisateur
+        $user = $this->userRepository->find($userId);
+        if (!$user) {
+            return ['error' => 'Utilisateur non trouvé'];
+        }
+
+        // Si le montant n'est pas fourni, le récupérer depuis l'établissement
+        if (!$montant) {
+            $etablissement = $user->getPersonne();
+            if (!$etablissement) {
+                return ['error' => 'Établissement non trouvé'];
+            }
+            
+            $niveauIntervention = $etablissement->getNiveauIntervention();
+            if (!$niveauIntervention) {
+                return ['error' => 'Niveau d\'intervention non défini pour cet établissement'];
+            }
+            
+            $montant = $niveauIntervention->getMontantRenouvellement();
+            if (!$montant) {
+                return ['error' => 'Montant de renouvellement non défini'];
+            }
+        }
+
+        // Obtenir le token Momo
+        $token = $this->getMomoToken();
+        if (!$token) {
+            return ['error' => 'Erreur lors de la récupération du token Momo'];
+        }
+
+        // Générer une référence unique
+        $referenceId = $this->generateReferenceId();
+
+        // Créer le corps de la requête de paiement
+        $paymentBody = [
+            'amount' => (string) $montant,
+            'currency' => 'XOF',
+            'externalId' => $referenceId,
+            'payer' => [
+                'partyIdType' => 'MSISDN',
+                'partyId' => "225$phoneNumber",
+            ],
+            'payerMessage' => "Ouverture d'exploitation",
+            'payeeNote' => 'OEP',
+        ];
+
+        // Initier le paiement Momo
+        $paymentResult = $this->initiateMomoPayment($token, $paymentBody, $referenceId);
+
+        if (!$paymentResult['success']) {
+            return ['error' => $paymentResult['error'] ?? 'Erreur lors de l\'initiation du paiement'];
+        }
+
+        // Enregistrer la transaction
+        $transaction = new Transaction();
+        $transaction->setUser($user);
+        $transaction->setChannel('momo');
+        $transaction->setReference($referenceId);
+        $transaction->setMontant($montant);
+        $transaction->setReferenceChannel($referenceId);
+        $transaction->setType("OUVERTURE D'EXPLOITATION");
+        $transaction->setTypeUser('etablissement');
+        $transaction->setState(0);
+        $transaction->setCreatedAtValue();
+        $transaction->setUpdatedAt();
+        $this->transactionRepository->add($transaction, true);
+
+        return [
+            'success' => true,
+            'message' => 'Paiement OEP initié avec succès',
+            'referenceId' => $referenceId,
+            'montant' => $montant,
+        ];
+    }
+
 }
