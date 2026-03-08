@@ -33,6 +33,21 @@ class PaiementProService
     ) {}
 
     /**
+     * Surcharge locale pour éviter l'appel à getParameter() (disponible uniquement en Controller).
+     */
+    public function getUploadDir($path, $create = false)
+    {
+        $uploadBaseDir = dirname(__DIR__, 2) . '/public/uploads';
+        $path = $uploadBaseDir . '/' . $path;
+
+        if ($create && !is_dir($path)) {
+            mkdir($path, 0777, true);
+        }
+
+        return $path;
+    }
+
+    /**
      * Initie un paiement professionnel via Momo
      */
     public function initierPaiementPro(array $data): array
