@@ -123,7 +123,7 @@ class PaiementProService
         $this->transactionRepository->add($transaction, true);
         return [
             'success' => true,
-            'message' => 'Paiement initié avec succès',
+            'message' => $paymentResponse,
             'referenceId' => $myUuid,
         ];
     }
