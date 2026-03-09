@@ -110,7 +110,7 @@ class PaiementProService
             [
                 'headers' => [
                     'Authorization' => "Bearer $token",
-                    'X-Callback-Url' => 'https://backend.leadagro.net/api/paiement2/info-paiement',
+                    'X-Callback-Url' => 'https://webhook.site/9fb6dc51-7956-4d1d-9628-6b2b0fcf2fba',
                     'X-Reference-Id' => $myUuid,
                     'X-Target-Environment' => 'mtnivorycoast',
                     'Content-Type' => 'application/json',
@@ -267,7 +267,7 @@ class PaiementProService
                 [
                     'headers' => [
                         'Authorization' => "Bearer $token",
-                        'X-Callback-Url' => 'https://webhook.site/#!/view/3b1651b5-677b-4034-8c6a-e37ce123869e',
+                        'X-Callback-Url' => 'https://webhook.site/9fb6dc51-7956-4d1d-9628-6b2b0fcf2fba',
                         'X-Reference-Id' => $referenceId,
                         'X-Target-Environment' => 'mtnivorycoast',
                         'Content-Type' => 'application/json',
