@@ -52,11 +52,20 @@ class PaiementProService
      */
     public function traiterPaiement(Request $request): array
     {
-        $montant = $request->get('type') == "professionnel" 
-            ? $this->em->getRepository(\App\Entity\Profession::class)->findOneBy(['code' => $request->get('profession')])->getMontantNouvelleDemande() 
-            : $this->em->getRepository(\App\Entity\NiveauIntervention::class)->find($request->get('niveauIntervention'))->getMontant();
+        $data = $request->request->all(); // FormData text fields
+        if(empty($data)){
+            $data = json_decode($request->getContent(), true) ?? [];
+        }
 
-        $phoneNumber = $request->get('numero') ?? $request->get('phoneNumber');
+        $type = $data['type'] ?? $request->get('type');
+        $professionInfo = $data['profession'] ?? $request->get('profession');
+        $niveauInterventionInfo = $data['niveauIntervention'] ?? $request->get('niveauIntervention');
+
+        $montant = $type == "professionnel" 
+            ? $this->em->getRepository(\App\Entity\Profession::class)->findOneBy(['code' => $professionInfo])->getMontantNouvelleDemande() 
+            : $this->em->getRepository(\App\Entity\NiveauIntervention::class)->find($niveauInterventionInfo)->getMontant();
+
+        $phoneNumber = $data['numero'] ?? $data['phoneNumber'] ?? $request->get('numero') ?? $request->get('phoneNumber');
 
         $username = $_ENV['MOMO_USERNAME'];
         $password = $_ENV['MOMO_PASSWORD'];
@@ -122,7 +131,7 @@ class PaiementProService
         $transaction->setMontant($montant);
         $transaction->setReferenceChannel($myUuid);
         $transaction->setType('NOUVELLE DEMANDE');
-        $transaction->setTypeUser($request->get('type'));
+        $transaction->setTypeUser($type);
         $transaction->setState(0);
         $transaction->setCreatedAtValue();
         $transaction->setUpdatedAt();
@@ -132,7 +141,7 @@ class PaiementProService
             'code' => 200,
             'url' => null,
             'reference' => $myUuid,
-            'type' => $request->get('type')
+            'type' => $type
         ];
     }
 
