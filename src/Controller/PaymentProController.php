@@ -762,14 +762,21 @@ class PaymentProController extends ApiInterface
         /*   dd($request); */
 
         $createTransactionData = $paiementService->traiterPaiement($request);
-        /* 
+
+        if (isset($createTransactionData['code']) && $createTransactionData['code'] !== 200) {
+            return $this->json([
+                'code' => $createTransactionData['code'],
+                'message' => $createTransactionData['error'] ?? 'Erreur lors de l\'initiation du paiement'
+            ], $createTransactionData['code'] == 500 ? 500 : 400);
+        }
+
         if (!isset($createTransactionData['type'])) {
-            return [
+            return $this->json([
                 'code' => 400,
                 'message' => 'Type de paiement manquant'
-            ];
+            ], 400);
         }
-     */
+
         if ($createTransactionData['type'] == "professionnel") {
             $resultat = $this->createProfessionnelTemp($request, $createTransactionData);
         } else {
