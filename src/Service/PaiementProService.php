@@ -122,7 +122,11 @@ class PaiementProService
         );
 
         if (!in_array($paymentResponse->getStatusCode(), [200, 202])) {
-            return ['code' => 500, 'error' => 'Erreur API MTN Momo'];
+            $errorContent = $paymentResponse->getContent(false);
+            return [
+                'code' => 500, 
+                'error' => 'Erreur API MTN Momo : ' . $paymentResponse->getStatusCode() . ' - ' . $errorContent
+            ];
         }
 
         $transaction = new Transaction();
