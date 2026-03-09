@@ -315,20 +315,50 @@ class PaymentProController extends ApiInterface
     )]
     #[OA\Tag(name: 'paiements')]
     // 
-    public function indexInfoTransaction(TransactionRepository $transactionRepository, $transactionId): Response
+    public function indexInfoTransaction(TransactionRepository $transactionRepository, PaiementProService $paiementService, $transactionId): Response
     {
         try {
+            $transaction = $transactionRepository->findOneBy(['reference' => $transactionId]);
 
-            $transactions = $transactionRepository->findOneBy(['reference' => $transactionId]);
+            if (!$transaction) {
+                return $this->json(['data' => ['state' => 0, 'message' => 'Transaction introuvable']], 404);
+            }
 
-            $response = $this->responseData($transactions, 'group_user_trx', ['Content-Type' => 'application/json']);
+            // Si déjà validée ou échouée, on retourne directement sans rappeler MTN
+            if ($transaction->getState() == 1) {
+                return $this->json(['data' => ['state' => 1, 'message' => 'Paiement déjà validé']]);
+            }
+            if ($transaction->getState() == -1) {
+                return $this->json(['data' => ['state' => -1, 'message' => 'Paiement échoué']]);
+            }
+
+            // Vérifier le statut via l'API MTN MoMo
+            $statusResult = $paiementService->verifierStatutPaiementPro($transactionId);
+
+            if (!isset($statusResult['status'])) {
+                return $this->json(['data' => ['state' => 0, 'message' => 'Statut inconnu, en attente']]);
+            }
+
+            $momoStatus = $statusResult['status'];
+
+            if ($momoStatus === 'SUCCESSFUL') {
+                $transaction->setState(1);
+                $transaction->setUpdatedAt();
+                $transactionRepository->add($transaction, true);
+                return $this->json(['data' => ['state' => 1, 'message' => 'Paiement confirmé avec succès']]);
+            } elseif ($momoStatus === 'FAILED') {
+                $transaction->setState(-1);
+                $transaction->setUpdatedAt();
+                $transactionRepository->add($transaction, true);
+                return $this->json(['data' => ['state' => -1, 'message' => 'Paiement échoué']]);
+            } else {
+                // PENDING ou autre
+                return $this->json(['data' => ['state' => 0, 'message' => 'Paiement en attente de validation MTN']]);
+            }
+
         } catch (\Exception $exception) {
-            $this->setMessage("");
-            $response = $this->response('[]');
+            return $this->json(['data' => ['state' => 0, 'message' => $exception->getMessage()]], 500);
         }
-
-        // On envoie la réponse
-        return $response;
     }
     #[Route('/find/one/transaction/{id}', methods: ['GET'])]
     /**
