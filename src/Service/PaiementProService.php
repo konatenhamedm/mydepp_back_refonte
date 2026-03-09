@@ -156,6 +156,7 @@ class PaiementProService
     {
         $username = $_ENV['MOMO_USERNAME'];
         $password = $_ENV['MOMO_PASSWORD'];
+        $response = null;
         $basicToken = base64_encode("$username:$password");
         $momoPrimaryKey = $_ENV['MOMO_PRIMARY_KEY'] ?? '';
         // Obtenir le token
