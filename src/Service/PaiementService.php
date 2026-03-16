@@ -531,6 +531,7 @@ class PaiementService
         $professionnel->setSpecialiteAutre($dataTemp->getSpecialiteAutre());
         $professionnel->setEmail($dataTemp->getEmailAutre());
         $professionnel->setLieuExercicePro($dataTemp->getLieuExercicePro());
+        $professionnel->setDateValidation((new \DateTime())->add(new \DateInterval('P1Y')));
 
 
 

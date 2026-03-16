@@ -548,7 +548,7 @@ class PaiementProService
                 if ($status === 'SUCCESSFUL') {
                     $transaction->setState(1);
                 } elseif ($status === 'FAILED') {
-                    $transaction->setState(-1);
+                    $transaction->setState(0); // FAILED
                 } else {
                     $transaction->setState(0); // PENDING
                 }
