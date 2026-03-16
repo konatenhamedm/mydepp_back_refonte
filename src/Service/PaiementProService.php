@@ -8,6 +8,7 @@ use App\Entity\TempProfessionnel;
 use App\Entity\Transaction;
 use App\Entity\User;
 use App\Repository\ProfessionnelRepository;
+use App\Repository\TempEtablissementRepository;
 use App\Repository\TempProfessionnelRepository;
 use App\Repository\TransactionRepository;
 use App\Repository\UserRepository;
@@ -29,6 +30,7 @@ class PaiementProService
         private ProfessionnelRepository $professionnelRepository,
         private EntityManagerInterface $em,
         private TempProfessionnelRepository $tempProfessionnelRepository,
+        private TempEtablissementRepository $tempEtablissementRepository,
         private PaiementService $paiementService
     ) {}
 
@@ -193,7 +195,7 @@ class PaiementProService
             
             if (($statusData['status'] ?? null) !== 'FAILED' && ($statusData['status'] ?? null) !== 'PENDING') {
                 
-                $response = $transaction->getTypeUser() == "professionnel" ?  $this->paiementService->updateProfessionnel($referenceId) :  null;
+                $response = $transaction->getTypeUser() == "professionnel" ?  $this->paiementService->updateProfessionnel($referenceId) :  $this->paiementService->updateEtablissement($referenceId);
             }
 
 
@@ -202,8 +204,8 @@ class PaiementProService
                     $temp =  $this->tempProfessionnelRepository->findOneBy(['reference' => $referenceId]);
                     $this->tempProfessionnelRepository->remove($temp, true);
                 } else {
-                   // $temp =  $this->tempEtablissementRepository->findOneBy(['reference' => $data['codePaiement']]);
-                   // $this->tempEtablissementRepository->remove($temp, true);
+                   $temp =  $this->tempEtablissementRepository->findOneBy(['reference' =>$referenceId]);
+                   $this->tempEtablissementRepository->remove($temp, true);
                 }
             }
 
