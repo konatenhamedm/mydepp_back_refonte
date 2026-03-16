@@ -1610,50 +1610,68 @@ Situation professionnelle * */
             $uploadedCertificat = $request->files->get('certificat');
             $uploadedCv = $request->files->get('cv');
 
+            $errors = [];
+
             if ($uploadedPhoto) {
                 $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedPhoto, self::UPLOAD_PATH);
                 if ($fichier) {
                     $professionnel->setPhoto($fichier);
+                } else {
+                    $errors[] = 'Erreur lors de l\'upload de la photo.';
                 }
             }
             if ($uploadedCasier) {
                 $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCasier, self::UPLOAD_PATH);
                 if ($fichier) {
                     $professionnel->setCasier($fichier);
+                } else {
+                    $errors[] = 'Erreur lors de l\'upload du casier.';
                 }
             }
             if ($uploadedCni) {
                 $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCni, self::UPLOAD_PATH);
                 if ($fichier) {
                     $professionnel->setCni($fichier);
+                } else {
+                    $errors[] = 'Erreur lors de l\'upload du CNI.';
                 }
             }
             if ($uploadedDiplome) {
                 $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedDiplome, self::UPLOAD_PATH);
                 if ($fichier) {
                     $professionnel->setDiplomeFile($fichier);
+                } else {
+                    $errors[] = 'Erreur lors de l\'upload du diplôme.';
                 }
             }
             if ($uploadedCertificat) {
                 $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCertificat, self::UPLOAD_PATH);
                 if ($fichier) {
                     $professionnel->setCertificat($fichier);
+                } else {
+                    $errors[] = 'Erreur lors de l\'upload du certificat.';
                 }
             }
             if ($uploadedCv) {
                 $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCv, self::UPLOAD_PATH);
                 if ($fichier) {
                     $professionnel->setCv($fichier);
+                } else {
+                    $errors[] = 'Erreur lors de l\'upload du CV.';
                 }
             }
 
             $professionnel->setStatus("accepte");
 
-            // $professionnelRepository->add($professionnel, true);
             $this->em->persist($professionnel);
             $this->em->flush();
-            
-            $this->setMessage("Operation effectuées avec success");
+
+            if (count($errors) > 0) {
+                $this->setMessage("Opération effectuée avec erreurs : " . implode(' | ', $errors));
+            } else {
+                $this->setMessage("Operation effectuées avec success");
+            }
+
             $response = $this->responseData([
                 'id' => $professionnel->getId(),
                 'code' => $professionnel->getCode(),
@@ -1662,6 +1680,7 @@ Situation professionnelle * */
                 'prenom' => $professionnel->getPrenoms(),
                 'email' => $professionnel->getEmail(),
                 'professionnel' => $professionnel->getProfessionnel(),
+                'errors' => $errors,
             ], 'group_pro', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("");
