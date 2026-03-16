@@ -368,7 +368,7 @@ class PaymentProController extends ApiInterface
                 }
 
                 if ($professionnel) {
-                    $professionnel->setStatus("a_jour");
+                    // $professionnel->setStatus("a_jour");
                     $professionnel->setDateValidation($dateRenouvellement);
                     $this->em->persist($professionnel);
                     $this->em->flush();
