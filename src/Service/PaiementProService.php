@@ -589,7 +589,10 @@ class PaiementProService
 
         if ($yearDue < 1) $yearDue = 1;
 
-        $montantTotal = $montant * $yearDue;
+        $yearsToPay = $data['yearsToPay'] ?? $yearDue;
+        if ($yearsToPay < 1) $yearsToPay = 1;
+
+        $montantTotal = $montant * $yearsToPay;
         $phoneNumber = $data['numero'] ?? null;
 
         $token = $this->getMomoToken();
@@ -622,6 +625,7 @@ class PaiementProService
         $transaction->setType('RENOUVELLEMENT');
         $transaction->setTypeUser($data['type'] ?? 'professionnel');
         $transaction->setState(0);
+        $transaction->setData(json_encode(['yearsToPay' => $yearsToPay]));
         $transaction->setCreatedAtValue();
         $transaction->setUpdatedAt();
         $this->transactionRepository->add($transaction, true);
@@ -750,9 +754,12 @@ class PaiementProService
                 }
             }
 
+            $transactionData = json_decode($transaction->getData() ?? "[]", true);
+            $yearsToPay = $transactionData['yearsToPay'] ?? 1;
+
             if ($professionnel) {
                 $professionnel->setStatus("a_jour");
-                $professionnel->setDateValidation($dateRenouvellement);
+                $professionnel->setDateValidation($dateRenouvellement->modify("+" . ($yearsToPay - 1) . " years"));
                 $this->em->persist($professionnel);
                 $this->em->flush();
             }
