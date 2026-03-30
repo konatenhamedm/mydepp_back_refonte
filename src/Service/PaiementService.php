@@ -510,27 +510,27 @@ class PaiementService
 
 
 
-        $professionnel->setPoleSanitaire($dataTemp->getPoleSanitaire());
-        $professionnel->setLieuObtentionDiplome($this->lieuDiplomeRepository->find($dataTemp->getLieuObtentionDiplome()));
+        $professionnel->setPoleSanitaire($dataTemp->getPoleSanitaire() ?? null);
+        $professionnel->setLieuObtentionDiplome($this->lieuDiplomeRepository->find($dataTemp->getLieuObtentionDiplome()) ?? null);
         $professionnel->setDateValidation(new DateTime());
-        $professionnel->getLieuDiplome($dataTemp->getLieuDiplome());
+        $professionnel->getLieuDiplome($dataTemp->getLieuDiplome() ?? null);
 
        // $professionnel->setLieuObtentionDiplome();
-        $professionnel->setRegion($this->regionRepository->find($dataTemp->getRegion()));
-        $professionnel->setDistrict($this->districtRepository->find($dataTemp->getDistrict()));
-        $professionnel->setVille($this->villeRepository->find($dataTemp->getVille()));
-        $professionnel->setCommune($this->communeRepository->find($dataTemp->getCommune()));
-        $professionnel->setQuartier($dataTemp->getQuartier());
+        $professionnel->setRegion($this->regionRepository->find($dataTemp->getRegion()) ?? null);
+        $professionnel->setDistrict($this->districtRepository->find($dataTemp->getDistrict()) ?? null);
+        $professionnel->setVille($this->villeRepository->find($dataTemp->getVille()) ?? null);
+        $professionnel->setCommune($this->communeRepository->find($dataTemp->getCommune()) ?? null);
+        $professionnel->setQuartier($dataTemp->getQuartier() ?? null);
 
-        $professionnel->setStatusPro($this->statusProRepository->find($dataTemp->getStatusPro()));
-        $professionnel->setTypeDiplome($this->typeDiplomeRepository->find($dataTemp->getTypeDiplome()));
+        $professionnel->setStatusPro($this->statusProRepository->find($dataTemp->getStatusPro()) ?? null);
+        $professionnel->setTypeDiplome($this->typeDiplomeRepository->find($dataTemp->getTypeDiplome()) ?? null);
 
-        $professionnel->setNom($dataTemp->getNom());
-        $professionnel->setPrenoms($dataTemp->getPrenoms());
-        $professionnel->setProfessionnel($dataTemp->getProfessionnel());
-        $professionnel->setSpecialiteAutre($dataTemp->getSpecialiteAutre());
-        $professionnel->setEmail($dataTemp->getEmailAutre());
-        $professionnel->setLieuExercicePro($dataTemp->getLieuExercicePro());
+        $professionnel->setNom($dataTemp->getNom() ?? null);
+        $professionnel->setPrenoms($dataTemp->getPrenoms() ?? null);
+        $professionnel->setProfessionnel($dataTemp->getProfessionnel() ?? null);
+        $professionnel->setSpecialiteAutre($dataTemp->getSpecialiteAutre() ?? null);
+        $professionnel->setEmail($dataTemp->getEmailAutre() ?? null);
+        $professionnel->setLieuExercicePro($dataTemp->getLieuExercicePro() ?? null);
         $professionnel->setDateValidation((new \DateTime())->add(new \DateInterval('P1Y')));
 
 
