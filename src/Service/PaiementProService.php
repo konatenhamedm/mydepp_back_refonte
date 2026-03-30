@@ -193,26 +193,29 @@ class PaiementProService
         $transaction = $this->transactionRepository->findOneBy(['reference' => $referenceId]);
         // dd($transaction->getTypeUser());
         if ($transaction) {
-            
-            if (($statusData['status'] ?? null) !== 'FAILED' && ($statusData['status'] ?? null) !== 'PENDING') {
-                
-                $response = ($transaction->getTypeUser() == "professionnel" || $transaction->getTypeUser() == "PROFESSIONNEL") ?  $this->paiementService->updateProfessionnel($referenceId) :  $this->paiementService->updateEtablissement($referenceId);
-            }
-
-
-            if ($response) {
-                if ($transaction->getTypeUser() == "professionnel" || $transaction->getTypeUser() == "PROFESSIONNEL") {
-                    $temp =  $this->tempProfessionnelRepository->findOneBy(['reference' => $referenceId]);
-                    $this->tempProfessionnelRepository->remove($temp, true);
-                } else {
-                   $temp =  $this->tempEtablissementRepository->findOneBy(['reference' =>$referenceId]);
-                   $this->tempEtablissementRepository->remove($temp, true);
+               if (($statusData['status'] ?? null) === 'SUCCESSFUL') {
+                if ($transaction->getType() === 'NOUVELLE DEMANDE') {
+                    $response = (in_array($transaction->getTypeUser(), ["professionnel", "PROFESSIONNEL"])) 
+                        ? $this->paiementService->updateProfessionnel($referenceId) 
+                        : $this->paiementService->updateEtablissement($referenceId);
+                } elseif ($transaction->getType() === 'RENOUVELLEMENT') {
+                    $response = $this->finaliserRenouvellement($transaction);
                 }
             }
 
-
-
+            if (isset($response['code']) && $response['code'] === 200) {
+                if (in_array($transaction->getTypeUser(), ["professionnel", "PROFESSIONNEL"])) {
+                    $temp = $this->tempProfessionnelRepository->findOneBy(['reference' => $referenceId]);
+                    if ($temp) $this->tempProfessionnelRepository->remove($temp, true);
+                } else {
+                    $temp = $this->tempEtablissementRepository->findOneBy(['reference' => $referenceId]);
+                    if ($temp) $this->tempEtablissementRepository->remove($temp, true);
+                }
+            }
         }
+
+
+
         return [
             'success' => true,
             'message' => 'Statut vérifié',
@@ -733,40 +736,59 @@ class PaiementProService
         
         if (!$reference) return ['message' => 'Reference missing', 'code' => 400];
         
-        $statusResult = $this->verifierStatutPaiementPro($reference); // same verifier
+        $statusResult = $this->verifierStatutPaiementPro($reference);
         if (isset($statusResult['status']) && $statusResult['status'] === 'SUCCESSFUL') {
             $transaction = $this->transactionRepository->findOneBy(['reference' => $reference]);
-            $professionnel = $this->userRepository->find($transaction->getUser())->getPersonne();
-            
-            $dernierAbonnement = $this->transactionRepository->findOneBy(
-                ['user' => $transaction->getUser(), 'state' => 1],
-                ['createdAt' => 'DESC']
-            );
-
-            $now = new \DateTime();
-            if (!$dernierAbonnement) {
-                $dateRenouvellement = $now->add(new \DateInterval('P1Y'));
-            } else {
-                $expiration = (clone $dernierAbonnement->getCreatedAt())->modify('+1 year');
-                if ($expiration < $now) {
-                    $dateRenouvellement = $now->add(new \DateInterval('P1Y'));
-                } else {
-                    $dateRenouvellement = $expiration->add(new \DateInterval('P1Y'));
-                }
-            }
-
-            $transactionData = json_decode($transaction->getData() ?? "[]", true);
-            $yearsToPay = $transactionData['yearsToPay'] ?? 1;
-
-            if ($professionnel) {
-                $professionnel->setStatus("a_jour");
-                $professionnel->setDateValidation($dateRenouvellement->modify("+" . ($yearsToPay - 1) . " years"));
-                $this->em->persist($professionnel);
-                $this->em->flush();
+            if ($transaction) {
+                $this->finaliserRenouvellement($transaction);
             }
             return ['code' => 200, 'message' => 'Success'];
         }
         return ['code' => 400, 'message' => 'Failure'];
+    }
+
+    public function finaliserRenouvellement(Transaction $transaction): array
+    {
+        $user = $transaction->getUser();
+        if (!$user) return ['code' => 400, 'message' => 'User not found'];
+
+        $personne = $user->getPersonne();
+        
+        $dernierAbonnement = $this->transactionRepository->findOneBy(
+            ['user' => $user, 'state' => 1],
+            ['createdAt' => 'DESC']
+        );
+
+        $now = new \DateTime();
+        if (!$dernierAbonnement) {
+            $dateRenouvellement = (clone $now)->add(new \DateInterval('P1Y'));
+        } else {
+            $expiration = (clone $dernierAbonnement->getCreatedAt())->modify('+1 year');
+            if ($expiration < $now) {
+                $dateRenouvellement = (clone $now)->add(new \DateInterval('P1Y'));
+            } else {
+                $dateRenouvellement = $expiration->add(new \DateInterval('P1Y'));
+            }
+        }
+
+        $transactionData = json_decode($transaction->getData() ?? "[]", true);
+        $yearsToPay = $transactionData['yearsToPay'] ?? 1;
+
+        if ($personne) {
+            $personne->setStatus("a_jour");
+            if ($yearsToPay > 1) {
+                $dateRenouvellement->modify("+" . ($yearsToPay - 1) . " years");
+            }
+            $personne->setDateValidation($dateRenouvellement);
+            $this->em->persist($personne);
+        }
+
+        $transaction->setState(1);
+        $transaction->setUpdatedAt();
+        $this->transactionRepository->add($transaction, true);
+        $this->em->flush();
+
+        return ['code' => 200, 'message' => 'Success'];
     }
 
 }

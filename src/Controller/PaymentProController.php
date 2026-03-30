@@ -347,37 +347,6 @@ class PaymentProController extends ApiInterface
             $momoStatus = $statusResult['status'];
 
             if ($momoStatus === 'SUCCESSFUL') {
-                $transaction->setState(1);
-                $transaction->setUpdatedAt();
-                $transactionRepository->add($transaction, true);
-
-                ///update professionnel
-                $transaction = $transactionRepository->findOneBy(['reference' => $transactionId]);
-                $professionnel = $this->userRepository->find($transaction->getUser())->getPersonne();
-
-                $dernierAbonnement = $transactionRepository->findOneBy(
-                    ['user' => $transaction->getUser(), 'state' => 1],
-                    ['createdAt' => 'DESC']
-                );
-
-                $now = new \DateTime();
-                if (!$dernierAbonnement) {
-                    $dateRenouvellement = $now->add(new \DateInterval('P1Y'));
-                } else {
-                    $expiration = (clone $dernierAbonnement->getCreatedAt())->modify('+1 year');
-                    if ($expiration < $now) {
-                        $dateRenouvellement = $now->add(new \DateInterval('P1Y'));
-                    } else {
-                        $dateRenouvellement = $expiration->add(new \DateInterval('P1Y'));
-                    }
-                }
-
-                if ($professionnel) {
-                    // $professionnel->setStatus("a_jour");
-                    $professionnel->setDateValidation($dateRenouvellement);
-                    $this->em->persist($professionnel);
-                    $this->em->flush();
-                }
                 return $this->json(['data' => ['state' => 1, 'message' => 'Paiement confirmé avec succès']]);
             } elseif ($momoStatus === 'FAILED') {
                 $transaction->setState(-1);
@@ -778,8 +747,8 @@ class PaymentProController extends ApiInterface
         $transaction->setCreatedBy($userRepository->find($data['user']));
         $transaction->setUpdatedBy($userRepository->find($data['user']));
         $transaction->setState(0);
-        $transaction->setCreatedAtValue(new Date());
-        $transaction->setUpdatedAt(new Date());
+        $transaction->setState(1);
+        $transaction->setUpdatedAt();
         $transactionRepository->add($transaction, true);
 
 
