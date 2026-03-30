@@ -586,8 +586,12 @@ class PaiementProService
         $data = json_decode($request->getContent(), true);
 
         $user = $this->em->getRepository(User::class)->find($data['user']);
-        $montant = $user->getPersonne()->getProfession()->getMontantRenouvellement();
-        $expiration = $user->getPersonne()->getDateValidation();
+        $personne = $user->getPersonne();
+        $montant = 0;
+        if (method_exists($personne, 'getProfession')) {
+            $montant = $personne->getProfession()->getMontantRenouvellement();
+        }
+        $expiration = method_exists($personne, 'getDateValidation') ? $personne->getDateValidation() : null;
         $today = new \DateTime();
         
         if ($expiration) {
@@ -651,7 +655,7 @@ class PaiementProService
     {
         $montant = $this->em->getRepository(\App\Entity\NiveauIntervention::class)->find($request->get('niveauIntervention'))->getMontantRenouvellement();
 
-        $phoneNumber = $request->get('telephone') ?? clone $request->get('numero') ?? $request->get('email'); // dummy match
+        $phoneNumber = $request->get('telephone') ?? $request->get('numero') ?? $request->get('email'); // dummy match
 
         $myUuid = Uuid::uuid4()->toString();
         $token = $this->getMomoToken();
@@ -765,22 +769,29 @@ class PaiementProService
         $yearsDue = $transactionData['yearDue'] ?? 1;
 
         $now = new \DateTime();
-        $currentExpiration = $personne->getDateValidation();
+        $profession = method_exists($personne, 'getProfession') ? $personne->getProfession() : null;
+        $currentExpiration = method_exists($personne, 'getDateValidation') ? $personne->getDateValidation() : null;
 
         if ($yearsPaid >= $yearsDue) {
             // Entièrement régularisé : passage à "a_jour" et +1 an à partir d'aujourd'hui
             $personne->setStatus("a_jour");
             $newExpiration = (clone $now)->modify('+1 year');
-            $personne->setDateValidation($newExpiration);
+            if (method_exists($personne, 'setDateValidation')) {
+                $personne->setDateValidation($newExpiration);
+            }
         } else {
             // Paiement partiel : on ajoute juste les années payées à l'expiration actuelle, status inchangé
             if ($currentExpiration) {
                 $newExpiration = (clone $currentExpiration)->modify("+$yearsPaid years");
-                $personne->setDateValidation($newExpiration);
+                if (method_exists($personne, 'setDateValidation')) {
+                    $personne->setDateValidation($newExpiration);
+                }
             } else {
                 // Cas de secours si pas d'expiration en base
                 $newExpiration = (clone $now)->modify("+$yearsPaid years");
-                $personne->setDateValidation($newExpiration);
+                if (method_exists($personne, 'setDateValidation')) {
+                    $personne->setDateValidation($newExpiration);
+                }
             }
         }
 
