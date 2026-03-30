@@ -105,7 +105,7 @@ class ResetPasswordController extends AbstractController
 
         return $this->json([
             'message' => 'Vous avez demandé une réinitialisation de mot de passe. Si l\'email existe, un code de réinitialisation a été envoyé.',
-            'token' => $sixDigitCode
+            // 'token' => $sixDigitCode
         ]);
     }
 

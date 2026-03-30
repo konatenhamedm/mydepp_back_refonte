@@ -587,9 +587,14 @@ class PaiementProService
 
         $user = $this->em->getRepository(User::class)->find($data['user']);
         $montant = $user->getPersonne()->getProfession()->getMontantRenouvellement();
-        $expiration = (clone $user->getPersonne()->getDateValidation());
+        $expiration = $user->getPersonne()->getDateValidation();
         $today = new \DateTime();
-        $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
+        
+        if ($expiration) {
+            $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
+        } else {
+            $yearDue = 1;
+        }
 
         if ($yearDue < 1) $yearDue = 1;
 
@@ -629,7 +634,7 @@ class PaiementProService
         $transaction->setType('RENOUVELLEMENT');
         $transaction->setTypeUser($data['type'] ?? 'professionnel');
         $transaction->setState(0);
-        $transaction->setData(json_encode(['yearsToPay' => $yearsToPay]));
+        $transaction->setData(json_encode(['yearsToPay' => $yearsToPay, 'yearDue' => $yearDue]));
         $transaction->setCreatedAtValue();
         $transaction->setUpdatedAt();
         $this->transactionRepository->add($transaction, true);
@@ -677,8 +682,8 @@ class PaiementProService
         $transaction->setType("OUVERTURE D'EXPLOITATION");
         $transaction->setTypeUser('etablissement');
         $transaction->setState(0);
-        $transaction->setCreatedAtValue(new \DateTime());
-        $transaction->setUpdatedAt(new \DateTime());
+        $transaction->setCreatedAtValue();
+        $transaction->setUpdatedAt();
 
         $this->transactionRepository->add($transaction, true);
 
@@ -753,34 +758,30 @@ class PaiementProService
         if (!$user) return ['code' => 400, 'message' => 'User not found'];
 
         $personne = $user->getPersonne();
-        
-        $dernierAbonnement = $this->transactionRepository->findOneBy(
-            ['user' => $user, 'state' => 1],
-            ['createdAt' => 'DESC']
-        );
-
-        $now = new \DateTime();
-        if (!$dernierAbonnement) {
-            $dateRenouvellement = (clone $now)->add(new \DateInterval('P1Y'));
-        } else {
-            $expiration = (clone $dernierAbonnement->getCreatedAt())->modify('+1 year');
-            if ($expiration < $now) {
-                $dateRenouvellement = (clone $now)->add(new \DateInterval('P1Y'));
-            } else {
-                $dateRenouvellement = $expiration->add(new \DateInterval('P1Y'));
-            }
-        }
+        if (!$personne) return ['code' => 400, 'message' => 'Personne not found'];
 
         $transactionData = json_decode($transaction->getData() ?? "[]", true);
-        $yearsToPay = $transactionData['yearsToPay'] ?? 1;
+        $yearsPaid = $transactionData['yearsToPay'] ?? 1;
+        $yearsDue = $transactionData['yearDue'] ?? 1;
 
-        if ($personne) {
+        $now = new \DateTime();
+        $currentExpiration = $personne->getDateValidation();
+
+        if ($yearsPaid >= $yearsDue) {
+            // Entièrement régularisé : passage à "a_jour" et +1 an à partir d'aujourd'hui
             $personne->setStatus("a_jour");
-            if ($yearsToPay > 1) {
-                $dateRenouvellement->modify("+" . ($yearsToPay - 1) . " years");
+            $newExpiration = (clone $now)->modify('+1 year');
+            $personne->setDateValidation($newExpiration);
+        } else {
+            // Paiement partiel : on ajoute juste les années payées à l'expiration actuelle, status inchangé
+            if ($currentExpiration) {
+                $newExpiration = (clone $currentExpiration)->modify("+$yearsPaid years");
+                $personne->setDateValidation($newExpiration);
+            } else {
+                // Cas de secours si pas d'expiration en base
+                $newExpiration = (clone $now)->modify("+$yearsPaid years");
+                $personne->setDateValidation($newExpiration);
             }
-            $personne->setDateValidation($dateRenouvellement);
-            $this->em->persist($personne);
         }
 
         $transaction->setState(1);

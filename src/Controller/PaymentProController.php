@@ -747,8 +747,8 @@ class PaymentProController extends ApiInterface
         $transaction->setCreatedBy($userRepository->find($data['user']));
         $transaction->setUpdatedBy($userRepository->find($data['user']));
         $transaction->setState(0);
-        $transaction->setState(1);
-        $transaction->setUpdatedAt();
+        $transaction->setCreatedAtValue(new Date());
+        $transaction->setUpdatedAt(new Date());
         $transactionRepository->add($transaction, true);
 
 
