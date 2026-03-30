@@ -191,6 +191,7 @@ class PaiementProService
         }
         $statusData = $statusResponse->toArray();
         $transaction = $this->transactionRepository->findOneBy(['reference' => $referenceId]);
+        dd($transaction);
         if ($transaction) {
             
             if (($statusData['status'] ?? null) !== 'FAILED' && ($statusData['status'] ?? null) !== 'PENDING') {
