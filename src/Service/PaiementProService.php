@@ -196,12 +196,12 @@ class PaiementProService
             
             if (($statusData['status'] ?? null) !== 'FAILED' && ($statusData['status'] ?? null) !== 'PENDING') {
                 
-                $response = $transaction->getTypeUser() == "professionnel" ?  $this->paiementService->updateProfessionnel($referenceId) :  $this->paiementService->updateEtablissement($referenceId);
+                $response = ($transaction->getTypeUser() == "professionnel" || $transaction->getTypeUser() == "PROFESSIONNEL") ?  $this->paiementService->updateProfessionnel($referenceId) :  $this->paiementService->updateEtablissement($referenceId);
             }
 
 
             if ($response) {
-                if ($transaction->getTypeUser() == "professionnel") {
+                if ($transaction->getTypeUser() == "professionnel" || $transaction->getTypeUser() == "PROFESSIONNEL") {
                     $temp =  $this->tempProfessionnelRepository->findOneBy(['reference' => $referenceId]);
                     $this->tempProfessionnelRepository->remove($temp, true);
                 } else {
