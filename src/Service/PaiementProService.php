@@ -266,7 +266,7 @@ class PaiementProService
     public function initiateMomoPayment(string $token, array $body, string $referenceId): array
     {
         $momoSubscriptionKey = $_ENV['MOMO_SUBSCRIPTION_KEY'] ?? 'f42e9a3ae31842fba6e8c2fea23fa0d7';
-
+        dd($token, $body, $referenceId);
         try {
             $paymentResponse = $this->httpClient->request(
                 'POST',
@@ -657,7 +657,7 @@ class PaiementProService
         if (!$phoneNumber) {
             return ['code' => 500, 'error' => 'Numéro manquant'];
         }
-        
+
         $token = $this->getMomoToken();
 
         if (!$token) {
