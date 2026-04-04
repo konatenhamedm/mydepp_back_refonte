@@ -646,6 +646,10 @@ class PaiementService
         $dataTemp = $this->tempEtablissementRepository->findOneBy(['reference' => $reference]);
         $transaction = $this->transactionRepository->findOneBy(['reference' => $reference]);
 
+        if (!$dataTemp) {
+            return ['code' => 200, 'message' => 'Déjà traité'];
+        }
+
         $etablissement = new Etablissement();
         $etablissement->setStatus('acp_attente_dossier_depot_service_courrier');
 
