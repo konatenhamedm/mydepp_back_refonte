@@ -19,8 +19,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class PaiementProService
-{ 
-    
+{
+
     use FileTrait;
     public function __construct(
         private TransactionRepository $transactionRepository,
@@ -55,7 +55,7 @@ class PaiementProService
     public function traiterPaiement(Request $request): array
     {
         $data = $request->request->all(); // FormData text fields
-        if(empty($data)){
+        if (empty($data)) {
             $data = json_decode($request->getContent(), true) ?? [];
         }
 
@@ -63,8 +63,8 @@ class PaiementProService
         $professionInfo = $data['profession'] ?? $request->get('profession');
         $niveauInterventionInfo = $data['niveauIntervention'] ?? $request->get('niveauIntervention');
 
-        $montant = $type == "professionnel" 
-            ? $this->em->getRepository(\App\Entity\Profession::class)->findOneBy(['code' => $professionInfo])->getMontantNouvelleDemande() 
+        $montant = $type == "professionnel"
+            ? $this->em->getRepository(\App\Entity\Profession::class)->findOneBy(['code' => $professionInfo])->getMontantNouvelleDemande()
             : $this->em->getRepository(\App\Entity\NiveauIntervention::class)->find($niveauInterventionInfo)->getMontant();
 
         $phoneNumber = $data['numero'] ?? $data['phoneNumber'] ?? $request->get('numero') ?? $request->get('phoneNumber');
@@ -126,7 +126,7 @@ class PaiementProService
         if (!in_array($paymentResponse->getStatusCode(), [200, 202])) {
             $errorContent = $paymentResponse->getContent(false);
             return [
-                'code' => 500, 
+                'code' => 500,
                 'error' => 'Erreur API MTN Momo : ' . $paymentResponse->getStatusCode() . ' - ' . $errorContent
             ];
         }
@@ -193,10 +193,10 @@ class PaiementProService
         $transaction = $this->transactionRepository->findOneBy(['reference' => $referenceId]);
         // dd($transaction->getTypeUser());
         if ($transaction) {
-               if (($statusData['status'] ?? null) === 'SUCCESSFUL') {
+            if (($statusData['status'] ?? null) === 'SUCCESSFUL') {
                 if ($transaction->getType() === 'NOUVELLE DEMANDE') {
-                    $response = (in_array($transaction->getTypeUser(), ["professionnel", "PROFESSIONNEL"])) 
-                        ? $this->paiementService->updateProfessionnel($referenceId) 
+                    $response = (in_array($transaction->getTypeUser(), ["professionnel", "PROFESSIONNEL"]))
+                        ? $this->paiementService->updateProfessionnel($referenceId)
                         : $this->paiementService->updateEtablissement($referenceId);
                 } elseif ($transaction->getType() === 'RENOUVELLEMENT') {
                     $response = $this->finaliserRenouvellement($transaction);
@@ -301,7 +301,7 @@ class PaiementProService
     public function initTransactionTemp(Request $request, $montant, string $referenceId): void
     {
         $transaction = new Transaction();
-       // $transaction->setUser($this->userRepository->find($request->get('user')));
+        // $transaction->setUser($this->userRepository->find($request->get('user')));
         $transaction->setChannel('momo');
         $transaction->setReference($referenceId);
         $transaction->setMontant($montant);
@@ -313,18 +313,18 @@ class PaiementProService
         $transaction->setUpdatedAt();
         $this->transactionRepository->add($transaction, true);
 
-        $request->get('type')   == 'professionnel' ? $this->createProfessionnelTemp($request,$referenceId) : null;
+        $request->get('type')   == 'professionnel' ? $this->createProfessionnelTemp($request, $referenceId) : null;
 
-         /* return  [
+        /* return  [
             'message' => 'Professionnel bien enregistré',
            /*  'data' => $data */
-        /* ]; */ 
+        /* ]; */
     }
 
 
 
 
-    public function createProfessionnelTemp(Request $request,$referenceId)
+    public function createProfessionnelTemp(Request $request, $referenceId)
     {
 
         $names = 'document_' . '01';
@@ -441,7 +441,7 @@ class PaiementProService
 
 
 
-      /*   $errorResponse = $this->errorResponse($professionnel);
+        /*   $errorResponse = $this->errorResponse($professionnel);
         if ($errorResponse !== null) {
             return $errorResponse; // Retourne la réponse d'erreur si des erreurs sont présentes
         } else {
@@ -451,14 +451,11 @@ class PaiementProService
         }
  */
 
-/* 
+        /* 
             $this->em->persist($professionnel);
             $this->em->flush(); */
 
-            $this->tempProfessionnelRepository->add($professionnel, true);
-
-
-       
+        $this->tempProfessionnelRepository->add($professionnel, true);
     }
 
 
@@ -471,21 +468,21 @@ class PaiementProService
     {
         try {
             $referenceId = $webhookData['referenceId'] ?? null;
-            
+
             if (!$referenceId) {
                 return ['success' => false, 'error' => 'Reference ID manquant'];
             }
 
             // Récupérer la transaction
             $transaction = $this->transactionRepository->findOneBy(['reference' => $referenceId]);
-            
+
             if (!$transaction) {
                 return ['success' => false, 'error' => 'Transaction non trouvée'];
             }
 
             // Vérifier le statut auprès de l'API Momo
             $statusResult = $this->verifierStatutPaiementPro($referenceId);
-            
+
             if (!$statusResult['success']) {
                 return $statusResult;
             }
@@ -549,7 +546,7 @@ class PaiementProService
 
             // Mettre à jour la transaction
             $transaction = $this->transactionRepository->findOneBy(['reference' => $referenceId]);
-            
+
             if ($transaction) {
                 if ($status === 'SUCCESSFUL') {
                     $transaction->setState(1);
@@ -558,7 +555,7 @@ class PaiementProService
                 } else {
                     $transaction->setState(0); // PENDING
                 }
-                
+
                 $transaction->setUpdatedAt(new \DateTimeImmutable());
                 $this->transactionRepository->add($transaction, true);
             }
@@ -593,7 +590,7 @@ class PaiementProService
         }
         $expiration = method_exists($personne, 'getDateValidation') ? $personne->getDateValidation() : null;
         $today = new \DateTime();
-        
+
         if ($expiration) {
             $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
         } else {
@@ -655,10 +652,19 @@ class PaiementProService
     {
         $montant = $this->em->getRepository(\App\Entity\NiveauIntervention::class)->find($request->get('niveauIntervention'))->getMontantRenouvellement();
 
-        $phoneNumber = $request->get('telephone') ?? $request->get('numero') ?? $request->get('email'); // dummy match
+        $phoneNumber = $request->get('telephone') ?? $request->get('numero');
+        
+        if (!$phoneNumber) {
+            return ['code' => 500, 'error' => 'Numéro manquant'];
+        }
+        
+        $token = $this->getMomoToken();
+
+        if (!$token) {
+            return ['code' => 500, 'error' => 'Impossible de récupérer le token MOMO'];
+        }
 
         $myUuid = Uuid::uuid4()->toString();
-        $token = $this->getMomoToken();
 
         $paymentBody = [
             'amount' => (string) $montant,
@@ -672,12 +678,16 @@ class PaiementProService
             'payeeNote' => 'OEP',
         ];
 
-        $this->initiateMomoPayment($token, $paymentBody, $myUuid);
+        $paymentResult = $this->initiateMomoPayment($token, $paymentBody, $myUuid);
+
+        if (!$paymentResult['success']) {
+            return ['code' => 500, 'error' => $paymentResult['error'] ?? 'Erreur lors de l\'initiation du paiement MOMO'];
+        }
 
         $transaction = new Transaction();
         $transaction->setChannel("momo");
-        
-        if($request->get('user')){
+
+        if ($request->get('user')) {
             $transaction->setUser($this->userRepository->find($request->get('user')));
         }
         $transaction->setReference($myUuid);
@@ -698,15 +708,15 @@ class PaiementProService
             'type' => 'etablissement'
         ];
     }
-    
+
     // Webhook Handlers
     public function methodeWebHook(Request $request): array
     {
         $data = json_decode($request->getContent(), true) ?? [];
         $reference = $request->headers->get('X-Reference-Id') ?? ($data['referenceId'] ?? $data['externalId'] ?? null);
-        
+
         if (!$reference) return ['message' => 'Reference missing', 'code' => 400];
-        
+
         $statusResult = $this->verifierStatutPaiementPro($reference);
         if (isset($statusResult['status']) && $statusResult['status'] === 'SUCCESSFUL') {
             return ['code' => 200, 'message' => 'Success']; // verifierStatutPaiementPro triggers updateProfessionnel
@@ -718,13 +728,13 @@ class PaiementProService
     {
         $data = json_decode($request->getContent(), true) ?? [];
         $reference = $request->headers->get('X-Reference-Id') ?? ($data['referenceId'] ?? $data['externalId'] ?? null);
-        
+
         if (!$reference) return ['message' => 'Reference missing', 'code' => 400];
-        
+
         $statusResult = $this->verifierStatutPaiementPro($reference); // same verifier
         if (isset($statusResult['status']) && $statusResult['status'] === 'SUCCESSFUL') {
             $this->paiementService->updateDocumentOep($reference); // Execute specific OEP action
-            
+
             $transaction = $this->transactionRepository->findOneBy(['reference' => $reference]);
             $etablissement = $this->em->getRepository(\App\Entity\Etablissement::class)->findOneBy(['id' => $transaction->getUser()->getPersonne()]);
             if ($etablissement) {
@@ -742,9 +752,9 @@ class PaiementProService
     {
         $data = json_decode($request->getContent(), true) ?? [];
         $reference = $request->headers->get('X-Reference-Id') ?? ($data['referenceId'] ?? $data['externalId'] ?? null);
-        
+
         if (!$reference) return ['message' => 'Reference missing', 'code' => 400];
-        
+
         $statusResult = $this->verifierStatutPaiementPro($reference);
         if (isset($statusResult['status']) && $statusResult['status'] === 'SUCCESSFUL') {
             $transaction = $this->transactionRepository->findOneBy(['reference' => $reference]);
@@ -802,5 +812,4 @@ class PaiementProService
 
         return ['code' => 200, 'message' => 'Success'];
     }
-
 }
