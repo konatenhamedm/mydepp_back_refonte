@@ -284,7 +284,7 @@ class PaiementProService
                         ]
                         );
                         
-                        dd($paymentResponse);
+                        dd($paymentResponse->getStatusCode());
             if (in_array($paymentResponse->getStatusCode(), [200, 202])) {
                 return ['success' => true];
             }
