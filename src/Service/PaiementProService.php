@@ -266,7 +266,6 @@ class PaiementProService
     public function initiateMomoPayment(string $token, array $body, string $referenceId): array
     {
         $momoSubscriptionKey = $_ENV['MOMO_SUBSCRIPTION_KEY'] ?? 'f42e9a3ae31842fba6e8c2fea23fa0d7';
-        dd($token, $body, $referenceId);
         try {
             $paymentResponse = $this->httpClient->request(
                 'POST',
@@ -280,11 +279,12 @@ class PaiementProService
                         'Content-Type' => 'application/json',
                         'Cache-Control' => 'no-cache',
                         'Ocp-Apim-Subscription-Key' => $momoSubscriptionKey,
-                    ],
-                    'json' => $body,
-                ]
-            );
-
+                        ],
+                        'json' => $body,
+                        ]
+                        );
+                        
+                        dd($paymentResponse);
             if (in_array($paymentResponse->getStatusCode(), [200, 202])) {
                 return ['success' => true];
             }
