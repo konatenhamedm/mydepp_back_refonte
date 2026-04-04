@@ -90,8 +90,8 @@ class Utils
         $fichier->setSize(filesize($path));
         $fichier->setUrl($fileExtension);
 
-        //$this->em->persist($fichier);
-        //$this->em->flush();
+        $this->em->persist($fichier);
+        $this->em->flush();
         //dd('');
 
 

@@ -363,7 +363,7 @@ class PaiementService
             "code_paiement" => $transaction->getReference(),
             "nom_usager" => "Mydepps",
             "prenom_usager" => "Mydepps",
-            "telephone" => "0704314164",
+            "telephone" => $request->get('telephone') ?? $request->get('numero') ?? "0704314164",
             "email" => $request->get('email'),
             "libelle_article" => "OUVERTURE D'EXPLOITATION",
             "quantite" => 1,
@@ -399,13 +399,16 @@ class PaiementService
     public function traiterPaiementRenouvellement(Request $request): array
     {
         $data = json_decode($request->getContent(), true);
+        $user = $this->userRepository->find($data['user']);
+        $professionnel = $user->getPersonne();
 
-        $user = $this->em->getRepository(User::class)->find($data['user']);
-
-       // $montant = $this->professionRepository->findOneByCode($user->getPersonne()->getProfession())->getMontantRenouvellement();
-    //    dd($user->getPersonne()->getProfession());
-        $montant = $user->getPersonne()->getProfession()->getMontantRenouvellement();
-        $expiration = (clone $user->getPersonne()->getDateValidation());
+        $montant = 0;
+        if (method_exists($professionnel, 'getProfession')) {
+            $montant = $professionnel->getProfession()->getMontantRenouvellement();
+        }
+        
+        $currentExpiration = method_exists($professionnel, 'getDateValidation') ? $professionnel->getDateValidation() : null;
+        $expiration = $currentExpiration ? (clone $currentExpiration) : null;
         $today = new \DateTime();
         // $yearDue = $today->diff($expiration)->y ;
         $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
@@ -513,7 +516,7 @@ class PaiementService
         $professionnel->setPoleSanitaire($dataTemp->getPoleSanitaire());
         $professionnel->setLieuObtentionDiplome($this->lieuDiplomeRepository->find($dataTemp->getLieuObtentionDiplome()));
         $professionnel->setDateValidation(new DateTime());
-        $professionnel->getLieuDiplome($dataTemp->getLieuDiplome());
+        $professionnel->setLieuDiplome($dataTemp->getLieuDiplome());
 
        // $professionnel->setLieuObtentionDiplome();
         $professionnel->setRegion($this->regionRepository->find($dataTemp->getRegion()));
@@ -531,6 +534,7 @@ class PaiementService
         $professionnel->setSpecialiteAutre($dataTemp->getSpecialiteAutre());
         $professionnel->setEmail($dataTemp->getEmailAutre());
         $professionnel->setLieuExercicePro($dataTemp->getLieuExercicePro());
+        $professionnel->setDateValidation((new \DateTime())->add(new \DateInterval('P1Y')));
 
 
 
