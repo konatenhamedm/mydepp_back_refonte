@@ -94,7 +94,7 @@ class ApiProfessionController extends ApiInterface
     return $response;
   }
 
-  #[Route('/get/status/paiement/{code}', methods: ['GET'])]
+  #[Route('/get/status/paiement/{id}', methods: ['GET'])]
   /**
    * Affiche un(e) specialite en offrant un identifiant.
    */
@@ -107,17 +107,17 @@ class ApiProfessionController extends ApiInterface
     )
   )]
   #[OA\Parameter(
-    name: 'code',
+    name: 'id',
     in: 'query',
-    schema: new OA\Schema(type: 'string')
+    schema: new OA\Schema(type: 'integer')
   )]
   #[OA\Tag(name: 'profession')]
   //
-  public function getPaiementStatus($code, ProfessionRepository $professionRepository)
+  public function getPaiementStatus(int $id, ProfessionRepository $professionRepository)
   {
     try {
 
-      $profession = $professionRepository->findOneBy(['code' => $code]);
+      $profession = $professionRepository->find($id);
       if ($profession) {
         $response = $this->response($profession->getMontantNouvelleDemande() != null || (int)$profession->getMontantNouvelleDemande() != 0 ? true : false);
       } else {
