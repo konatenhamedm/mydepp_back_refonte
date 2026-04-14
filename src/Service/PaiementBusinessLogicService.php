@@ -112,7 +112,7 @@ class PaiementBusinessLogicService
         $professionnel->setNumber($dataTemp->getNumber());
         $professionnel->setEmailPro($dataTemp->getEmailPro());
         $professionnel->setProfession(
-            $this->professionRepository->findOneBy(['code' => $dataTemp->getProfession()])
+            $this->professionRepository->find($dataTemp->getProfession())
         );
 
         // Appartenance

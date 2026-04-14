@@ -271,7 +271,7 @@ class PaiementService
     {
         $data = json_decode($request->getContent(), true);
 
-        $montant = $request->get('type') == "professionnel" ? $this->professionRepository->findOneByCode($request->get('profession'))->getMontantNouvelleDemande() : $this->niveauInterventionRepository->find($request->get('niveauIntervention'))->getMontant();
+        $montant = $request->get('type') == "professionnel" ? $this->professionRepository->find($request->get('profession'))->getMontantNouvelleDemande() : $this->niveauInterventionRepository->find($request->get('niveauIntervention'))->getMontant();
 
         $transaction = new Transaction();
         $transaction->setChannel("");
@@ -547,7 +547,7 @@ class PaiementService
 
         $professionnel->setNumber($dataTemp->getNumber());
         $professionnel->setEmailPro($dataTemp->getEmailPro());
-        $professionnel->setProfession($this->professionRepository->findOneBy(['code' => $dataTemp->getProfession()]));
+        $professionnel->setProfession($this->professionRepository->find($dataTemp->getProfession()));
         //$professionnel->setSpecialite($this->professionRepository->findOneBy(['code' => $dataTemp->getProfession()]));
         $professionnel->setAppartenirOrganisation($dataTemp->getAppartenirOrganisation());
         $professionnel->setAppartenirOrdre($dataTemp->getAppartenirOrdre());
