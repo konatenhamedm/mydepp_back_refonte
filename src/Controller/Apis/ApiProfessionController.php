@@ -95,7 +95,6 @@ class ApiProfessionController extends ApiInterface
   }
 
   #[Route('/get/status/paiement/{id}', methods: ['GET'])]
-  #[Route('/get/status/paiement/{id}', methods: ['GET'])]
   /**
    * Affiche un(e) specialite en offrant un identifiant.
    */
@@ -108,7 +107,6 @@ class ApiProfessionController extends ApiInterface
     )
   )]
   #[OA\Parameter(
-    name: 'id',
     name: 'id',
     in: 'query',
     schema: new OA\Schema(type: 'integer')
