@@ -64,7 +64,7 @@ class PaiementProService
         $niveauInterventionInfo = $data['niveauIntervention'] ?? $request->get('niveauIntervention');
 
         $montant = $type == "professionnel"
-            ? $this->em->getRepository(\App\Entity\Profession::class)->findOneBy(['code' => $professionInfo])->getMontantNouvelleDemande()
+            ? $this->em->getRepository(\App\Entity\Profession::class)->find($professionInfo)->getMontantNouvelleDemande()
             : $this->em->getRepository(\App\Entity\NiveauIntervention::class)->find($niveauInterventionInfo)->getMontant();
 
         $phoneNumber = $data['numero'] ?? $data['phoneNumber'] ?? $request->get('numero') ?? $request->get('phoneNumber');

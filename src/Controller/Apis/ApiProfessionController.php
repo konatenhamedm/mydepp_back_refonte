@@ -94,7 +94,7 @@ class ApiProfessionController extends ApiInterface
     return $response;
   }
 
-  #[Route('/get/status/paiement/{code}', methods: ['GET'])]
+  #[Route('/get/status/paiement/{id}', methods: ['GET'])]
   /**
    * Affiche un(e) specialite en offrant un identifiant.
    */
@@ -107,17 +107,15 @@ class ApiProfessionController extends ApiInterface
     )
   )]
   #[OA\Parameter(
-    name: 'code',
+    name: 'id',
     in: 'query',
     schema: new OA\Schema(type: 'string')
   )]
   #[OA\Tag(name: 'profession')]
   //
-  public function getPaiementStatus($code, ProfessionRepository $professionRepository)
+  public function getPaiementStatus(?Profession $profession)
   {
     try {
-
-      $profession = $professionRepository->findOneBy(['code' => $code]);
       if ($profession) {
         $response = $this->response($profession->getMontantNouvelleDemande() != null || (int)$profession->getMontantNouvelleDemande() != 0 ? true : false);
       } else {
@@ -291,8 +289,8 @@ class ApiProfessionController extends ApiInterface
     $profession->setChronoMax($data['chronoMax']);
     $profession->setMaxCode($data['chronoMax']);
     $profession->setCodeGeneration($data['codeGeneration']);
-    $profession->setCreatedAtValue(new \DateTime());
-    $profession->setUpdatedAt(new \DateTime());
+    $profession->setCreatedAtValue();
+    $profession->setUpdatedAt();
     $profession->setTypeProfession($typeProfessionRepository->find($data['typeProfession']));
     $profession->setMontantNouvelleDemande($data['montantNouvelleDemande']);
     $profession->setMontantRenouvellement($data['montantRenouvellement']);
@@ -352,7 +350,7 @@ class ApiProfessionController extends ApiInterface
         $profession->setMontantRenouvellement($data->montantRenouvellement);
         $profession->setCode($typeProfessionRepository->find($data->typeProfession)->getCode() . '_' . $data->libelle);
         $profession->setUpdatedBy($this->getUser());
-        $profession->setUpdatedAt(new \DateTime());
+        $profession->setUpdatedAt();
         $errorResponse = $this->errorResponse($profession);
 
         if ($errorResponse !== null) {
