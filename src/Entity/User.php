@@ -21,6 +21,7 @@ use Doctrine\DBAL\Types\Types;
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 #[Table(name: 'utilisateur')]
 #[UniqueEntity(fields: 'email', message: 'Ce email est déjà utilisé par un autre utilisateur')]
+#[ORM\HasLifecycleCallbacks]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     const STATUS = [

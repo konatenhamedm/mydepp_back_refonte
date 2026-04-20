@@ -347,6 +347,9 @@ class PaymentProController extends ApiInterface
             $momoStatus = $statusResult['status'];
 
             if ($momoStatus === 'SUCCESSFUL') {
+                $transaction->setState(1);
+                $transaction->setUpdatedAt();
+                $transactionRepository->add($transaction, true);
                 return $this->json(['data' => ['state' => 1, 'message' => 'Paiement confirmé avec succès']]);
             } elseif ($momoStatus === 'FAILED') {
                 $transaction->setState(-1);
@@ -1097,11 +1100,7 @@ class PaymentProController extends ApiInterface
 
 
         $documents = $request->get('documents');
-
-
         $uploadedFiles = $request->files->get('documents');
-
-        /*    dd($documents); */
 
         if ($documents) {
             foreach ($documents as $index => $doc) {
@@ -1110,21 +1109,13 @@ class PaymentProController extends ApiInterface
                 $newDocument->setLibelle($doc['libelle'])
                     ->setLibelleGroupe($this->em->getRepository(LibelleGroupe::class)->find($doc['libelleGroupe']));
 
-                if (isset($uploadedFiles[$index])) {
-                    /* $fileKeys = [
-                        'path',
-                    ]; */
-
-                    /*   foreach ($fileKeys as $key) { */
-                    if (!empty($uploadedFiles[$index]['path'])) {
-                        $uploadedFile = $uploadedFiles[$index]['path'];
-                        $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH);
-                        if ($fichier) {
-                            /*    $setter = 'set' . ucfirst($key); */
-                            $newDocument->setPath($fichier);
-                        }
+                if (isset($uploadedFiles[$index]) && !empty($uploadedFiles[$index]['path'])) {
+                    $uploadedFile = $uploadedFiles[$index]['path'];
+                    $docPrefix = str_slug('document_' . ($index + 1));
+                    $fichier = $this->utils->sauvegardeFichier($filePath, $docPrefix, $uploadedFile, self::UPLOAD_PATH);
+                    if ($fichier) {
+                        $newDocument->setPath($fichier);
                     }
-                    /*   } */
                 }
 
                 $etablissement->addDocumentTemporaire($newDocument);
