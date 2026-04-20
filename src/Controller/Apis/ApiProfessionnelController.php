@@ -104,7 +104,7 @@ class ApiProfessionnelController extends ApiInterface
                     'nom' => $pro->getNom(),
                     'prenoms' => $pro->getPrenoms(),
                     'nationalite' => $pro->getNationate()->getId(),
-                    'profession' => $pro->getProfession()->getLibelle(),
+                    'profession' => $pro->getProfession()->getId(),
                     'sexe' => $pro->getCivilite()->getId(),
                     'DateNaissance' => $pro->getDateNaissance() ? $pro->getDateNaissance()->format('d/m/Y') : null,
                 ]);

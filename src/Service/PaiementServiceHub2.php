@@ -339,7 +339,7 @@ class PaiementServiceHub2
         if (!isset($data['user'])) {
             if ($type === 'professionnel') {
                 $professionCode = $request->get('profession') ?? $data['profession'];
-                $profession = $this->professionRepository->findOneByCode($professionCode);
+                $profession = $this->professionRepository->find($professionCode);
                 return $profession->getMontantNouvelleDemande();
             } else {
                 $niveauId = $request->get('niveauIntervention') ?? $data['niveauIntervention'];
