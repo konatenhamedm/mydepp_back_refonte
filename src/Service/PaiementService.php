@@ -281,8 +281,8 @@ class PaiementService
         $transaction->setType("NOUVELLE DEMANDE");
         $transaction->setTypeUser($request->get('type'));
         $transaction->setState(0);
-        $transaction->setCreatedAtValue(new \DateTime());
-        $transaction->setUpdatedAt(new \DateTime());
+        $transaction->setCreatedAtValue();
+        $transaction->setUpdatedAt();
 
         $this->transactionRepository->add($transaction, true);
 
@@ -353,8 +353,8 @@ class PaiementService
         $transaction->setType("OUVERTURE D'EXPLOITATION");
         $transaction->setTypeUser('etablissement');
         $transaction->setState(0);
-        $transaction->setCreatedAtValue(new \DateTime());
-        $transaction->setUpdatedAt(new \DateTime());
+        $transaction->setCreatedAtValue();
+        $transaction->setUpdatedAt();
 
         $this->transactionRepository->add($transaction, true);
 
@@ -423,8 +423,8 @@ class PaiementService
         $transaction->setTypeUser($data['type']);
         $transaction->setUser($user);
         $transaction->setState(0);
-        $transaction->setCreatedAtValue(new \DateTime());
-        $transaction->setUpdatedAt(new \DateTime());
+        $transaction->setCreatedAtValue();
+        $transaction->setUpdatedAt();
 
         $this->transactionRepository->add($transaction, true);
 
@@ -585,6 +585,7 @@ class PaiementService
         $professionnel->setCni($dataTemp->getCni());
         $professionnel->setDiplomeFile($dataTemp->getDiplomeFile());
         $professionnel->setCertificat($dataTemp->getCertificat());
+        $professionnel->setCertificat($dataTemp->getCertificat());
         $professionnel->setUpdatedAt();
         $professionnel->setCreatedAtValue();
 
@@ -695,13 +696,13 @@ class PaiementService
         $user->setTypeUser(User::TYPE['ETABLISSEMENT']);
         $user->setPayement(User::PAYEMENT['payed']);
         $user->setCreatedBy($user);
-        $user->setCreatedAtValue(new DateTime());
+        $user->setCreatedAtValue();
         $user->setUpdatedBy($user);
         $this->em->persist($user);
         $this->em->flush();
 
         $etablissement->setCreatedBy($user);
-        $etablissement->setCreatedAtValue(new DateTime());
+        $etablissement->setCreatedAtValue();
         $etablissement->setUpdatedBy($user);
         $this->em->persist($etablissement);
         $this->em->flush();
