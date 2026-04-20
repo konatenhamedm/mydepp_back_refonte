@@ -28,6 +28,7 @@ use Symfony\Component\Serializer\Attribute\Groups as Group;
     'etablissement' => Etablissement::class,
     'administrateur' => Administrateur::class,
 ])]
+#[ORM\HasLifecycleCallbacks]
 class Entite
 {
 

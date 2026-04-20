@@ -109,6 +109,7 @@ class AuthController extends ApiInterface
                 'role' => $user->getRoles(),
                 "expire" => $user->getPersonne()->getStatus() == "renouvellement" ? true : false,
                 "finRenouvellement" => $finRenouvelement,
+                'createdAt' => $user->getCreatedAt() ? $user->getCreatedAt()->format('Y-m-d H:i:s') : null,
                 'username' => $user->getTypeUser() == "ADMINISTRATEUR" ? $user->getUsername() : $user->getUserIdentifier(),
                 'avatar' => $avatar,
                 'status' =>  $user->getPersonne()->getStatus(),
