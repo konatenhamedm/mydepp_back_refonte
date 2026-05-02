@@ -371,7 +371,7 @@ class ApiUserController extends ApiInterface
                         "prenoms" => $user->getPersonne()->getPrenoms()
                     ],
                     "password" => $request->get('password'),
-                    "login_url" => "https://mydepp-front.pages.dev/login"
+                    "login_url" => "https://mydepps.net/login"
                 ]
             );
 
@@ -986,7 +986,7 @@ class ApiUserController extends ApiInterface
                     "email" => $email,
                     "password" => $password,
                 ],
-                "login_url" => "https://mydepp-front.pages.dev/login"
+                "login_url" => "https://mydepps.net/login"
             ]
         );
 
@@ -1024,9 +1024,9 @@ class ApiUserController extends ApiInterface
             )
         ]
     )]
-    public function createUserWithCode(Request $request,ProfessionnelRepository $professionnelRepository,SendMailService $sendMailService, UserRepository $userRepo, UserPasswordHasherInterface $passwordHasher,)
+    public function createUserWithCode(Request $request, ProfessionnelRepository $professionnelRepository, SendMailService $sendMailService, UserRepository $userRepo, UserPasswordHasherInterface $passwordHasher,)
     {
-            $data = json_decode($request->getContent(), true);
+        $data = json_decode($request->getContent(), true);
         $professionnel = $professionnelRepository->findOneBy(['code' => $data['code']]);
 
         if ($professionnel == null) {
@@ -1035,16 +1035,16 @@ class ApiUserController extends ApiInterface
 
         $professionnel->setStatus("a_jour");
 
-        $professionnelRepository->add($professionnel,true);
-     
-         $user = new User();
+        $professionnelRepository->add($professionnel, true);
+
+        $user = new User();
         $user->setEmail($data['email']);
         $user->setPayement("payed");
         $user->setPassword($passwordHasher->hashPassword($user, $data['password']));
         $user->setRoles(['ROLE_MEMBRE']);
         $user->setTypeUser("PROFESSIONNEL");
         $user->setPersonne($professionnel);
-        $userRepo->add($user,true);
+        $userRepo->add($user, true);
 
 
         $sendMailService->send(
@@ -1057,13 +1057,12 @@ class ApiUserController extends ApiInterface
                     "email" => $data['email'],
                     "password" => $data['password'],
                 ],
-                "login_url" => "https://mydepp-front.pages.dev/connexion"
+                "login_url" => "https://mydepps.net/connexion"
             ]
         );
 
 
 
         return $this->json(['message' => 'Utilisateur créé avec succès']);
-        
     }
 }

@@ -30,13 +30,13 @@ class ResetPasswordService
         $this->em->persist($resetRpassWOrd);
         $this->em->flush();
 
-      
+
         $user->setResetToken($token);
         $this->em->persist($user);
         $this->em->flush();
 
         // URL du frontend Svelte pour la réinitialisation
-        $url = "https://mydepp-front.pages.dev/site/connexion/nouveau_mot_de_passe/{$token}";
+        $url = "https://mydepps.net/site/connexion/nouveau_mot_de_passe/{$token}";
 
         $context = compact('url', 'user');
 
@@ -48,8 +48,6 @@ class ResetPasswordService
             'password_reset',
             $context
         );
-
-       
     }
     public function sendResetPasswordEmailAdmin($user): void
     {
@@ -60,13 +58,13 @@ class ResetPasswordService
         $this->em->persist($resetRpassWOrd);
         $this->em->flush();
 
-      
+
         $user->setResetToken($token);
         $this->em->persist($user);
         $this->em->flush();
 
         // URL du frontend Svelte pour la réinitialisation
-        $url = "https://mydepp-front.pages.dev/login/nouveau_mot_de_passe/{$token}";
+        $url = "https://mydepps.net/login/nouveau_mot_de_passe/{$token}";
 
         $context = compact('url', 'user');
 
@@ -78,7 +76,5 @@ class ResetPasswordService
             'password_reset',
             $context
         );
-
-       
     }
 }
