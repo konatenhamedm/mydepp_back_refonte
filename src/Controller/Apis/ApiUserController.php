@@ -317,8 +317,8 @@ class ApiUserController extends ApiInterface
             $personne->setPrenoms($request->get('prenoms'));
 
 
-            $personne->setUpdatedAt(new \DateTime());
-            $personne->setCreatedAtValue(new \DateTime());
+            $personne->setUpdatedAt();
+            $personne->setCreatedAtValue();
 
 
             $this->em->persist($personne);
@@ -334,8 +334,8 @@ class ApiUserController extends ApiInterface
                 $user->setPassword($this->hasher->hashPassword($user,  $request->get('password')));
 
             $user->setUpdatedBy($this->getUser());
-            $user->setUpdatedAt(new \DateTime());
-            $user->setCreatedAtValue(new \DateTime());
+            $user->setUpdatedAt();
+            $user->setCreatedAtValue();
             // $user->setCreatedBy($this->getUser());
 
             /* if ($uploadedFile) {
@@ -687,7 +687,7 @@ class ApiUserController extends ApiInterface
 
                 // Mise à jour des informations utilisateur
                 $user->setUpdatedBy($userUpdate);
-                $user->setUpdatedAt(new \DateTime());
+                $user->setUpdatedAt();
 
                 // Gestion de l'upload de l'avatar
                 if ($uploadedFile) {

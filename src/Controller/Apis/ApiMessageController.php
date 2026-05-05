@@ -139,7 +139,7 @@ class ApiMessageController extends ApiInterface
     ): Response {
         try {
             $messages = $messageRepository->findConversation($sender, $receiver);
-/* dd($messages); */
+            /* dd($messages); */
             if (empty($messages)) {
 
                 $this->setMessage("Aucun message trouvé entre ces utilisateurs.");
@@ -172,7 +172,7 @@ class ApiMessageController extends ApiInterface
                     new OA\Property(property: "sender", type: "string"),
                     new OA\Property(property: "receiver", type: "string"),
                     new OA\Property(property: "message", type: "string"),
-                    
+
 
 
                 ],
@@ -184,7 +184,7 @@ class ApiMessageController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'message')]
-    
+
     public function create(Request $request, MessageRepository $messageRepository): Response
     {
 
@@ -217,7 +217,7 @@ class ApiMessageController extends ApiInterface
                     new OA\Property(property: "sender", type: "string"),
                     new OA\Property(property: "receiver", type: "string"),
                     new OA\Property(property: "message", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -228,7 +228,7 @@ class ApiMessageController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'message')]
-    
+
     public function update(Request $request, Message $message, MessageRepository $messageRepository): Response
     {
         try {
@@ -239,7 +239,7 @@ class ApiMessageController extends ApiInterface
                 $message->setSender($this->userRepository->find($data->receiver));
                 $message->setMessage($data->message);
                 $message->setUpdatedBy($this->getUser());
-                $message->setUpdatedAt(new \DateTime());
+                $message->setUpdatedAt();
                 $errorResponse = $this->errorResponse($message);
 
                 if ($errorResponse !== null) {
@@ -316,7 +316,7 @@ class ApiMessageController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'message')]
-    
+
     public function deleteAll(Request $request, MessageRepository $villeRepository): Response
     {
         try {

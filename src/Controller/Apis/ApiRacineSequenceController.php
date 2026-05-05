@@ -108,7 +108,7 @@ class ApiRacineSequenceController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -119,7 +119,7 @@ class ApiRacineSequenceController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'racineSequence')]
-    
+
     public function create(Request $request, RacineSequenceRepository $racineSequenceRepository): Response
     {
 
@@ -149,7 +149,7 @@ class ApiRacineSequenceController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -160,7 +160,7 @@ class ApiRacineSequenceController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'racineSequence')]
-    
+
     public function update(Request $request, RacineSequence $racineSequence, RacineSequenceRepository $racineSequenceRepository): Response
     {
         try {
@@ -169,7 +169,7 @@ class ApiRacineSequenceController extends ApiInterface
 
                 $racineSequence->setCode($data->libelle);
                 $racineSequence->setUpdatedBy($this->getUser());
-                $racineSequence->setUpdatedAt(new \DateTime());
+                $racineSequence->setUpdatedAt();
 
                 $errorResponse = $this->errorResponse($racineSequence);
 
@@ -247,7 +247,7 @@ class ApiRacineSequenceController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'racineSequence')]
-    
+
     public function deleteAll(Request $request, RacineSequenceRepository $villeRepository): Response
     {
         try {

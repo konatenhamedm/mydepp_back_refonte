@@ -110,7 +110,7 @@ class ApiAdminDocumentController extends ApiInterface
 
                         new OA\Property(property: "libelle", type: "string"),
                         new OA\Property(property: "path", type: "string", format: "binary"),
-                        
+
 
                     ],
                     type: "object"
@@ -122,7 +122,7 @@ class ApiAdminDocumentController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'adminDocument')]
-    
+
     public function create(Request $request, AdminDocumentRepository $adminDocumentRepository): Response
     {
 
@@ -136,8 +136,8 @@ class ApiAdminDocumentController extends ApiInterface
 
         $adminDocument = new AdminDocument();
         $adminDocument->setLibelle($request->get('libelle'));
-        $adminDocument->setCreatedAtValue(new \DateTime());
-        $adminDocument->setUpdatedAt(new \DateTime());
+        $adminDocument->setCreatedAtValue();
+        $adminDocument->setUpdatedAt();
         $adminDocument->setCreatedBy($this->getUser());
         $adminDocument->setUpdatedBy($this->getUser());
         $errorResponse = $this->errorResponse($adminDocument);
@@ -178,7 +178,7 @@ class ApiAdminDocumentController extends ApiInterface
 
                         new OA\Property(property: "libelle", type: "string"),
                         new OA\Property(property: "path", type: "string", format: "binary"),
-                        
+
 
                     ],
                     type: "object"
@@ -190,7 +190,7 @@ class ApiAdminDocumentController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'adminDocument')]
-    
+
     public function update(Request $request, AdminDocument $adminDocument, AdminDocumentRepository $adminDocumentRepository): Response
     {
         try {
@@ -204,7 +204,7 @@ class ApiAdminDocumentController extends ApiInterface
             if ($adminDocument != null) {
 
                 $adminDocument->setLibelle($request->get('libelle'));
-                $adminDocument->setUpdatedAt(new \DateTime());
+                $adminDocument->setUpdatedAt();
                 $adminDocument->setUpdatedBy($this->getUser());
                 $errorResponse = $this->errorResponse($adminDocument);
 
@@ -287,7 +287,7 @@ class ApiAdminDocumentController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'adminDocument')]
-    
+
     public function deleteAll(Request $request, AdminDocumentRepository $villeRepository): Response
     {
         try {

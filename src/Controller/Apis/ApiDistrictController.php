@@ -44,7 +44,7 @@ class ApiDistrictController extends ApiInterface
 
             $districts = $districtRepository->findAll();
 
-          
+
 
             $response =  $this->responseData($districts, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -76,7 +76,7 @@ class ApiDistrictController extends ApiInterface
 
             $districts = $districtRepository->findBy(['region' => $region]);
 
-          
+
 
             $response =  $this->responseData($districts, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -141,7 +141,7 @@ class ApiDistrictController extends ApiInterface
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "region", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -152,8 +152,8 @@ class ApiDistrictController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'district')]
-    
-    public function create(Request $request,RegionRepository $regionRepository, DistrictRepository $districtRepository): Response
+
+    public function create(Request $request, RegionRepository $regionRepository, DistrictRepository $districtRepository): Response
     {
 
         $data = json_decode($request->getContent(), true);
@@ -185,7 +185,7 @@ class ApiDistrictController extends ApiInterface
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
                     new OA\Property(property: "codeGeneration", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -196,8 +196,8 @@ class ApiDistrictController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'district')]
-    
-    public function update(Request $request, District $district,RegionRepository $regionRepository, DistrictRepository $districtRepository): Response
+
+    public function update(Request $request, District $district, RegionRepository $regionRepository, DistrictRepository $districtRepository): Response
     {
         try {
             $data = json_decode($request->getContent());
@@ -206,7 +206,7 @@ class ApiDistrictController extends ApiInterface
                 $district->setLibelle($data->libelle);
                 $district->setRegion($regionRepository->find($data->region));
                 $district->setUpdatedBy($this->getUser());
-                $district->setUpdatedAt(new \DateTime());
+                $district->setUpdatedAt();
                 $errorResponse = $this->errorResponse($district);
 
                 if ($errorResponse !== null) {
@@ -283,7 +283,7 @@ class ApiDistrictController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'district')]
-    
+
     public function deleteAll(Request $request, DistrictRepository $villeRepository): Response
     {
         try {

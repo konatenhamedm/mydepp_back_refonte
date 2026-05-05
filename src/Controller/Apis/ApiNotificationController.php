@@ -66,11 +66,11 @@ class ApiNotificationController extends ApiInterface
     )]
     #[OA\Tag(name: 'notification')]
     // 
-    public function indexByUser(NotificationRepository $notificationRepository,$userId): Response
+    public function indexByUser(NotificationRepository $notificationRepository, $userId): Response
     {
         try {
 
-            $notifications = $notificationRepository->findBy(['user'=>$userId]);
+            $notifications = $notificationRepository->findBy(['user' => $userId]);
 
             $response =  $this->responseData($notifications, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -96,11 +96,11 @@ class ApiNotificationController extends ApiInterface
     )]
     #[OA\Tag(name: 'notification')]
     // 
-    public function indexNombreNotificationNonlu(NotificationRepository $notificationRepository,$userId): Response
+    public function indexNombreNotificationNonlu(NotificationRepository $notificationRepository, $userId): Response
     {
         try {
 
-            $notifications = $notificationRepository->findBy(['user'=>$userId,'isRead'=> 0]);
+            $notifications = $notificationRepository->findBy(['user' => $userId, 'isRead' => 0]);
 
             $response =  $this->responseData($notifications, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -165,7 +165,7 @@ class ApiNotificationController extends ApiInterface
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "user", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -176,7 +176,7 @@ class ApiNotificationController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'notification')]
-    
+
     public function create(Request $request, NotificationRepository $notificationRepository, UserRepository $userRepository): Response
     {
 
@@ -216,7 +216,7 @@ class ApiNotificationController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'notification')]
-    
+
     public function Read(Request $request, Notification $notification, NotificationRepository $notificationRepository, UserRepository $userRepository): Response
     {
         if ($notification) {
@@ -239,7 +239,7 @@ class ApiNotificationController extends ApiInterface
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "user", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -250,7 +250,7 @@ class ApiNotificationController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'notification')]
-    
+
     public function update(Request $request, Notification $notification, NotificationRepository $notificationRepository, UserRepository $userRepository): Response
     {
         try {
@@ -260,7 +260,7 @@ class ApiNotificationController extends ApiInterface
                 $notification->setLibelle($data->libelle);
                 $notification->setUser($userRepository->find($data->user));
                 $notification->setUpdatedBy($this->getUser());
-                $notification->setUpdatedAt(new \DateTime());
+                $notification->setUpdatedAt();
                 $errorResponse = $this->errorResponse($notification);
 
                 if ($errorResponse !== null) {
@@ -337,7 +337,7 @@ class ApiNotificationController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'notification')]
-    
+
     public function deleteAll(Request $request, NotificationRepository $notificationRepository): Response
     {
         try {

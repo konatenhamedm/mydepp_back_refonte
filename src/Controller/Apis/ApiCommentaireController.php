@@ -110,7 +110,7 @@ class ApiCommentaireController extends ApiInterface
                 properties: [
                     new OA\Property(property: "article", type: "string"),
                     new OA\Property(property: "user", type: "string"),
-                    
+
                     new OA\Property(property: "commentaire", type: "text"),
 
 
@@ -123,8 +123,8 @@ class ApiCommentaireController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'commentaire')]
-    
-    public function create(Request $request, CommentaireRepository $commentaireRepository,ArticleRepository $articleRepository): Response
+
+    public function create(Request $request, CommentaireRepository $commentaireRepository, ArticleRepository $articleRepository): Response
     {
 
         $data = json_decode($request->getContent(), true);
@@ -156,7 +156,7 @@ class ApiCommentaireController extends ApiInterface
                 properties: [
                     new OA\Property(property: "article", type: "string"),
                     new OA\Property(property: "user", type: "string"),
-                    
+
                     new OA\Property(property: "commentaire", type: "text"),
 
                 ],
@@ -168,18 +168,18 @@ class ApiCommentaireController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'commentaire')]
-    
-    public function update(Request $request, Commentaire $commentaire,ArticleRepository $articleRepository, CommentaireRepository $commentaireRepository): Response
+
+    public function update(Request $request, Commentaire $commentaire, ArticleRepository $articleRepository, CommentaireRepository $commentaireRepository): Response
     {
         try {
             $data = json_decode($request->getContent());
             if ($commentaire != null) {
 
                 $commentaire->setArticle($articleRepository->find($data['article']));
-                 $commentaire->setUser($this->userRepository->find($data->user));
-                 $commentaire->setCommentaire($data->commentaire);
+                $commentaire->setUser($this->userRepository->find($data->user));
+                $commentaire->setCommentaire($data->commentaire);
                 $commentaire->setUpdatedBy($this->getUser());
-                $commentaire->setUpdatedAt(new \DateTime());
+                $commentaire->setUpdatedAt();
 
                 $errorResponse = $this->errorResponse($commentaire);
 
@@ -257,7 +257,7 @@ class ApiCommentaireController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'commentaire')]
-    
+
     public function deleteAll(Request $request, CommentaireRepository $villeRepository): Response
     {
         try {
