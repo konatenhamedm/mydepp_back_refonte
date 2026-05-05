@@ -44,7 +44,7 @@ class ApiForumController extends ApiInterface
 
             $forums = $forumRepository->findAll();
 
-          
+
 
             $response =  $this->responseData($forums, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -75,7 +75,7 @@ class ApiForumController extends ApiInterface
     {
         try {
 
-            $forums = $forumRepository->findBy(['status'=>'Actif']);
+            $forums = $forumRepository->findBy(['status' => 'Actif']);
             $response =  $this->responseData($forums, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("");
@@ -105,9 +105,9 @@ class ApiForumController extends ApiInterface
     {
         try {
 
-            $forums = $forumRepository->findBy(['user'=>$userId]);
+            $forums = $forumRepository->findBy(['user' => $userId]);
 
-          
+
 
             $response =  $this->responseData($forums, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -139,7 +139,7 @@ class ApiForumController extends ApiInterface
     )]
     #[OA\Tag(name: 'forum')]
     //
-    public function getOne(ForumRepository $forumRepository,$id)
+    public function getOne(ForumRepository $forumRepository, $id)
     {
         try {
             $forum = $forumRepository->find($id);
@@ -175,7 +175,7 @@ class ApiForumController extends ApiInterface
                     new OA\Property(property: "user", type: "string"),
                     new OA\Property(property: "status", type: "string"),
                     new OA\Property(property: "titre", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -186,7 +186,7 @@ class ApiForumController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'forum')]
-    
+
     public function create(Request $request, ForumRepository $forumRepository): Response
     {
 
@@ -195,8 +195,8 @@ class ApiForumController extends ApiInterface
         $forum->setContenu($data['contenu']);
         $forum->setTitre($data['titre']);
         $forum->setStatus($data['status']);
-        $forum->setCreatedAtValue(new \DateTime());
-        $forum->setUpdatedAt(new \DateTime());
+        $forum->setCreatedAtValue();
+        $forum->setUpdatedAt();
         $forum->setUser($this->userRepository->find($data['user']));
         $forum->setCreatedBy($this->userRepository->find($data['user']));
         $forum->setUpdatedBy($this->userRepository->find($data['user']));
@@ -233,7 +233,7 @@ class ApiForumController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'forum')]
-    
+
     public function update(Request $request, Forum $forum, ForumRepository $forumRepository): Response
     {
         try {
@@ -243,8 +243,8 @@ class ApiForumController extends ApiInterface
                 $forum->setContenu($data->contenu);
                 $forum->setStatus($data->status);
                 $forum->setTitre($data->titre);
-              
-                $forum->setUpdatedAt(new \DateTime());
+
+                $forum->setUpdatedAt();
                 $errorResponse = $this->errorResponse($forum);
 
                 if ($errorResponse !== null) {
@@ -319,7 +319,7 @@ class ApiForumController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'forum')]
-    
+
     public function deleteAll(Request $request, ForumRepository $villeRepository): Response
     {
         try {

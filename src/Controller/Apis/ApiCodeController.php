@@ -108,7 +108,7 @@ class ApiCodeController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -119,7 +119,7 @@ class ApiCodeController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'code')]
-    
+
     public function create(Request $request, CodeRepository $codeRepository): Response
     {
 
@@ -150,7 +150,7 @@ class ApiCodeController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -161,7 +161,7 @@ class ApiCodeController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'code')]
-    
+
     public function update(Request $request, Code $code, CodeRepository $codeRepository): Response
     {
         try {
@@ -170,7 +170,7 @@ class ApiCodeController extends ApiInterface
 
                 $code->setCode($data['code']);
                 $code->setUpdatedBy($this->getUser());
-                $code->setUpdatedAt(new \DateTime());
+                $code->setUpdatedAt();
 
                 $errorResponse = $this->errorResponse($code);
 
@@ -248,7 +248,7 @@ class ApiCodeController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'code')]
-    
+
     public function deleteAll(Request $request, CodeRepository $villeRepository): Response
     {
         try {

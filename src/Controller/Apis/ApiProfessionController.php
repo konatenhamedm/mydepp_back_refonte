@@ -280,9 +280,18 @@ class ApiProfessionController extends ApiInterface
   
   public function create(Request $request, ProfessionRepository $professionRepository, TypeProfessionRepository $typeProfessionRepository): Response
   {
-
-
     $data = json_decode($request->getContent(), true);
+
+    $typeProfession = $typeProfessionRepository->find($data['typeProfession']);
+
+    // Normalisation du libellé : accents supprimés, espaces → _, tout en majuscules
+    // Ex: "Médecin Généraliste" => "MEDECIN_GENERALISTE"
+    $libelleSlug = strtoupper(
+      preg_replace(
+        '/\s+/', '_',
+        trim(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $data['libelle']))
+      )
+    );
 
     $profession = new Profession();
     $profession->setLibelle($data['libelle']);
@@ -291,17 +300,16 @@ class ApiProfessionController extends ApiInterface
     $profession->setCodeGeneration($data['codeGeneration']);
     $profession->setCreatedAtValue();
     $profession->setUpdatedAt();
-    $profession->setTypeProfession($typeProfessionRepository->find($data['typeProfession']));
+    $profession->setTypeProfession($typeProfession);
     $profession->setMontantNouvelleDemande($data['montantNouvelleDemande']);
     $profession->setMontantRenouvellement($data['montantRenouvellement']);
-    $profession->setCode($typeProfessionRepository->find($data['typeProfession'])->getCode() . '_' . $data['libelle']);
+    $profession->setCode($typeProfession->getCode() . '_' . $libelleSlug);
     $profession->setCreatedBy($this->getUser());
     $profession->setUpdatedBy($this->getUser());
     $errorResponse = $this->errorResponse($profession);
     if ($errorResponse !== null) {
       return $errorResponse; // Retourne la réponse d'erreur si des erreurs sont présentes
     } else {
-
       $professionRepository->add($profession, true);
     }
 
@@ -324,7 +332,7 @@ class ApiProfessionController extends ApiInterface
           new OA\Property(property: "montantRenouvellement", type: "string"),
           new OA\Property(property: "codeGeneration", type: "string"),
           new OA\Property(property: "chronoMax", type: "string"),
-          new OA\Property(property: "code", type: "string"),
+         // new OA\Property(property: "code", type: "string"),
         ],
         type: "object"
       )
@@ -348,7 +356,7 @@ class ApiProfessionController extends ApiInterface
         $profession->setTypeProfession($typeProfessionRepository->find($data->typeProfession));
         $profession->setMontantNouvelleDemande($data->montantNouvelleDemande);
         $profession->setMontantRenouvellement($data->montantRenouvellement);
-        $profession->setCode($typeProfessionRepository->find($data->typeProfession)->getCode() . '_' . $data->libelle);
+        //$profession->setCode($typeProfessionRepository->find($data->typeProfession)->getCode() . '_' . $data->libelle);
         $profession->setUpdatedBy($this->getUser());
         $profession->setUpdatedAt();
         $errorResponse = $this->errorResponse($profession);
@@ -425,7 +433,6 @@ class ApiProfessionController extends ApiInterface
     )
   )]
   #[OA\Tag(name: 'profession')]
-  
   public function deleteAll(Request $request, ProfessionRepository $villeRepository): Response
   {
     try {

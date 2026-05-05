@@ -44,7 +44,7 @@ class ApiValidationWorkflowController extends ApiInterface
 
             $validationWorkflow = $civiliteRepository->findAll();
 
-          
+
 
             $response =  $this->responseData($validationWorkflow, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -76,7 +76,7 @@ class ApiValidationWorkflowController extends ApiInterface
 
             $validationWorkflow = $validationWorkflowRepository->findBy(['personne' => $idPersoone]);
 
-          
+
 
             $response =  $this->responseData($validationWorkflow, 'group_pro_validate_', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -142,7 +142,7 @@ class ApiValidationWorkflowController extends ApiInterface
                     new OA\Property(property: "personne", type: "string"),
                     new OA\Property(property: "etape", type: "string"),
                     new OA\Property(property: "raison", type: "string"),
-                    
+
                 ],
                 type: "object"
             )
@@ -152,7 +152,7 @@ class ApiValidationWorkflowController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'ValidationWorkflow')]
-    
+
     public function create(Request $request, ValidationWorkflowRepository $civiliteRepository): Response
     {
 
@@ -188,7 +188,7 @@ class ApiValidationWorkflowController extends ApiInterface
                     new OA\Property(property: "personne", type: "string"),
                     new OA\Property(property: "etape", type: "string"),
                     new OA\Property(property: "raison", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -199,7 +199,7 @@ class ApiValidationWorkflowController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'ValidationWorkflow')]
-    
+
     public function update(Request $request, ValidationWorkflow $ValidationWorkflow, ValidationWorkflowRepository $civiliteRepository): Response
     {
         try {
@@ -210,7 +210,7 @@ class ApiValidationWorkflowController extends ApiInterface
                 $ValidationWorkflow->setEtape($data->etape);
                 $ValidationWorkflow->setRaison($data->raison);
                 $ValidationWorkflow->setUpdatedBy($this->getUser());
-                $ValidationWorkflow->setUpdatedAt(new \DateTime());
+                $ValidationWorkflow->setUpdatedAt();
                 $errorResponse = $this->errorResponse($ValidationWorkflow);
 
                 if ($errorResponse !== null) {
@@ -284,7 +284,7 @@ class ApiValidationWorkflowController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'ValidationWorkflow')]
-    
+
     public function deleteAll(Request $request, ValidationWorkflowRepository $villeRepository): Response
     {
         try {

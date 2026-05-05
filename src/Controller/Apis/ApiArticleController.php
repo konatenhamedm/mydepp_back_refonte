@@ -112,7 +112,7 @@ class ApiArticleController extends ApiInterface
                         new OA\Property(property: "titre", type: "string"),
                         new OA\Property(property: "text", type: "string"),
                         new OA\Property(property: "image", type: "string", format: "binary"),
-                        
+
                     ],
                     type: "object"
                 )
@@ -123,7 +123,7 @@ class ApiArticleController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'article')]
-    
+
     public function create(Request $request, ArticleRepository $articleRepository): Response
     {
 
@@ -173,7 +173,7 @@ class ApiArticleController extends ApiInterface
                         new OA\Property(property: "titre", type: "string"),
                         new OA\Property(property: "text", type: "string"),
                         new OA\Property(property: "image", type: "string", format: "binary"),
-                        
+
                     ],
                     type: "object"
                 )
@@ -184,7 +184,7 @@ class ApiArticleController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'article')]
-    
+
     public function update(Request $request, Article $article, ArticleRepository $articleRepository): Response
     {
         try {
@@ -200,7 +200,7 @@ class ApiArticleController extends ApiInterface
                 $article->setTitre($request->get('titre'));
                 $article->setText($request->get('text'));
                 $article->setUpdatedBy($this->getUser());
-                $article->setUpdatedAt(new \DateTime());
+                $article->setUpdatedAt();
                 if ($uploadedFile) {
                     $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH);
                     if ($fichier) {
@@ -284,7 +284,7 @@ class ApiArticleController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'article')]
-    
+
     public function deleteAll(Request $request, ArticleRepository $villeRepository): Response
     {
         try {

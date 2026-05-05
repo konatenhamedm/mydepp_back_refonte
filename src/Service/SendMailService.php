@@ -13,7 +13,7 @@ class SendMailService
 {
     private $mailer;
 
-    public function __construct(MailerInterface $mailer,private EntityManagerInterface $em)
+    public function __construct(MailerInterface $mailer, private EntityManagerInterface $em)
     {
         $this->mailer = $mailer;
     }
@@ -39,17 +39,17 @@ class SendMailService
 
 
 
-    public function  sendNotification($message, $user, $userUpdate){
+    public function  sendNotification($message, $user, $userUpdate)
+    {
 
         $notification = new Notification();
         $notification->setLibelle($message);
         $notification->setUser($user);
         $notification->setUpdatedBy($userUpdate);
         $notification->setCreatedBy($userUpdate);
-        $notification->setUpdatedAt(new \DateTime());
-        $notification->setCreatedAtValue(new \DateTime());
+        $notification->setUpdatedAt();
+        $notification->setCreatedAtValue();
         $this->em->persist($notification);
         $this->em->flush();
-
     }
 }
