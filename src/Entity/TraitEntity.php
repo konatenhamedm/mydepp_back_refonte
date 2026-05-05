@@ -27,15 +27,42 @@ trait TraitEntity
     private ?User $updatedBy = null;
 
 
+    /**
+     * Appelé automatiquement par Doctrine au PrePersist (sans argument).
+     * Pour définir une date personnalisée, appeler setCreatedAtValue($date) manuellement AVANT persist.
+     */
     #[ORM\PrePersist]
-    public function setCreatedAtValue(?DateTimeImmutable $date = null): void
+    public function onPrePersist(): void
     {
         if ($this->createdAt === null) {
-            $this->createdAt = $date ?? new DateTimeImmutable();
+            $this->createdAt = new DateTimeImmutable();
+        }
+        if ($this->updatedAt === null) {
+            $this->updatedAt = new DateTimeImmutable();
         }
     }
 
+    /**
+     * Appelé automatiquement par Doctrine au PreUpdate (sans argument).
+     */
     #[ORM\PreUpdate]
+    public function onPreUpdate(): void
+    {
+        $this->updatedAt = new DateTimeImmutable();
+    }
+
+    /**
+     * Permet de définir une date de création personnalisée (ex: import Excel).
+     * À appeler AVANT $repository->add() pour que la valeur soit conservée.
+     */
+    public function setCreatedAtValue(?DateTimeImmutable $date = null): void
+    {
+        $this->createdAt = $date ?? new DateTimeImmutable();
+    }
+
+    /**
+     * Permet de définir une date de mise à jour personnalisée.
+     */
     public function setUpdatedAt(?DateTimeImmutable $date = null): void
     {
         $this->updatedAt = $date ?? new DateTimeImmutable();
