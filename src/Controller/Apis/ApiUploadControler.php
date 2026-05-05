@@ -12,6 +12,7 @@ use App\Repository\GenreRepository;
 use App\Repository\PaysRepository;
 use App\Repository\ProfessionnelRepository;
 use App\Repository\ProfessionRepository;
+use DateTimeImmutable;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -80,21 +81,25 @@ class ApiUploadControler extends ApiInterface
 
                 foreach ($sheetData as $index => $row) {
                     try {
-                        // Vérification des dates avec DateTime::createFromFormat
-                        $dateAnniv = \DateTime::createFromFormat('d/m/Y', $row['E']);
-                        if (!$dateAnniv || \DateTime::getLastErrors()['error_count'] > 0) {
-                            $dateAnniv = new \DateTime("01-01-1970");
-                        }
+                        // Closure robuste : essaie plusieurs formats (avec ou sans zéros)
+                        // Formats supportés : 11/11/2025, 1/1/2025, 11-11-2025, 2025-11-11
+                        $parseDate = function (?string $value): \DateTimeImmutable {
+                            if ($value === null || trim($value) === '') {
+                                return new \DateTimeImmutable('1970-01-01');
+                            }
+                            foreach (['d/m/Y', 'j/n/Y', 'd-m-Y', 'j-n-Y', 'Y-m-d'] as $fmt) {
+                                $date = \DateTimeImmutable::createFromFormat($fmt, trim($value));
+                                $errors = \DateTimeImmutable::getLastErrors();
+                                if ($date !== false && $errors['error_count'] === 0 && $errors['warning_count'] === 0) {
+                                    return $date->setTime(0, 0, 0);
+                                }
+                            }
+                            return new \DateTimeImmutable('1970-01-01');
+                        };
 
-                        $dateEnreg = \DateTime::createFromFormat('d/m/Y', $row['B']);
-                        if (!$dateEnreg || \DateTime::getLastErrors()['error_count'] > 0) {
-                            $dateEnreg = new \DateTime("01-01-1970");
-                        }
-
-                        $dateCommission = \DateTime::createFromFormat('d/m/Y', $row['J']);
-                        if (!$dateCommission || \DateTime::getLastErrors()['error_count'] > 0) {
-                            $dateCommission = new \DateTime("01-01-1970");
-                        }
+                        $dateAnniv      = $parseDate($row['E']);
+                        $dateEnreg      = $parseDate($row['B']);
+                        $dateCommission = $parseDate($row['J']);
 
                         // dump($row);
                         $rowData = [
@@ -127,7 +132,9 @@ class ApiUploadControler extends ApiInterface
 
 
                         //Je verifie si le professionnel existe déjà pour eviter les doublons
-                        $rowData['numId'] != null ? $existingPerson = $professionnelRepository->findOneBy(['code' => $rowData['numId']]) : null;
+                        $existingPerson = $rowData['numId'] != null
+                            ? $professionnelRepository->findOneBy(['code' => $rowData['numId']])
+                            : null;
                         if ($existingPerson) {
                             $successCount++;
                             // $errors[] = [
