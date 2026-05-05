@@ -28,17 +28,17 @@ trait TraitEntity
 
 
     #[ORM\PrePersist]
-    public function setCreatedAtValue(): void
+    public function setCreatedAtValue(?DateTimeImmutable $date = null): void
     {
         if ($this->createdAt === null) {
-            $this->createdAt = new DateTimeImmutable();
+            $this->createdAt = $date ?? new DateTimeImmutable();
         }
     }
 
     #[ORM\PreUpdate]
-    public function setUpdatedAt(): void
+    public function setUpdatedAt(?DateTimeImmutable $date = null): void
     {
-        $this->updatedAt = new DateTimeImmutable();
+        $this->updatedAt = $date ?? new DateTimeImmutable();
     }
 
     public function getCreatedAt(): ?\DateTimeImmutable
