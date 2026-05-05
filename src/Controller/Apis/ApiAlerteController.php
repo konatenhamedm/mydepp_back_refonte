@@ -24,7 +24,7 @@ class ApiAlerteController extends ApiInterface
 {
 
 
-   
+
 
     #[Route('/', methods: ['GET'])]
     /**
@@ -133,7 +133,7 @@ class ApiAlerteController extends ApiInterface
         return $response;
     }
 
-   
+
 
 
     #[Route('/create',  methods: ['POST'])]
@@ -151,7 +151,7 @@ class ApiAlerteController extends ApiInterface
                     new OA\Property(property: "destinateur", type: "string"),
                     new OA\Property(property: "message", type: "string"),
                     new OA\Property(property: "objet", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -162,8 +162,8 @@ class ApiAlerteController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'alerte')]
-    
-    public function create(Request $request, AlerteRepository $alerteRepository,DestinateurRepository $destinateurRepository): Response
+
+    public function create(Request $request, AlerteRepository $alerteRepository, DestinateurRepository $destinateurRepository): Response
     {
 
         $data = json_decode($request->getContent(), true);
@@ -198,7 +198,7 @@ class ApiAlerteController extends ApiInterface
                     new OA\Property(property: "destinateur", type: "string"),
                     new OA\Property(property: "message", type: "string"),
                     new OA\Property(property: "objet", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -209,8 +209,8 @@ class ApiAlerteController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'alerte')]
-    
-    public function update(Request $request, Alerte $alerte, AlerteRepository $alerteRepository,DestinateurRepository $destinateurRepository): Response
+
+    public function update(Request $request, Alerte $alerte, AlerteRepository $alerteRepository, DestinateurRepository $destinateurRepository): Response
     {
         try {
             $data = json_decode($request->getContent());
@@ -221,7 +221,7 @@ class ApiAlerteController extends ApiInterface
                 $alerte->setMessage($data->message);
                 $alerte->setObjet($data->objet);
                 $alerte->setUpdatedBy($this->getUser());
-                $alerte->setUpdatedAt(new \DateTime());
+                $alerte->setUpdatedAt();
                 $errorResponse = $this->errorResponse($alerte);
 
                 if ($errorResponse !== null) {
@@ -298,7 +298,7 @@ class ApiAlerteController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'alerte')]
-    
+
     public function deleteAll(Request $request, AlerteRepository $villeRepository): Response
     {
         try {

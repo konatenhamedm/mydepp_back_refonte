@@ -41,7 +41,7 @@ class ApiSituationProfessionnelleController extends ApiInterface
 
             $situationProfessionnelles = $situationProfessionnelleRepository->findAll();
 
-          
+
 
             $response =  $this->responseData($situationProfessionnelles, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -106,7 +106,7 @@ class ApiSituationProfessionnelleController extends ApiInterface
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -117,7 +117,7 @@ class ApiSituationProfessionnelleController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'situationProfessionnelle')]
-    
+
     public function create(Request $request, SituationProfessionnelleRepository $situationProfessionnelleRepository): Response
     {
 
@@ -148,7 +148,7 @@ class ApiSituationProfessionnelleController extends ApiInterface
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -159,7 +159,7 @@ class ApiSituationProfessionnelleController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'situationProfessionnelle')]
-    
+
     public function update(Request $request, SituationProfessionnelle $situationProfessionnelle, SituationProfessionnelleRepository $situationProfessionnelleRepository): Response
     {
         try {
@@ -168,7 +168,7 @@ class ApiSituationProfessionnelleController extends ApiInterface
 
                 $situationProfessionnelle->setLibelle($data->libelle);
                 $situationProfessionnelle->setUpdatedBy($this->getUser());
-                $situationProfessionnelle->setUpdatedAt(new \DateTime());
+                $situationProfessionnelle->setUpdatedAt();
                 $errorResponse = $this->errorResponse($situationProfessionnelle);
 
                 if ($errorResponse !== null) {
@@ -245,7 +245,7 @@ class ApiSituationProfessionnelleController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'situationProfessionnelle')]
-    
+
     public function deleteAll(Request $request, SituationProfessionnelleRepository $villeRepository): Response
     {
         try {

@@ -43,7 +43,7 @@ class ApiLieuDiplomeController extends ApiInterface
 
             $lieuDiplomes = $lieuDiplomeRepository->findAll();
 
-          
+
 
             $response =  $this->responseData($lieuDiplomes, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -109,7 +109,7 @@ class ApiLieuDiplomeController extends ApiInterface
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
                     new OA\Property(property: "codeGeneration", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -120,7 +120,7 @@ class ApiLieuDiplomeController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'lieuDiplome')]
-    
+
     public function create(Request $request, LieuDiplomeRepository $lieuDiplomeRepository): Response
     {
 
@@ -152,7 +152,7 @@ class ApiLieuDiplomeController extends ApiInterface
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
                     new OA\Property(property: "codeGeneration", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -163,7 +163,7 @@ class ApiLieuDiplomeController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'lieuDiplome')]
-    
+
     public function update(Request $request, LieuDiplome $lieuDiplome, LieuDiplomeRepository $lieuDiplomeRepository): Response
     {
         try {
@@ -172,7 +172,7 @@ class ApiLieuDiplomeController extends ApiInterface
 
                 $lieuDiplome->setLibelle($data->libelle);
                 $lieuDiplome->setUpdatedBy($this->getUser());
-                $lieuDiplome->setUpdatedAt(new \DateTime());
+                $lieuDiplome->setUpdatedAt();
                 $errorResponse = $this->errorResponse($lieuDiplome);
 
                 if ($errorResponse !== null) {
@@ -249,7 +249,7 @@ class ApiLieuDiplomeController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'lieuDiplome')]
-    
+
     public function deleteAll(Request $request, LieuDiplomeRepository $villeRepository): Response
     {
         try {

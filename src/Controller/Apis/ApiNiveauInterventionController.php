@@ -110,7 +110,7 @@ class ApiNiveauInterventionController extends ApiInterface
                     new OA\Property(property: "code", type: "string"),
                     new OA\Property(property: "montant", type: "string"),
                     new OA\Property(property: "montantRenouvellement", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -121,7 +121,7 @@ class ApiNiveauInterventionController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'niveauIntervention')]
-    
+
     public function create(Request $request, NiveauInterventionRepository $niveauInterventionRepository): Response
     {
 
@@ -157,7 +157,7 @@ class ApiNiveauInterventionController extends ApiInterface
                     new OA\Property(property: "code", type: "string"),
                     new OA\Property(property: "montant", type: "string"),
                     new OA\Property(property: "montantRenouvellement", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -168,7 +168,7 @@ class ApiNiveauInterventionController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'niveauIntervention')]
-    
+
     public function update(Request $request, NiveauIntervention $niveauIntervention, NiveauInterventionRepository $niveauInterventionRepository): Response
     {
         try {
@@ -180,7 +180,7 @@ class ApiNiveauInterventionController extends ApiInterface
                 $niveauIntervention->setMontant($data->montant);
                 $niveauIntervention->setMontantRenouvellement($data->montantRenouvellement);
                 $niveauIntervention->setUpdatedBy($this->getUser());
-                $niveauIntervention->setUpdatedAt(new \DateTime());
+                $niveauIntervention->setUpdatedAt();
                 $errorResponse = $this->errorResponse($niveauIntervention);
 
                 if ($errorResponse !== null) {
@@ -257,7 +257,7 @@ class ApiNiveauInterventionController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'niveauIntervention')]
-    
+
     public function deleteAll(Request $request, NiveauInterventionRepository $villeRepository): Response
     {
         try {
