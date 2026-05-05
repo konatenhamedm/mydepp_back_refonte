@@ -208,7 +208,7 @@ class ApiTypeDocumentController extends ApiInterface
                     new OA\Property(property: "nombre", type: "string"),
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "libelleGroupe", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -219,7 +219,7 @@ class ApiTypeDocumentController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'typeDocument')]
-    
+
     public function create(Request $request, LibelleGroupeRepository $libelleGroupeRepository, TypeDocumentRepository $typeDocumentRepository, TypePersonneRepository $typePersonneRepository): Response
     {
 
@@ -234,8 +234,8 @@ class ApiTypeDocumentController extends ApiInterface
         $typeDocument->setLibelleGroupe($libelleGroupeRepository->find($data['libelleGroupe']));
         $typeDocument->setNombre($data['nombre']);
         $typeDocument->setTypePersonne($typePersonneRepository->find($data['typePersonne']));
-        $typeDocument->setCreatedAtValue(new \DateTime());
-        $typeDocument->setUpdatedAt(new \DateTime());
+        $typeDocument->setCreatedAtValue();
+        $typeDocument->setUpdatedAt();
         $typeDocument->setCreatedBy($this->getUser());
         $typeDocument->setUpdatedBy($this->getUser());
 
@@ -270,7 +270,7 @@ class ApiTypeDocumentController extends ApiInterface
                     new OA\Property(property: "nombre", type: "string"),
                     new OA\Property(property: "libelleGroupe", type: "string"),
                     new OA\Property(property: "typePersonne", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -281,7 +281,7 @@ class ApiTypeDocumentController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'typeDocument')]
-    
+
     public function update(Request $request, $id, LibelleGroupeRepository $libelleGroupeRepository, TypeDocumentRepository $typeDocumentRepository, TypePersonneRepository $typePersonneRepository): Response
     {
         try {
@@ -296,7 +296,7 @@ class ApiTypeDocumentController extends ApiInterface
                 $typeDocument->setNombre($data->nombre);
                 $typeDocument->setLibelleGroupe($libelleGroupeRepository->find($data->libelleGroupe));
                 $typeDocument->setTypePersonne($typePersonneRepository->find($data->typePersonne));
-                $typeDocument->setUpdatedAt(new \DateTime());
+                $typeDocument->setUpdatedAt();
                 $typeDocument->setUpdatedBy($this->getUser());
                 $errorResponse = $this->errorResponse($typeDocument);
 
@@ -333,7 +333,7 @@ class ApiTypeDocumentController extends ApiInterface
 
                     new OA\Property(property: "dataDocument", type: "string"),
                     new OA\Property(property: "dataDelete", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -344,7 +344,7 @@ class ApiTypeDocumentController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'typeDocument')]
-    
+
     public function updateMultiple(Request $request, TypePersonne $typePersonne, LibelleGroupeRepository $libelleGroupeRepository, TypeDocumentRepository $typeDocumentRepository, TypePersonneRepository $typePersonneRepository): Response
     {
         try {
@@ -363,7 +363,7 @@ class ApiTypeDocumentController extends ApiInterface
                         $typeDocument->setLibelle($document['libelle']);
                         $typeDocument->setLibelleGroupe($libelleGroupeRepository->find($data['libelleGroupe']));
                         $typeDocument->setNombre($document['nombre']);
-                        $typeDocument->setUpdatedAt(new \DateTime());
+                        $typeDocument->setUpdatedAt();
                         $typeDocument->setUpdatedBy($this->getUser());
                         $errorResponse = $this->errorResponse($typeDocument);
                         if ($errorResponse !== null) {
@@ -379,8 +379,8 @@ class ApiTypeDocumentController extends ApiInterface
                         $typeDocument->setLibelleGroupe($libelleGroupeRepository->find($data['libelleGroupe']));
                         $typeDocument->setNombre($document['nombre']);
                         $typeDocument->setTypePersonne($typePersonne);
-                        $typeDocument->setCreatedAtValue(new \DateTime());
-                        $typeDocument->setUpdatedAt(new \DateTime());
+                        $typeDocument->setCreatedAtValue();
+                        $typeDocument->setUpdatedAt();
                         $typeDocument->setCreatedBy($this->getUser());
                         $typeDocument->setUpdatedBy($this->getUser());
                         $errorResponse = $this->errorResponse($typeDocument);
@@ -467,7 +467,7 @@ class ApiTypeDocumentController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'typeDocument')]
-    
+
     public function deleteAll(Request $request, TypeDocumentRepository $villeRepository): Response
     {
         try {

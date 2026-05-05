@@ -108,7 +108,7 @@ class ApiDestinateurController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -119,7 +119,7 @@ class ApiDestinateurController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'destinateur')]
-    
+
     public function create(Request $request, DestinateurRepository $destinateurRepository): Response
     {
 
@@ -149,7 +149,7 @@ class ApiDestinateurController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -160,7 +160,7 @@ class ApiDestinateurController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'destinateur')]
-    
+
     public function update(Request $request, Destinateur $destinateur, DestinateurRepository $destinateurRepository): Response
     {
         try {
@@ -169,7 +169,7 @@ class ApiDestinateurController extends ApiInterface
 
                 $destinateur->setLibelle($data->libelle);
                 $destinateur->setUpdatedBy($this->getUser());
-                $destinateur->setUpdatedAt(new \DateTime());
+                $destinateur->setUpdatedAt();
                 $errorResponse = $this->errorResponse($destinateur);
 
                 if ($errorResponse !== null) {
@@ -246,7 +246,7 @@ class ApiDestinateurController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'destinateur')]
-    
+
     public function deleteAll(Request $request, DestinateurRepository $villeRepository): Response
     {
         try {

@@ -108,7 +108,7 @@ class ApiPaysController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -149,7 +149,7 @@ class ApiPaysController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -169,7 +169,7 @@ class ApiPaysController extends ApiInterface
 
                 $pays->setLibelle($data->libelle);
                 $pays->setUpdatedBy($this->getUser());
-                $pays->setUpdatedAt(new \DateTime());
+                $pays->setUpdatedAt();
 
                 $errorResponse = $this->errorResponse($pays);
 

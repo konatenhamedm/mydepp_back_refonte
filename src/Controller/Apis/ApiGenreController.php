@@ -108,7 +108,7 @@ class ApiGenreController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -119,7 +119,7 @@ class ApiGenreController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'genre')]
-    
+
     public function create(Request $request, GenreRepository $genreRepository): Response
     {
 
@@ -149,7 +149,7 @@ class ApiGenreController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -160,7 +160,7 @@ class ApiGenreController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'genre')]
-    
+
     public function update(Request $request, Genre $genre, GenreRepository $genreRepository): Response
     {
         try {
@@ -169,7 +169,7 @@ class ApiGenreController extends ApiInterface
 
                 $genre->setLibelle($data->libelle);
                 $genre->setUpdatedBy($this->getUser());
-                $genre->setUpdatedAt(new \DateTime());
+                $genre->setUpdatedAt();
 
                 $errorResponse = $this->errorResponse($genre);
 
@@ -247,7 +247,7 @@ class ApiGenreController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'genre')]
-    
+
     public function deleteAll(Request $request, GenreRepository $villeRepository): Response
     {
         try {

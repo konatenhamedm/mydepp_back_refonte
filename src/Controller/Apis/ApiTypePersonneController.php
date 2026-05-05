@@ -109,7 +109,7 @@ class ApiTypePersonneController extends ApiInterface
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -120,7 +120,7 @@ class ApiTypePersonneController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'typePersonne')]
-    
+
     public function create(Request $request, TypePersonneRepository $typePersonneRepository): Response
     {
 
@@ -152,7 +152,7 @@ class ApiTypePersonneController extends ApiInterface
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -163,7 +163,7 @@ class ApiTypePersonneController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'typePersonne')]
-    
+
     public function update(Request $request, TypePersonne $typePersonne, TypePersonneRepository $typePersonneRepository): Response
     {
         try {
@@ -173,7 +173,7 @@ class ApiTypePersonneController extends ApiInterface
                 $typePersonne->setLibelle($data->libelle);
                 $typePersonne->setCode($data->code);
                 $typePersonne->setUpdatedBy($this->getUser());
-                $typePersonne->setUpdatedAt(new \DateTime());
+                $typePersonne->setUpdatedAt();
 
                 $errorResponse = $this->errorResponse($typePersonne);
 
@@ -251,7 +251,7 @@ class ApiTypePersonneController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'typePersonne')]
-    
+
     public function deleteAll(Request $request, TypePersonneRepository $villeRepository): Response
     {
         try {

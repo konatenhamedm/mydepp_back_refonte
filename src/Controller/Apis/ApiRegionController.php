@@ -108,7 +108,7 @@ class ApiRegionController extends ApiInterface
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
                     new OA\Property(property: "direction", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -119,8 +119,8 @@ class ApiRegionController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'region')]
-    
-    public function create(Request $request, RegionRepository $regionRepository,DirectionRepository $directionRepository): Response
+
+    public function create(Request $request, RegionRepository $regionRepository, DirectionRepository $directionRepository): Response
     {
 
         $data = json_decode($request->getContent(), true);
@@ -153,7 +153,7 @@ class ApiRegionController extends ApiInterface
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
                     new OA\Property(property: "direction", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -164,8 +164,8 @@ class ApiRegionController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'region')]
-    
-    public function update(Request $request, Region $region, RegionRepository $regionRepository,DirectionRepository $directionRepository): Response
+
+    public function update(Request $request, Region $region, RegionRepository $regionRepository, DirectionRepository $directionRepository): Response
     {
         try {
             $data = json_decode($request->getContent());
@@ -175,7 +175,7 @@ class ApiRegionController extends ApiInterface
                 $region->setCode($data->code);
                 $region->setDirection($directionRepository->find($data->direction));
                 $region->setUpdatedBy($this->getUser());
-                $region->setUpdatedAt(new \DateTime());
+                $region->setUpdatedAt();
                 $errorResponse = $this->errorResponse($region);
 
                 if ($errorResponse !== null) {
@@ -252,7 +252,7 @@ class ApiRegionController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'region')]
-    
+
     public function deleteAll(Request $request, RegionRepository $villeRepository): Response
     {
         try {

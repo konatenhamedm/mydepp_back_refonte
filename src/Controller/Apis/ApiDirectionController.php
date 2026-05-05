@@ -43,7 +43,7 @@ class ApiDirectionController extends ApiInterface
 
             $directions = $directionRepository->findAll();
 
-          
+
 
             $response =  $this->responseData($directions, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -109,7 +109,7 @@ class ApiDirectionController extends ApiInterface
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
                     new OA\Property(property: "codeGeneration", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -120,7 +120,7 @@ class ApiDirectionController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'direction')]
-    
+
     public function create(Request $request, DirectionRepository $directionRepository): Response
     {
 
@@ -152,7 +152,7 @@ class ApiDirectionController extends ApiInterface
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
                     new OA\Property(property: "codeGeneration", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -163,7 +163,7 @@ class ApiDirectionController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'direction')]
-    
+
     public function update(Request $request, Direction $direction, DirectionRepository $directionRepository): Response
     {
         try {
@@ -172,7 +172,7 @@ class ApiDirectionController extends ApiInterface
 
                 $direction->setLibelle($data->libelle);
                 $direction->setUpdatedBy($this->getUser());
-                $direction->setUpdatedAt(new \DateTime());
+                $direction->setUpdatedAt();
                 $errorResponse = $this->errorResponse($direction);
 
                 if ($errorResponse !== null) {
@@ -249,7 +249,7 @@ class ApiDirectionController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'direction')]
-    
+
     public function deleteAll(Request $request, DirectionRepository $villeRepository): Response
     {
         try {

@@ -43,7 +43,7 @@ class ApiCiviliteController extends ApiInterface
 
             $civilites = $civiliteRepository->findAll();
 
-          
+
 
             $response =  $this->responseData($civilites, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -109,7 +109,7 @@ class ApiCiviliteController extends ApiInterface
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
                     new OA\Property(property: "codeGeneration", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -120,7 +120,7 @@ class ApiCiviliteController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'civilite')]
-    
+
     public function create(Request $request, CiviliteRepository $civiliteRepository): Response
     {
 
@@ -154,7 +154,7 @@ class ApiCiviliteController extends ApiInterface
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
                     new OA\Property(property: "codeGeneration", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -165,7 +165,7 @@ class ApiCiviliteController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'civilite')]
-    
+
     public function update(Request $request, Civilite $civilite, CiviliteRepository $civiliteRepository): Response
     {
         try {
@@ -176,7 +176,7 @@ class ApiCiviliteController extends ApiInterface
                 $civilite->setCode($data->code);
                 $civilite->setCodeGeneration($data->codeGeneration);
                 $civilite->setUpdatedBy($this->getUser());
-                $civilite->setUpdatedAt(new \DateTime());
+                $civilite->setUpdatedAt();
                 $errorResponse = $this->errorResponse($civilite);
 
                 if ($errorResponse !== null) {
@@ -253,7 +253,7 @@ class ApiCiviliteController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'civilite')]
-    
+
     public function deleteAll(Request $request, CiviliteRepository $villeRepository): Response
     {
         try {
