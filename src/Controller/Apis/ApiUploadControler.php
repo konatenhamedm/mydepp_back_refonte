@@ -44,8 +44,16 @@ class ApiUploadControler extends ApiInterface
         try {
             // Validation du fichier
             $file = $request->files->get('path');
+
+            if ($file === null) {
+                return $this->json([
+                    'statut' => 0,
+                    'message' => 'Aucun fichier reçu. Vérifiez que le champ s\'appelle bien "path".',
+                    'data' => null
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
             $professionSelected = $request->request->get('professionSelected');
-            (dump($professionSelected));
             // Upload du fichier
             $fileFolder = $this->getParameter('kernel.project_dir') . '/public/uploads/excel_files/';
             $filePathName = md5(uniqid()) . '_' . $file->getClientOriginalName();
