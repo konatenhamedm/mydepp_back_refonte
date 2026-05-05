@@ -44,8 +44,16 @@ class ApiUploadControler extends ApiInterface
         try {
             // Validation du fichier
             $file = $request->files->get('path');
+
+            if ($file === null) {
+                return $this->json([
+                    'statut' => 0,
+                    'message' => 'Aucun fichier reçu. Vérifiez que le champ s\'appelle bien "path".',
+                    'data' => null
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
             $professionSelected = $request->request->get('professionSelected');
-            (dump($professionSelected));
             // Upload du fichier
             $fileFolder = $this->getParameter('kernel.project_dir') . '/public/uploads/excel_files/';
             $filePathName = md5(uniqid()) . '_' . $file->getClientOriginalName();
@@ -81,25 +89,28 @@ class ApiUploadControler extends ApiInterface
 
                 foreach ($sheetData as $index => $row) {
                     try {
-                        // Closure robuste : essaie plusieurs formats (avec ou sans zéros)
-                        // Formats supportés : 11/11/2025, 1/1/2025, 11-11-2025, 2025-11-11
+                        // Closure robuste : supporte années 2 et 4 chiffres
+                        // Exemples: "3/7/53", "19/6/19", "01/04/2021", "2021-04-01"
                         $parseDate = function (?string $value): \DateTimeImmutable {
                             if ($value === null || trim($value) === '') {
                                 return new \DateTimeImmutable('1970-01-01');
                             }
-                            foreach (['d/m/Y', 'j/n/Y', 'd-m-Y', 'j-n-Y', 'Y-m-d'] as $fmt) {
+                            // Ordre important : 4 chiffres d'abord, puis 2 chiffres
+                            foreach (['d/m/Y', 'j/n/Y', 'd-m-Y', 'j-n-Y', 'Y-m-d', 'd/m/y', 'j/n/y'] as $fmt) {
                                 $date = \DateTimeImmutable::createFromFormat($fmt, trim($value));
+                                // PHP 8.1+ : getLastErrors() retourne false si aucune erreur
                                 $errors = \DateTimeImmutable::getLastErrors();
-                                if ($date !== false && $errors['error_count'] === 0 && $errors['warning_count'] === 0) {
+                                $hasErrors = $errors !== false && ($errors['error_count'] > 0 || $errors['warning_count'] > 0);
+                                if ($date !== false && !$hasErrors) {
                                     return $date->setTime(0, 0, 0);
                                 }
                             }
                             return new \DateTimeImmutable('1970-01-01');
                         };
 
-                        $dateAnniv      = $parseDate($row['E']);
-                        $dateEnreg      = $parseDate($row['B']);
-                        $dateCommission = $parseDate($row['J']);
+                        $dateAnniv      = $parseDate((string)($row['E'] ?? ''));
+                        $dateEnreg      = $parseDate((string)($row['B'] ?? ''));
+                        $dateCommission = $parseDate((string)($row['J'] ?? ''));
 
                         // dump($row);
                         $rowData = [
