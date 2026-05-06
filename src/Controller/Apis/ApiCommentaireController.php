@@ -41,20 +41,11 @@ class ApiCommentaireController extends ApiInterface
     public function index(CommentaireRepository $commentaireRepository): Response
     {
         try {
-
             $commentaires = $commentaireRepository->findAll();
-
-            $context = [AbstractNormalizer::GROUPS => 'group1'];
-            $json = $this->serializer->serialize($commentaires, 'json', $context);
-
-            return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
+            return $this->responseData($commentaires, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
-            $response = $this->response('[]');
+            return $this->responseData([], 'group1', ['Content-Type' => 'application/json']);
         }
-
-        // On envoie la réponse
-        return $response;
     }
 
 

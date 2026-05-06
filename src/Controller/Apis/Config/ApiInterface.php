@@ -282,6 +282,14 @@ class ApiInterface extends AbstractController
         try {
             $finalHeaders = empty($headers) ? ['Content-Type' => 'application/json'] : $headers;
 
+            $request = $this->paginationService->getRequest();
+            $withPagination = $request ? $request->query->get('with_pagination') === 'true' : false;
+
+            if ($withPagination && !$data instanceof PaginationInterface && $data !== null) {
+                $data = $this->paginationService->paginate($data);
+                $paginate = true;
+            }
+
             $context = [AbstractNormalizer::GROUPS => $group];
 
             // Cas paginé (KnpPaginator ou PaginationInterface)

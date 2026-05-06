@@ -40,20 +40,11 @@ class ApiCodeController extends ApiInterface
     public function index(CodeRepository $codeRepository): Response
     {
         try {
-
             $codes = $codeRepository->findAll();
-
-            $context = [AbstractNormalizer::GROUPS => 'group1'];
-            $json = $this->serializer->serialize($codes, 'json', $context);
-
-            return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
+            return $this->responseData($codes, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
-            $response = $this->response('[]');
+            return $this->responseData([], 'group1', ['Content-Type' => 'application/json']);
         }
-
-        // On envoie la réponse
-        return $response;
     }
 
 
