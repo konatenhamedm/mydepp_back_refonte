@@ -283,6 +283,47 @@ class ApiInterface extends AbstractController
             $finalHeaders = empty($headers) ? ['Content-Type' => 'application/json'] : $headers;
 
             $request = $this->paginationService->getRequest();
+            $search = $request ? ($request->query->get('search') ?? $request->query->get('q') ?? $request->query->get('searchTerm')) : null;
+
+            if ($search) {
+                if (is_array($data)) {
+                    $data = array_values(array_filter($data, function ($item) use ($search) {
+                        if (!is_object($item)) {
+                            return false;
+                        }
+                        $fields = ['libelle', 'code', 'nom', 'prenoms', 'email', 'message', 'title', 'titre', 'text', 'name'];
+                        foreach ($fields as $field) {
+                            $getter = 'get' . ucfirst($field);
+                            if (method_exists($item, $getter)) {
+                                $val = $item->$getter();
+                                if ($val !== null && stripos((string)$val, $search) !== false) {
+                                    return true;
+                                }
+                            }
+                        }
+                        return false;
+                    }));
+                } elseif ($data instanceof \Doctrine\ORM\QueryBuilder) {
+                    $aliases = $data->getRootAliases();
+                    if (!empty($aliases)) {
+                        $alias = $aliases[0];
+                        $metadata = $data->getEntityManager()->getClassMetadata($data->getRootEntities()[0]);
+                        $orX = $data->expr()->orX();
+                        $hasSearchable = false;
+                        $fields = ['libelle', 'code', 'nom', 'prenoms', 'email', 'message', 'title', 'titre', 'text', 'name'];
+                        foreach ($fields as $field) {
+                            if ($metadata->hasField($field)) {
+                                $orX->add($data->expr()->like($alias . '.' . $field, ':search'));
+                                $hasSearchable = true;
+                            }
+                        }
+                        if ($hasSearchable) {
+                            $data->andWhere($orX)->setParameter('search', '%' . $search . '%');
+                        }
+                    }
+                }
+            }
+
             $withPagination = $request ? $request->query->get('with_pagination') === 'true' : false;
 
             if ($withPagination && !$data instanceof PaginationInterface && $data !== null) {
