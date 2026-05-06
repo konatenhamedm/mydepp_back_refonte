@@ -42,20 +42,11 @@ class ApiLibelleGroupeController extends ApiInterface
     public function index(LibelleGroupeRepository $libelleGroupeRepository): Response
     {
         try {
-
             $libelleGroupes = $libelleGroupeRepository->findAll();
-
-            $context = [AbstractNormalizer::GROUPS => 'group1'];
-            $json = $this->serializer->serialize($libelleGroupes, 'json', $context);
-
-            return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
+            return $this->responseData($libelleGroupes, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
-            $response = $this->response('[]');
+            return $this->responseData([], 'group1', ['Content-Type' => 'application/json']);
         }
-
-        // On envoie la réponse
-        return $response;
     }
 
     #[Route('/all/{code}', methods: ['GET'])]

@@ -17,6 +17,14 @@ class PaginationService
     }
 
     /**
+     * Obtenir la requête courante
+     */
+    public function getRequest()
+    {
+        return $this->requestStack->getCurrentRequest();
+    }
+
+    /**
      * Paginer une requête Doctrine ou un tableaukkkk
      *dddd
      * @param mixed $target QueryBuilder, Query ou array
