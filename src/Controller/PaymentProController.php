@@ -282,8 +282,8 @@ class PaymentProController extends ApiInterface
             }
 
 
-            $montantUnitaire = $user->getTypeUser() == "PROFESSIONNEL" ? $user->getPersonne()->getProfession()->getMontantRenouvellement() : null;
-            $montantTotal = $user->getTypeUser() == "PROFESSIONNEL" ? $montantUnitaire * $yearDue : "";
+            $montantUnitaire = $user->getTypeUser() == "PROFESSIONNEL" ? (int) $user->getPersonne()->getProfession()->getMontantRenouvellement() : null;
+            $montantTotal = $user->getTypeUser() == "PROFESSIONNEL" ? $montantUnitaire * (int) $yearDue : "";
 
             $transactions = [
                 'expire' => $expire,
