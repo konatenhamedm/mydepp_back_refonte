@@ -142,7 +142,7 @@ class ApiAvisController extends ApiInterface
                 properties: [
                     new OA\Property(property: "contenu", type: "string"),
                     new OA\Property(property: "forum", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -153,15 +153,15 @@ class ApiAvisController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'avis')]
-    
-    public function create(Request $request, AvisRepository $avisRepository,ForumRepository $forumRepository): Response
+
+    public function create(Request $request, AvisRepository $avisRepository, ForumRepository $forumRepository): Response
     {
 
         $data = json_decode($request->getContent(), true);
         $avis = new Avis();
         $avis->setContenu($data['contenu']);
-        $avis->setUpdatedAt(new \DateTime());
-        $avis->setCreatedAtValue(new \DateTime());
+        $avis->setUpdatedAt();
+        $avis->setCreatedAtValue();
         $avis->setForum($forumRepository->find($data['forum']));
         $avis->setCreatedBy($this->getUser());
         $avis->setUser($this->userRepository->find($data['userUpdate']));
@@ -188,7 +188,7 @@ class ApiAvisController extends ApiInterface
                 properties: [
                     new OA\Property(property: "contenu", type: "string"),
                     new OA\Property(property: "forum", type: "string"),
-                    
+
                 ],
                 type: "object"
             )
@@ -198,7 +198,7 @@ class ApiAvisController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'avis')]
-    
+
     public function update(Request $request, Avis $avis, AvisRepository $avisRepository): Response
     {
         try {
@@ -208,7 +208,7 @@ class ApiAvisController extends ApiInterface
                 $avis->setContenu($data->contenu);
                 $avis->setForum($data->forum);
                 $avis->setUpdatedBy($this->getUser());
-                $avis->setUpdatedAt(new \DateTime());
+                $avis->setUpdatedAt();
                 $errorResponse = $this->errorResponse($avis);
 
                 if ($errorResponse !== null) {
@@ -285,7 +285,7 @@ class ApiAvisController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'avis')]
-    
+
     public function deleteAll(Request $request, AvisRepository $villeRepository): Response
     {
         try {

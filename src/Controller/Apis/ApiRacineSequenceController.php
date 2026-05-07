@@ -40,20 +40,11 @@ class ApiRacineSequenceController extends ApiInterface
     public function index(RacineSequenceRepository $racineSequenceRepository): Response
     {
         try {
-
             $racineSequence = $racineSequenceRepository->findAll();
-
-            $context = [AbstractNormalizer::GROUPS => 'group1'];
-            $json = $this->serializer->serialize($racineSequence, 'json', $context);
-
-            return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
+            return $this->responseData($racineSequence, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
-            $response = $this->response('[]');
+            return $this->responseData([], 'group1', ['Content-Type' => 'application/json']);
         }
-
-        // On envoie la réponse
-        return $response;
     }
 
 
@@ -108,7 +99,7 @@ class ApiRacineSequenceController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -119,7 +110,7 @@ class ApiRacineSequenceController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'racineSequence')]
-    
+
     public function create(Request $request, RacineSequenceRepository $racineSequenceRepository): Response
     {
 
@@ -149,7 +140,7 @@ class ApiRacineSequenceController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -160,7 +151,7 @@ class ApiRacineSequenceController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'racineSequence')]
-    
+
     public function update(Request $request, RacineSequence $racineSequence, RacineSequenceRepository $racineSequenceRepository): Response
     {
         try {
@@ -169,7 +160,7 @@ class ApiRacineSequenceController extends ApiInterface
 
                 $racineSequence->setCode($data->libelle);
                 $racineSequence->setUpdatedBy($this->getUser());
-                $racineSequence->setUpdatedAt(new \DateTime());
+                $racineSequence->setUpdatedAt();
 
                 $errorResponse = $this->errorResponse($racineSequence);
 
@@ -247,7 +238,7 @@ class ApiRacineSequenceController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'racineSequence')]
-    
+
     public function deleteAll(Request $request, RacineSequenceRepository $villeRepository): Response
     {
         try {

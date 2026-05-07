@@ -42,23 +42,14 @@ class ApiLibelleGroupeController extends ApiInterface
     public function index(LibelleGroupeRepository $libelleGroupeRepository): Response
     {
         try {
-
             $libelleGroupes = $libelleGroupeRepository->findAll();
-
-            $context = [AbstractNormalizer::GROUPS => 'group1'];
-            $json = $this->serializer->serialize($libelleGroupes, 'json', $context);
-
-            return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
+            return $this->responseData($libelleGroupes, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
-            $response = $this->response('[]');
+            return $this->responseData([], 'group1', ['Content-Type' => 'application/json']);
         }
-
-        // On envoie la réponse
-        return $response;
     }
 
-      #[Route('/all/{code}', methods: ['GET'])]
+    #[Route('/all/{code}', methods: ['GET'])]
     /**
      * Retourne la liste des typeDocuments pour l'accord de principe.
      * 
@@ -73,12 +64,12 @@ class ApiLibelleGroupeController extends ApiInterface
     )]
     #[OA\Tag(name: 'libelleGroupe')]
     // 
-    public function indexByLibelle(LibelleGroupeRepository $libelleGroupeRepository,TypePersonneRepository $typePersonneRepository,$code): Response
+    public function indexByLibelle(LibelleGroupeRepository $libelleGroupeRepository, TypePersonneRepository $typePersonneRepository, $code): Response
     {
         try {
 
             $libelleGroupe = $libelleGroupeRepository->findAllByLibelleGroupe($typePersonneRepository->findOneByCode($code)->getId());
-            
+
             $response =  $this->responseData($libelleGroupe, 'group_libelle', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("");
@@ -88,7 +79,7 @@ class ApiLibelleGroupeController extends ApiInterface
         // On envoie la réponse
         return $response;
     }
-      #[Route('/all/oep/{id}', methods: ['GET'])]
+    #[Route('/all/oep/{id}', methods: ['GET'])]
     /**
      * Retourne la liste des typeDocuments pour l'exploitation.
      * 
@@ -103,12 +94,12 @@ class ApiLibelleGroupeController extends ApiInterface
     )]
     #[OA\Tag(name: 'libelleGroupe')]
     // 
-    public function indexByLibelleOep(LibelleGroupeRepository $libelleGroupeRepository,TypePersonne $typePersonne): Response
+    public function indexByLibelleOep(LibelleGroupeRepository $libelleGroupeRepository, TypePersonne $typePersonne): Response
     {
         try {
 
             $libelleGroupe = $libelleGroupeRepository->findAllByLibelleGroupeOep($typePersonne->getId());
-            
+
             $response =  $this->responseData($libelleGroupe, 'group_libelle', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("");
@@ -172,7 +163,7 @@ class ApiLibelleGroupeController extends ApiInterface
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "type", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -183,7 +174,7 @@ class ApiLibelleGroupeController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'libelleGroupe')]
-    
+
     public function create(Request $request, LibelleGroupeRepository $libelleGroupeRepository): Response
     {
 
@@ -215,7 +206,7 @@ class ApiLibelleGroupeController extends ApiInterface
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "type", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -226,7 +217,7 @@ class ApiLibelleGroupeController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'libelleGroupe')]
-    
+
     public function update(Request $request, LibelleGroupe $libelleGroupe, LibelleGroupeRepository $libelleGroupeRepository): Response
     {
         try {
@@ -236,7 +227,7 @@ class ApiLibelleGroupeController extends ApiInterface
                 $libelleGroupe->setLibelle($data->libelle);
                 $libelleGroupe->setType($data->type);
                 $libelleGroupe->setUpdatedBy($this->getUser());
-                $libelleGroupe->setUpdatedAt(new \DateTime());
+                $libelleGroupe->setUpdatedAt();
 
                 $errorResponse = $this->errorResponse($libelleGroupe);
 
@@ -314,7 +305,7 @@ class ApiLibelleGroupeController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'libelleGroupe')]
-    
+
     public function deleteAll(Request $request, LibelleGroupeRepository $villeRepository): Response
     {
         try {
