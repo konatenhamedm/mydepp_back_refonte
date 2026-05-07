@@ -1166,8 +1166,8 @@ class ApiProfessionnelController extends ApiInterface
             }
 
 
-            $professionnel->setUpdatedAt(new DateTime());
-            $professionnel->setCreatedAtValue(new DateTime());
+            $professionnel->setUpdatedAt();
+            $professionnel->setCreatedAtValue();
 
 
             $uploadedPhoto = $request->files->get('photo');
