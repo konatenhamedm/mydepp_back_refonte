@@ -1098,8 +1098,8 @@ class ApiProfessionnelController extends ApiInterface
         $user->setRoles(['ROLE_MEMBRE']);
         $user->setTypeUser(User::TYPE['PROFESSIONNEL']);
         $user->setPayement(User::PAYEMENT['payed']);
-        $user->setUpdatedAt(new DateTimeImmutable());
-        $user->setCreatedAtValue(new DateTimeImmutable());
+        $user->setUpdatedAt();
+        $user->setCreatedAtValue();
 
 
         $errorResponse1 = $request->get('password') !== $request->get('confirmPassword') ?  $this->errorResponse($user, "Les mots de passe ne sont pas identiques") :  $this->errorResponse($user);
