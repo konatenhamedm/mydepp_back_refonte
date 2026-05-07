@@ -117,7 +117,9 @@ class ApiProfessionController extends ApiInterface
   {
     try {
       if ($profession) {
-        $response = $this->response($profession->getMontantNouvelleDemande() != null || (int)$profession->getMontantNouvelleDemande() != 0 ? true : false);
+        $montant = $profession->getMontantNouvelleDemande();
+        $hasPaiement = $montant !== null && (int)$montant !== 0;
+        $response = $this->response(['status' => $hasPaiement, 'montant' => $hasPaiement ? $montant : 0]);
       } else {
         $this->setMessage('Cette ressource est inexistante');
         $this->setStatusCode(300);
