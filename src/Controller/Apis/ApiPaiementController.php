@@ -522,9 +522,22 @@ class ApiPaiementController extends ApiInterface
 
             $transactions = $transactionRepository->getAllTransactionByUser($userId);
 
-            $response = $this->responseData($transactions, 'group_user_trx', ['Content-Type' => 'application/json']);
+            $formattedTransactions = array_map(function (Transaction $transaction) {
+                return [
+                    "montant"           => $transaction->getMontant(),
+                    "reference"         => $transaction->getReference(),
+                    "reference_channel" => $transaction->getReferenceChannel(),
+                    "channel"           => $transaction->getChannel(),
+                    "type"              => $transaction->getType(),
+                    "state"             => $transaction->getState(),
+                    "typeUser"          => $transaction->getTypeUser(),
+                    "createdAt"         => $transaction->getCreatedAt()?->format('Y-m-d H:i:s'),
+                ];
+            }, $transactions);
+
+            $response = $this->responseData($formattedTransactions, 'group_user_trx', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
 
