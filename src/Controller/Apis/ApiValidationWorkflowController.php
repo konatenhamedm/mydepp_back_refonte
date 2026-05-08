@@ -74,13 +74,23 @@ class ApiValidationWorkflowController extends ApiInterface
     {
         try {
 
-            $validationWorkflow = $validationWorkflowRepository->findBy(['personne' => $idPersoone]);
+            $validationWorkflow = $validationWorkflowRepository->findBy(
+                ['personne' => $idPersoone],
+                ['createdAt' => 'ASC']
+            );
 
+            $formatted = array_map(function (ValidationWorkflow $w) {
+                return [
+                    'id'        => $w->getId(),
+                    'etape'     => $w->getEtape(),
+                    'raison'    => $w->getRaison(),
+                    'createdAt' => $w->getCreatedAt()?->format('Y-m-d H:i:s'),
+                ];
+            }, $validationWorkflow);
 
-
-            $response =  $this->responseData($validationWorkflow, 'group_pro_validate_', ['Content-Type' => 'application/json']);
+            $response = $this->responseData($formatted, 'group_pro_validate_', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
 
