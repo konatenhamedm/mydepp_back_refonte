@@ -74,16 +74,19 @@ class ApiUserController extends ApiInterface
     public function indexInstructeur(UserRepository $userRepository): Response
     {
         try {
-
             $users = $userRepository->findUserByTypeCode();
-
-            $response = $this->responseData($users, 'group_user', ['Content-Type' => 'application/json']);
+            $formatted = array_map(fn($u) => [
+                'id'      => $u->getId(),
+                'email'   => $u->getEmail(),
+                'nom'     => $u->getPersonne()?->getNom(),
+                'prenoms' => $u->getPersonne()?->getPrenoms(),
+            ], $users);
+            $response = $this->responseData($formatted, 'group_user', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("");
             $response = $this->response('[]');
         }
 
-        // On envoie la réponse
         return $response;
     }
     #[Route('/liste/instructeur/etablissement', methods: ['GET'])]
@@ -104,16 +107,19 @@ class ApiUserController extends ApiInterface
     public function indexInstructeurEtab(UserRepository $userRepository): Response
     {
         try {
-
             $users = $userRepository->findUserByTypeCodeEtab();
-
-            $response = $this->responseData($users, 'group_user', ['Content-Type' => 'application/json']);
+            $formatted = array_map(fn($u) => [
+                'id'      => $u->getId(),
+                'email'   => $u->getEmail(),
+                'nom'     => $u->getPersonne()?->getNom(),
+                'prenoms' => $u->getPersonne()?->getPrenoms(),
+            ], $users);
+            $response = $this->responseData($formatted, 'group_user', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("");
             $response = $this->response('[]');
         }
 
-        // On envoie la réponse
         return $response;
     }
 
