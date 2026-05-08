@@ -743,8 +743,6 @@ class ApiProfessionnelController extends ApiInterface
             $validationWorkflow->setEtape($dto->status);
             $validationWorkflow->setRaison($dto->raison);
             $validationWorkflow->setPersonne($professionnel);
-            $validationWorkflow->setCreatedAtValue(new DateTime('now'));
-            $validationWorkflow->setUpdatedAt(new DateTime('now'));
             $validationWorkflow->setCreatedBy($user);
             $validationWorkflow->setUpdatedBy($user);
 
