@@ -431,4 +431,31 @@ class ProfessionnelRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+
+    /**
+     * Recherche un professionnel par son code complet (ex: "MS10250299.0001")
+     * ou par les 4 chiffres après le préfixe "MS" (ex: "1025" → LIKE 'MS1025%').
+     */
+    public function findByCodeOrPartial(string $input): ?Professionnel
+    {
+        $input = trim($input);
+
+        // Correspondance exacte d'abord
+        $exact = $this->findOneBy(['code' => $input]);
+        if ($exact) {
+            return $exact;
+        }
+
+        // 4 chiffres uniquement → recherche partielle MS{input}%
+        if (preg_match('/^\d{1,8}$/', $input)) {
+            return $this->createQueryBuilder('p')
+                ->where('p.code LIKE :pattern')
+                ->setParameter('pattern', 'MS' . $input . '%')
+                ->setMaxResults(1)
+                ->getQuery()
+                ->getOneOrNullResult();
+        }
+
+        return null;
+    }
 }

@@ -914,6 +914,154 @@ class ApiProfessionnelController extends ApiInterface
     }
 
 
+    #[Route('/find/by/email', methods: ['POST'])]
+    #[OA\Tag(name: 'professionnel')]
+    public function findByEmail(
+        Request $request,
+        UserRepository $userRepository,
+        TransactionRepository $transactionRepository
+    ): Response {
+        try {
+            $data = json_decode($request->getContent(), true);
+            $email = trim($data['email'] ?? '');
+
+            if (!$email) {
+                $this->setMessage('Email requis');
+                $this->setStatusCode(400);
+                return $this->response('[]');
+            }
+
+            $user = $userRepository->findOneBy(['email' => $email]);
+
+            if (!$user) {
+                $this->setMessage('Aucun utilisateur trouvé avec cet email');
+                $this->setStatusCode(404);
+                return $this->response('[]');
+            }
+
+            if (strtoupper($user->getTypeUser()) !== 'PROFESSIONNEL') {
+                $this->setMessage("Cet utilisateur n'est pas un professionnel");
+                $this->setStatusCode(400);
+                return $this->response('[]');
+            }
+
+            $responseData = $this->buildProfessionnelResponse($user, $transactionRepository);
+            return $this->responseData($responseData, 'group_pro', ['Content-Type' => 'application/json']);
+        } catch (\Exception $exception) {
+            $this->setMessage($exception->getMessage());
+            return $this->response('[]');
+        }
+    }
+
+    #[Route('/find/by/code', methods: ['POST'])]
+    #[OA\Tag(name: 'professionnel')]
+    public function findByCode(
+        Request $request,
+        ProfessionnelRepository $professionnelRepository,
+        UserRepository $userRepository,
+        TransactionRepository $transactionRepository
+    ): Response {
+        try {
+            $data = json_decode($request->getContent(), true);
+            $code = trim($data['code'] ?? '');
+
+            if (!$code) {
+                $this->setMessage('Code requis');
+                $this->setStatusCode(400);
+                return $this->response('[]');
+            }
+
+            $personne = $professionnelRepository->findByCodeOrPartial($code);
+
+            if (!$personne) {
+                $this->setMessage('Aucun professionnel trouvé pour ce code');
+                $this->setStatusCode(404);
+                return $this->response('[]');
+            }
+
+            $user = $userRepository->findOneBy(['personne' => $personne->getId()]);
+            if (!$user) {
+                $this->setMessage("Ce professionnel n'a pas de compte utilisateur");
+                $this->setStatusCode(404);
+                return $this->response('[]');
+            }
+
+            $responseData = $this->buildProfessionnelResponse($user, $transactionRepository);
+            return $this->responseData($responseData, 'group_pro', ['Content-Type' => 'application/json']);
+        } catch (\Exception $exception) {
+            $this->setMessage($exception->getMessage());
+            return $this->response('[]');
+        }
+    }
+
+    private function buildProfessionnelResponse(User $user, TransactionRepository $transactionRepository): array
+    {
+        $personne = $user->getPersonne();
+        $profession = $personne->getProfession();
+
+        $expire = false;
+        $yearDue = 0;
+        $joursRestants = 0;
+        $expiration = new \DateTime();
+
+        if ($profession && $profession->getMontantRenouvellement() !== null) {
+            $today = new \DateTime();
+
+            if ($personne->getDateValidation() !== null) {
+                $expiration = clone $personne->getDateValidation();
+            } else {
+                $dernierAbonnement = $transactionRepository->findOneBy(
+                    ['user' => $user->getId(), 'state' => 1],
+                    ['createdAt' => 'DESC']
+                );
+                if ($dernierAbonnement) {
+                    $expiration = clone $dernierAbonnement->getCreatedAt();
+                }
+            }
+
+            $expire = $expiration < $today;
+            if ($expire) {
+                $yearDue = (int)(new \DateTime())->format('Y') - (int)$expiration->format('Y');
+            } else {
+                $joursRestants = (new \DateTime())->diff($expiration)->days;
+            }
+        }
+
+        return [
+            'user' => [
+                'id'       => $user->getId(),
+                'email'    => $user->getEmail(),
+                'username' => $user->getUsername(),
+                'typeUser' => $user->getTypeUser(),
+            ],
+            'personne' => [
+                'id'             => $personne->getId(),
+                'code'           => $personne->getCode(),
+                'nom'            => $personne->getNom(),
+                'prenoms'        => $personne->getPrenoms(),
+                'number'         => $personne->getNumber(),
+                'email'          => $personne->getEmail(),
+                'status'         => $personne->getStatus(),
+                'dateValidation' => $personne->getDateValidation()
+                    ? $personne->getDateValidation()->format('Y-m-d')
+                    : null,
+                'profession' => $profession ? [
+                    'id'                    => $profession->getId(),
+                    'libelle'               => $profession->getLibelle(),
+                    'montantRenouvellement' => $profession->getMontantRenouvellement(),
+                ] : null,
+            ],
+            'renouvellement' => [
+                'expire'          => $expire,
+                'yearDue'         => $yearDue,
+                'montantUnitaire' => $profession ? (int)$profession->getMontantRenouvellement() : 0,
+                'montantTotal'    => $profession ? (int)$profession->getMontantRenouvellement() * $yearDue : 0,
+                'date_expiration' => $expiration->format('Y-m-d'),
+                'jours_restants'  => $joursRestants,
+            ],
+        ];
+    }
+
     private function formatEntity($entity): ?array
     {
         return $entity ? [
