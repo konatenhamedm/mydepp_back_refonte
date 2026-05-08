@@ -328,8 +328,8 @@ class ApiProfessionnelController extends ApiInterface
                         'imputationData' => $personne->getImputation() ? [
                             'id' =>  $personne->getImputation()->getId(),
                             'username' =>  $personne->getImputation()->getUsername(),
-                            'nom' => $personne->getImputation()->getPersonne()->getNom(),
-                            'prenoms' => $personne->getImputation()->getPersonne()->getPrenoms(),
+                            'nom' => $personne->getImputation()->getPersonne()?->getNom(),
+                            'prenoms' => $personne->getImputation()->getPersonne()?->getPrenoms(),
                             'email' =>  $personne->getImputation()->getEmail(),
                         ] : null,
                         'appartenirOrdre' => $personne->getAppartenirOrdre() ?? "",
@@ -412,6 +412,7 @@ class ApiProfessionnelController extends ApiInterface
 
             $formattedProfessionnels = array_map(function ($professionnel) use ($professionRepository) {
                 $personne = $professionnel->getPersonne();
+                if (!$personne) return null;
                 // $profession = $personne->getProfession() ? $professionRepository->findOneByCode($personne->getProfession()) : null;
 
                 return [
@@ -426,8 +427,8 @@ class ApiProfessionnelController extends ApiInterface
                         'imputationData' => $personne->getImputation() ? [
                             'id' =>  $personne->getImputation()->getId(),
                             'username' =>  $personne->getImputation()->getUsername(),
-                            'nom' => $personne->getImputation()->getPersonne()->getNom(),
-                            'prenoms' => $personne->getImputation()->getPersonne()->getPrenoms(),
+                            'nom' => $personne->getImputation()->getPersonne()?->getNom(),
+                            'prenoms' => $personne->getImputation()->getPersonne()?->getPrenoms(),
                             'email' =>  $personne->getImputation()->getEmail(),
                         ] : null,
                         'appartenirOrdre' => $personne->getAppartenirOrdre() ?? "",
@@ -476,7 +477,7 @@ class ApiProfessionnelController extends ApiInterface
 
             // Pour retourner en JSON (dans un contrôleur Symfony par exemple)
 
-            $response = $this->responseData($formattedProfessionnels, 'group_pro', ['Content-Type' => 'application/json']);
+            $response = $this->responseData(array_values(array_filter($formattedProfessionnels)), 'group_pro', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("");
             $this->response('[]');
@@ -517,6 +518,7 @@ class ApiProfessionnelController extends ApiInterface
 
             $formattedProfessionnels = array_map(function ($professionnel) use ($professionRepository) {
                 $personne = $professionnel->getPersonne();
+                if (!$personne) return null;
                 //$profession = $personne->getProfession() ? $professionRepository->findOneByCode($personne->getProfession()) : null;
 
                 return [
@@ -531,8 +533,8 @@ class ApiProfessionnelController extends ApiInterface
                         'imputationData' => $personne->getImputation() ? [
                             'id' =>  $personne->getImputation()->getId(),
                             'username' =>  $personne->getImputation()->getUsername(),
-                            'nom' => $personne->getImputation()->getPersonne()->getNom(),
-                            'prenoms' => $personne->getImputation()->getPersonne()->getPrenoms(),
+                            'nom' => $personne->getImputation()->getPersonne()?->getNom(),
+                            'prenoms' => $personne->getImputation()->getPersonne()?->getPrenoms(),
                             'email' =>  $personne->getImputation()->getEmail(),
                         ] : null,
                         'appartenirOrdre' => $personne->getAppartenirOrdre() ?? "",
@@ -579,7 +581,7 @@ class ApiProfessionnelController extends ApiInterface
                 ];
             }, $professionnels);
 
-            $response = $this->responseData($formattedProfessionnels, 'group_pro', ['Content-Type' => 'application/json']);
+            $response = $this->responseData(array_values(array_filter($formattedProfessionnels)), 'group_pro', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("");
             $response = $this->response('[]');
