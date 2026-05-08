@@ -157,11 +157,8 @@ class TransactionRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('t')
             ->innerJoin('t.user', 'u')
             ->andWhere('t.user = :user')
-            ->andWhere('t.state = :state')
-            ->setParameter('state', 1)
             ->setParameter('user', $user)
             ->orderBy('t.id', 'ASC')
-
             ->getQuery()
             ->getResult()
         ;

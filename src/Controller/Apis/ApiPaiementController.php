@@ -523,6 +523,7 @@ class ApiPaiementController extends ApiInterface
             $transactions = $transactionRepository->getAllTransactionByUser($userId);
 
             $formattedTransactions = array_map(function (Transaction $transaction) {
+                $personne = $transaction->getUser()->getPersonne();
                 return [
                     "montant"           => $transaction->getMontant(),
                     "reference"         => $transaction->getReference(),
@@ -532,6 +533,9 @@ class ApiPaiementController extends ApiInterface
                     "state"             => $transaction->getState(),
                     "typeUser"          => $transaction->getTypeUser(),
                     "createdAt"         => $transaction->getCreatedAt()?->format('Y-m-d H:i:s'),
+                    "nom"               => $personne ? $personne->getNom() : null,
+                    "prenoms"           => $personne ? $personne->getPrenoms() : null,
+                    "email"             => $transaction->getUser()->getEmail(),
                 ];
             }, $transactions);
 
