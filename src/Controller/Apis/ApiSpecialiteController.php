@@ -40,20 +40,11 @@ class ApiSpecialiteController extends ApiInterface
     public function index(SpecialiteRepository $specialiteRepository): Response
     {
         try {
-
             $specialites = $specialiteRepository->findAll();
-
-            $context = [AbstractNormalizer::GROUPS => 'group1'];
-            $json = $this->serializer->serialize($specialites, 'json', $context);
-
-            return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
+            return $this->responseData($specialites, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
-            $response = $this->response('[]');
+            return $this->responseData([], 'group1', ['Content-Type' => 'application/json']);
         }
-
-        // On envoie la réponse
-        return $response;
     }
 
 
@@ -146,7 +137,7 @@ class ApiSpecialiteController extends ApiInterface
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "paiement", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -157,7 +148,7 @@ class ApiSpecialiteController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'specialite')]
-    
+
     public function create(Request $request, SpecialiteRepository $specialiteRepository): Response
     {
 
@@ -189,7 +180,7 @@ class ApiSpecialiteController extends ApiInterface
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -200,7 +191,7 @@ class ApiSpecialiteController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'specialite')]
-    
+
     public function update(Request $request, Specialite $specialite, SpecialiteRepository $specialiteRepository): Response
     {
         try {
@@ -210,7 +201,7 @@ class ApiSpecialiteController extends ApiInterface
                 $specialite->setLibelle($data->libelle);
                 $specialite->setPaiement($data->paiement);
                 $specialite->setUpdatedBy($this->getUser());
-                $specialite->setUpdatedAt(new \DateTime());
+                $specialite->setUpdatedAt();
                 $errorResponse = $this->errorResponse($specialite);
 
                 if ($errorResponse !== null) {
@@ -287,7 +278,7 @@ class ApiSpecialiteController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'specialite')]
-    
+
     public function deleteAll(Request $request, SpecialiteRepository $villeRepository): Response
     {
         try {

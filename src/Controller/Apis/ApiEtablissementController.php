@@ -64,7 +64,7 @@ class ApiEtablissementController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "imputation", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -85,7 +85,7 @@ class ApiEtablissementController extends ApiInterface
                 $etablissement->setImputation($userRepository->find($data->imputation));
 
                 $etablissement->setUpdatedBy($this->getUser());
-                $etablissement->setUpdatedAt(new \DateTime());
+                $etablissement->setUpdatedAt();
                 $etablissement->setStatus("oep_dossier_imputer");
                 $errorResponse = $this->errorResponse($etablissement);
 
@@ -147,7 +147,7 @@ class ApiEtablissementController extends ApiInterface
         return $response;
     }
 
-        public function genererCodeEtablissement(): string
+    public function genererCodeEtablissement(): string
     {
         $query = $this->em->createQueryBuilder();
         $query->select("count(a.id)")
@@ -170,7 +170,7 @@ class ApiEtablissementController extends ApiInterface
                         new OA\Property(property: "status", type: "string"),
                         new OA\Property(property: "raison", type: "string", nullable: true),
                         new OA\Property(property: "dateVisite", type: "string", format: "date", nullable: true),
-                        
+
                         new OA\Property(property: "email", type: "string"),
                         new OA\Property(
                             property: "rapportExamen",
@@ -276,12 +276,12 @@ class ApiEtablissementController extends ApiInterface
                 $etablissement->setRapportExamen($dto->rapportExamen);
             }
             if ($dto->status === "validation_finale") {
-                
+
                 // Enregistrer le rapport d'examen dans l'établissement
-                if($etablissement->getNiveauIntervention()->getMontant() != null){
+                if ($etablissement->getNiveauIntervention()->getMontant() != null) {
                     $etablissement->setDateValidation(new \DateTime());
                 }
-            
+
                 $etablissement->setCode($this->genererCodeEtablissement());
             }
 
@@ -495,8 +495,8 @@ class ApiEtablissementController extends ApiInterface
 
                 $newDocument->setCreatedBy($user);
                 $newDocument->setUpdatedBy($user);
-                $newDocument->setCreatedAtValue(new \DateTime());
-                $newDocument->setUpdatedAt(new \DateTime());
+                $newDocument->setCreatedAtValue();
+                $newDocument->setUpdatedAt();
 
 
                 $etablissement->addDocument($newDocument);
@@ -506,8 +506,8 @@ class ApiEtablissementController extends ApiInterface
 
             $etablissement->setCreatedBy($user);
             $etablissement->setUpdatedBy($user);
-            $etablissement->setCreatedAtValue(new \DateTime());
-            $etablissement->setUpdatedAt(new \DateTime());
+            $etablissement->setCreatedAtValue();
+            $etablissement->setUpdatedAt();
 
             $errorResponse = $this->errorResponse($etablissement);
             if ($errorResponse !== null) {
@@ -918,7 +918,7 @@ class ApiEtablissementController extends ApiInterface
                             }
                         }
 
-                        $document->setUpdatedAt(new \DateTime());
+                        $document->setUpdatedAt();
                         if ($this->getUser()) {
                             $document->setUpdatedBy($this->getUser());;
                         }
@@ -928,7 +928,7 @@ class ApiEtablissementController extends ApiInterface
         }
 
 
-        $etablissement->setUpdatedAt(new \DateTime());
+        $etablissement->setUpdatedAt();
         if ($this->getUser()) {
             $etablissement->setUpdatedBy($this->getUser());;
         }

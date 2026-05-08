@@ -29,7 +29,7 @@ class PaiementServiceHub2
         private NiveauInterventionRepository $niveauInterventionRepository,
         private UserRepository $userRepository,
     ) {
-       /*  $this->apiKey = $params->get('HUB2_API_KEY');
+        /*  $this->apiKey = $params->get('HUB2_API_KEY');
         $this->merchantId = $params->get('HUB2_MERCHANT_ID');
         $this->apiUrl = $params->get('HUB2_API_URL') ?? 'https://api.hub2.io';
         $this->environment = $params->get('HUB2_ENVIRONMENT') ?? 'sandbox'; */
@@ -52,18 +52,18 @@ class PaiementServiceHub2
     public function initPaymentIntent(Request $request): array
     {
         $data = json_decode($request->getContent(), true);
-        
+
         // Vérifier que le provider et le numéro sont fournis
         if (!isset($data['provider']) || !isset($data['numero'])) {
             throw new \Exception('Provider et numéro de téléphone requis');
         }
-        
+
         // Déterminer le montant selon le type
         $montant = $this->calculerMontant($request, $data);
-        
+
         // Générer référence unique
         $reference = $this->genererNumero();
-        
+
         // Créer la transaction en base
         $transaction = new Transaction();
         $transaction->setChannel($data['provider']);
@@ -73,20 +73,20 @@ class PaiementServiceHub2
         $transaction->setType($this->determinerType($data));
         $transaction->setTypeUser($data['type'] ?? 'professionnel');
         $transaction->setState(0);
-        $transaction->setCreatedAtValue(new \DateTime());
-        $transaction->setUpdatedAt(new \DateTime());
-        
+        $transaction->setCreatedAtValue();
+        $transaction->setUpdatedAt();
+
         // Associer l'utilisateur si renouvellement
         if (isset($data['user'])) {
             $user = $this->userRepository->find($data['user']);
             $transaction->setUser($user);
         }
-        
+
         $this->transactionRepository->add($transaction, true);
 
         try {
             $customerReference = $this->prepareCustomerReference($data);
-            
+
             // ÉTAPE 1: Créer Payment Intent chez Hub2
             $paymentIntentResponse = $this->httpClient->request('POST', $this->apiUrl . '/payment-intents', [
                 'json' => [
@@ -99,14 +99,13 @@ class PaiementServiceHub2
                     /* 'ApiKey' => $this->apiKey,
                     'MerchantId' => $this->merchantId,
                     'Environment' => $this->environment,
-                    'Content-Type' => 'application/json', */
-                ],
+                    'Content-Type' => 'application/json', */],
                 'verify_peer' => false,
                 'verify_host' => false
             ]);
 
             $paymentIntent = $paymentIntentResponse->toArray();
-            
+
             // Sauvegarder le Payment Intent
             $transaction->setData(json_encode([
                 'hub2_intent_id' => $paymentIntent['id'],
@@ -126,12 +125,12 @@ class PaiementServiceHub2
                     'msisdn' => $data['numero']
                 ]
             ];
-            
+
             // Ajouter l'OTP si fourni (Orange)
             if (isset($data['otp']) && !empty($data['otp'])) {
                 $paymentData['mobileMoney']['otp'] = $data['otp'];
             }
-            
+
             $paymentResponse = $this->httpClient->request(
                 'POST',
                 $this->apiUrl . '/payment-intents/' . $paymentIntent['id'] . '/payments',
@@ -146,7 +145,7 @@ class PaiementServiceHub2
             );
 
             $paymentResult = $paymentResponse->toArray();
-            
+
             // Mettre à jour la transaction avec les infos du paiement
             $transactionData = json_decode($transaction->getData(), true);
             $transactionData['payment_result'] = $paymentResult;
@@ -162,25 +161,24 @@ class PaiementServiceHub2
                 'payment' => $paymentResult,
                 'message' => $this->getMessageByProvider($data['provider'], $paymentResult)
             ];
-
         } catch (\Exception $e) {
             // Supprimer la transaction en cas d'erreur
             $this->transactionRepository->remove($transaction, true);
             throw new \Exception('Erreur paiement: ' . $e->getMessage());
         }
     }
-    
+
     /**
      * Génère un message approprié selon le provider et le résultat
      */
     private function getMessageByProvider(string $provider, array $paymentResult): string
     {
         $status = $paymentResult['status'] ?? '';
-        
+
         if ($status === 'successful') {
             return 'Paiement effectué avec succès';
         }
-        
+
         // Messages selon le provider
         $messages = [
             'orange' => 'Paiement initié. Validez avec votre code OTP Orange Money.',
@@ -188,16 +186,16 @@ class PaiementServiceHub2
             'moov' => 'SMS envoyé sur votre numéro Moov. Validez depuis votre téléphone.',
             'wave' => 'Cliquez sur le lien pour finaliser le paiement Wave.'
         ];
-        
+
         return $messages[$provider] ?? 'Paiement en cours de traitement.';
     }
 
-  
+
     public function initPayment(string $intentId, string $token, array $paymentData): array
     {
         try {
             $response = $this->httpClient->request(
-                'POST', 
+                'POST',
                 $this->apiUrl . '/payment-intents/' . $intentId . '/payments',
                 [
                     'json' => array_merge(
@@ -213,7 +211,6 @@ class PaiementServiceHub2
             );
 
             return $response->toArray();
-            
         } catch (\Exception $e) {
             throw new \Exception('Erreur initiation paiement: ' . $e->getMessage());
         }
@@ -233,10 +230,10 @@ class PaiementServiceHub2
         }
 
         $data = json_decode($request->getContent(), true);
-        
+
         // Récupérer le Payment Intent ID depuis les données webhook
         $intentId = $data['id'] ?? null;
-        
+
         if (!$intentId) {
             throw new \Exception('Payment Intent ID manquant dans le webhook');
         }
@@ -244,11 +241,13 @@ class PaiementServiceHub2
         // Trouver la transaction associée
         $transactions = $this->transactionRepository->findAll();
         $transaction = null;
-        
+
         foreach ($transactions as $t) {
             $transactionData = json_decode($t->getData() ?? '{}', true);
-            if (isset($transactionData['hub2_intent_id']) && 
-                $transactionData['hub2_intent_id'] === $intentId) {
+            if (
+                isset($transactionData['hub2_intent_id']) &&
+                $transactionData['hub2_intent_id'] === $intentId
+            ) {
                 $transaction = $t;
                 break;
             }
@@ -260,7 +259,7 @@ class PaiementServiceHub2
 
         // Traiter selon le statut du paiement
         $status = $data['status'] ?? null;
-        
+
         if ($status === 'successful') {
             return $this->traiterPaiementReussi($transaction, $data);
         } elseif ($status === 'failed') {
@@ -347,7 +346,7 @@ class PaiementServiceHub2
                 return $niveau->getMontant();
             }
         }
-        
+
         // Pour les renouvellements
         $user = $this->userRepository->find($data['user']);
         if ($user->getTypeUser() === 'PROFESSIONNEL') {
@@ -365,11 +364,11 @@ class PaiementServiceHub2
         if (isset($data['user'])) {
             return 'RENOUVELLEMENT';
         }
-        
+
         if (isset($data['isOep']) && $data['isOep']) {
             return 'OUVERTURE D\'EXPLOITATION';
         }
-        
+
         return 'NOUVELLE DEMANDE';
     }
 
@@ -382,15 +381,15 @@ class PaiementServiceHub2
             $user = $this->userRepository->find($data['user']);
             return 'USER_' . $data['user'] . '_' . $user->getEmail();
         }
-        
+
         if (isset($data['nom']) && isset($data['prenoms'])) {
             return $data['nom'] . '_' . $data['prenoms'];
         }
-        
+
         if (isset($data['denomination'])) {
             return $data['denomination'] . '_' . time();
         }
-        
+
         return 'CLIENT_' . time();
     }
 
@@ -422,26 +421,24 @@ class PaiementServiceHub2
                     'metadata' => []
                 ],
                 'headers' => [
-                   /*  'ApiKey' => $this->apiKey,
+                    /*  'ApiKey' => $this->apiKey,
                     'MerchantId' => $this->merchantId,
                     'Environment' => $this->environment,
-                    'Content-Type' => 'application/json', */
-                ],
+                    'Content-Type' => 'application/json', */],
                 'verify_peer' => false,
                 'verify_host' => false
             ]);
 
             $webhook = $response->toArray();
-            
-         
-            
+
+
+
             return [
                 'code' => 200,
                 'webhook' => $webhook,
                 'secret' => $webhook['secret'],
                 'message' => 'Webhook créé avec succès. Sauvegardez le secret!'
             ];
-
         } catch (\Exception $e) {
             throw new \Exception('Erreur création webhook: ' . $e->getMessage());
         }
@@ -453,20 +450,20 @@ class PaiementServiceHub2
         try {
             // Lister les webhooks existants
             $existingWebhooks = $this->listWebhooks();
-            
+
             $webhookUrls = [
                 $baseUrl . '/api/paiement/info-paiement',
                 $baseUrl . '/api/paiement/info-paiement-oep',
                 $baseUrl . '/api/paiement/info-paiement-renouvellement'
             ];
-            
-            $existingUrls = array_map(function($wh) {
+
+            $existingUrls = array_map(function ($wh) {
                 return $wh['url'] ?? '';
             }, $existingWebhooks);
-            
+
             $createdWebhooks = [];
             $skippedWebhooks = [];
-            
+
             // Webhook 1: Inscriptions
             if (!in_array($webhookUrls[0], $existingUrls)) {
                 $createdWebhooks[] = $this->createWebhook(
@@ -477,7 +474,7 @@ class PaiementServiceHub2
             } else {
                 $skippedWebhooks[] = $webhookUrls[0] . ' (existe déjà)';
             }
-            
+
             // Webhook 2: OEP
             if (!in_array($webhookUrls[1], $existingUrls)) {
                 $createdWebhooks[] = $this->createWebhook(
@@ -488,7 +485,7 @@ class PaiementServiceHub2
             } else {
                 $skippedWebhooks[] = $webhookUrls[1] . ' (existe déjà)';
             }
-            
+
             // Webhook 3: Renouvellements
             if (!in_array($webhookUrls[2], $existingUrls)) {
                 $createdWebhooks[] = $this->createWebhook(
@@ -499,16 +496,15 @@ class PaiementServiceHub2
             } else {
                 $skippedWebhooks[] = $webhookUrls[2] . ' (existe déjà)';
             }
-            
+
             return [
                 'code' => 200,
                 'created' => $createdWebhooks,
                 'skipped' => $skippedWebhooks,
-                'message' => count($createdWebhooks) > 0 
+                'message' => count($createdWebhooks) > 0
                     ? 'Webhooks créés avec succès. SAUVEGARDEZ LES SECRETS!'
                     : 'Tous les webhooks existent déjà.'
             ];
-            
         } catch (\Exception $e) {
             throw new \Exception('Erreur vérification webhooks: ' . $e->getMessage());
         }
@@ -517,7 +513,7 @@ class PaiementServiceHub2
     public function validateWebhookSignature(Request $request, string $webhookSecret): bool
     {
         $signature = $request->headers->get('Hub2-Signature');
-        
+
         if (!$signature) {
             return false;
         }
@@ -535,7 +531,7 @@ class PaiementServiceHub2
         // Vérifier avec s1 (HMAC-SHA256)
         if (isset($signatures['s1'])) {
             $expectedSignature = hash_hmac('sha256', $payload, $webhookSecret);
-            
+
             if (hash_equals($expectedSignature, $signatures['s1'])) {
                 return true;
             }
@@ -544,7 +540,7 @@ class PaiementServiceHub2
         // Vérifier avec s0 (SHA256 simple - fallback)
         if (isset($signatures['s0'])) {
             $expectedSignature = hash('sha256', $payload . $webhookSecret);
-            
+
             if (hash_equals($expectedSignature, $signatures['s0'])) {
                 return true;
             }
@@ -558,16 +554,14 @@ class PaiementServiceHub2
         try {
             $response = $this->httpClient->request('GET', $this->apiUrl . '/webhooks', [
                 'headers' => [
-                   /*  'ApiKey' => $this->apiKey,
+                    /*  'ApiKey' => $this->apiKey,
                     'MerchantId' => $this->merchantId,
-                    'Environment' => $this->environment, */
-                ],
+                    'Environment' => $this->environment, */],
                 'verify_peer' => false,
                 'verify_host' => false
             ]);
 
             return $response->toArray();
-
         } catch (\Exception $e) {
             throw new \Exception('Erreur liste webhooks: ' . $e->getMessage());
         }
@@ -577,14 +571,13 @@ class PaiementServiceHub2
     {
         try {
             $response = $this->httpClient->request(
-                'DELETE', 
+                'DELETE',
                 $this->apiUrl . '/webhooks/' . $webhookId,
                 [
                     'headers' => [
                         /* 'ApiKey' => $this->apiKey,
                         'MerchantId' => $this->merchantId,
-                        'Environment' => $this->environment, */
-                    ],
+                        'Environment' => $this->environment, */],
                     'verify_peer' => false,
                     'verify_host' => false
                 ]
@@ -594,7 +587,6 @@ class PaiementServiceHub2
                 'code' => 200,
                 'message' => 'Webhook supprimé avec succès'
             ];
-
         } catch (\Exception $e) {
             throw new \Exception('Erreur suppression webhook: ' . $e->getMessage());
         }

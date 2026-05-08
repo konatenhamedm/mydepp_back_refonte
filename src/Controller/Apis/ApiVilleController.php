@@ -217,7 +217,7 @@ class ApiVilleController extends ApiInterface
                 $ville->setCode($data->code);
                 $ville->setDistrict($districtRepository->find($data->district));
                 $ville->setUpdatedBy($this->getUser());
-                $ville->setUpdatedAt(new \DateTime());
+                $ville->setUpdatedAt();
                 $errorResponse = $this->errorResponse($ville);
 
                 if ($errorResponse !== null) {
@@ -314,6 +314,4 @@ class ApiVilleController extends ApiInterface
         }
         return $response;
     }
-
 }
-

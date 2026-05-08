@@ -43,7 +43,7 @@ class ApiStatusProController extends ApiInterface
 
             $statusPros = $statusProRepository->findAll();
 
-          
+
 
             $response =  $this->responseData($statusPros, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -107,7 +107,7 @@ class ApiStatusProController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -118,7 +118,7 @@ class ApiStatusProController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'statusPro')]
-    
+
     public function create(Request $request, StatusProRepository $statusProRepository): Response
     {
 
@@ -148,7 +148,7 @@ class ApiStatusProController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -159,7 +159,7 @@ class ApiStatusProController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'statusPro')]
-    
+
     public function update(Request $request, StatusPro $statusPro, StatusProRepository $statusProRepository): Response
     {
         try {
@@ -168,7 +168,7 @@ class ApiStatusProController extends ApiInterface
 
                 $statusPro->setLibelle($data->libelle);
                 $statusPro->setUpdatedBy($this->getUser());
-                $statusPro->setUpdatedAt(new \DateTime());
+                $statusPro->setUpdatedAt();
                 $errorResponse = $this->errorResponse($statusPro);
 
                 if ($errorResponse !== null) {
@@ -245,7 +245,7 @@ class ApiStatusProController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'statusPro')]
-    
+
     public function deleteAll(Request $request, StatusProRepository $villeRepository): Response
     {
         try {

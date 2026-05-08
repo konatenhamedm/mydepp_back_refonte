@@ -40,20 +40,11 @@ class ApiCodeController extends ApiInterface
     public function index(CodeRepository $codeRepository): Response
     {
         try {
-
             $codes = $codeRepository->findAll();
-
-            $context = [AbstractNormalizer::GROUPS => 'group1'];
-            $json = $this->serializer->serialize($codes, 'json', $context);
-
-            return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
+            return $this->responseData($codes, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
-            $response = $this->response('[]');
+            return $this->responseData([], 'group1', ['Content-Type' => 'application/json']);
         }
-
-        // On envoie la réponse
-        return $response;
     }
 
 
@@ -108,7 +99,7 @@ class ApiCodeController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -119,7 +110,7 @@ class ApiCodeController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'code')]
-    
+
     public function create(Request $request, CodeRepository $codeRepository): Response
     {
 
@@ -150,7 +141,7 @@ class ApiCodeController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -161,7 +152,7 @@ class ApiCodeController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'code')]
-    
+
     public function update(Request $request, Code $code, CodeRepository $codeRepository): Response
     {
         try {
@@ -170,7 +161,7 @@ class ApiCodeController extends ApiInterface
 
                 $code->setCode($data['code']);
                 $code->setUpdatedBy($this->getUser());
-                $code->setUpdatedAt(new \DateTime());
+                $code->setUpdatedAt();
 
                 $errorResponse = $this->errorResponse($code);
 
@@ -248,7 +239,7 @@ class ApiCodeController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'code')]
-    
+
     public function deleteAll(Request $request, CodeRepository $villeRepository): Response
     {
         try {

@@ -44,7 +44,7 @@ class ApiCommuneController extends ApiInterface
 
             $communes = $communeRepository->findAll();
 
-          
+
 
             $response =  $this->responseData($communes, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -71,13 +71,13 @@ class ApiCommuneController extends ApiInterface
     )]
     #[OA\Tag(name: 'commune')]
     // 
-    public function indexByVile(CommuneRepository $communeRepository,$ville): Response
+    public function indexByVile(CommuneRepository $communeRepository, $ville): Response
     {
         try {
 
             $communes = $communeRepository->findByVille($ville);
 
-          
+
 
             $response =  $this->responseData($communes, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -142,7 +142,7 @@ class ApiCommuneController extends ApiInterface
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "ville", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -153,7 +153,7 @@ class ApiCommuneController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'commune')]
-    
+
     public function create(Request $request, CommuneRepository $communeRepository, VilleRepository $villeRepository): Response
     {
 
@@ -185,7 +185,7 @@ class ApiCommuneController extends ApiInterface
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "ville", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -196,7 +196,7 @@ class ApiCommuneController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'commune')]
-    
+
     public function update(Request $request, Commune $commune, CommuneRepository $communeRepository, VilleRepository $villeRepository): Response
     {
         try {
@@ -205,9 +205,9 @@ class ApiCommuneController extends ApiInterface
 
                 $commune->setLibelle($data->libelle);
                 $commune->setVille($villeRepository->find($data->ville));
-               
+
                 $commune->setUpdatedBy($this->getUser());
-                $commune->setUpdatedAt(new \DateTime());
+                $commune->setUpdatedAt();
                 $errorResponse = $this->errorResponse($commune);
 
                 if ($errorResponse !== null) {
@@ -284,7 +284,7 @@ class ApiCommuneController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'commune')]
-    
+
     public function deleteAll(Request $request, CommuneRepository $villeRepository): Response
     {
         try {

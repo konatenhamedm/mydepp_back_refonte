@@ -43,7 +43,7 @@ class ApiTypeDiplomeController extends ApiInterface
 
             $typeDiplomes = $typeDiplomeRepository->findAll();
 
-          
+
 
             $response =  $this->responseData($typeDiplomes, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -107,7 +107,7 @@ class ApiTypeDiplomeController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -118,7 +118,7 @@ class ApiTypeDiplomeController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'typeDiplome')]
-    
+
     public function create(Request $request, TypeDiplomeRepository $typeDiplomeRepository): Response
     {
 
@@ -148,7 +148,7 @@ class ApiTypeDiplomeController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -159,7 +159,7 @@ class ApiTypeDiplomeController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'typeDiplome')]
-    
+
     public function update(Request $request, TypeDiplome $typeDiplome, TypeDiplomeRepository $typeDiplomeRepository): Response
     {
         try {
@@ -168,7 +168,7 @@ class ApiTypeDiplomeController extends ApiInterface
 
                 $typeDiplome->setLibelle($data->libelle);
                 $typeDiplome->setUpdatedBy($this->getUser());
-                $typeDiplome->setUpdatedAt(new \DateTime());
+                $typeDiplome->setUpdatedAt();
                 $errorResponse = $this->errorResponse($typeDiplome);
 
                 if ($errorResponse !== null) {
@@ -245,7 +245,7 @@ class ApiTypeDiplomeController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'typeDiplome')]
-    
+
     public function deleteAll(Request $request, TypeDiplomeRepository $villeRepository): Response
     {
         try {

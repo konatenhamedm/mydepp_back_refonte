@@ -40,20 +40,11 @@ class ApiDestinateurController extends ApiInterface
     public function index(DestinateurRepository $destinateurRepository): Response
     {
         try {
-
             $destinateurs = $destinateurRepository->findAll();
-
-            $context = [AbstractNormalizer::GROUPS => 'group1'];
-            $json = $this->serializer->serialize($destinateurs, 'json', $context);
-
-            return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
+            return $this->responseData($destinateurs, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
-            $response = $this->response('[]');
+            return $this->responseData([], 'group1', ['Content-Type' => 'application/json']);
         }
-
-        // On envoie la réponse
-        return $response;
     }
 
 
@@ -108,7 +99,7 @@ class ApiDestinateurController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -119,7 +110,7 @@ class ApiDestinateurController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'destinateur')]
-    
+
     public function create(Request $request, DestinateurRepository $destinateurRepository): Response
     {
 
@@ -149,7 +140,7 @@ class ApiDestinateurController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -160,7 +151,7 @@ class ApiDestinateurController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'destinateur')]
-    
+
     public function update(Request $request, Destinateur $destinateur, DestinateurRepository $destinateurRepository): Response
     {
         try {
@@ -169,7 +160,7 @@ class ApiDestinateurController extends ApiInterface
 
                 $destinateur->setLibelle($data->libelle);
                 $destinateur->setUpdatedBy($this->getUser());
-                $destinateur->setUpdatedAt(new \DateTime());
+                $destinateur->setUpdatedAt();
                 $errorResponse = $this->errorResponse($destinateur);
 
                 if ($errorResponse !== null) {
@@ -246,7 +237,7 @@ class ApiDestinateurController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'destinateur')]
-    
+
     public function deleteAll(Request $request, DestinateurRepository $villeRepository): Response
     {
         try {
