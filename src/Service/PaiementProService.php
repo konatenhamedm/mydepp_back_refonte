@@ -775,33 +775,48 @@ class PaiementProService
         if (!$personne) return ['code' => 400, 'message' => 'Personne not found'];
 
         $transactionData = json_decode($transaction->getData() ?? "[]", true);
-        $yearsPaid = $transactionData['yearsToPay'] ?? 1;
-        $yearsDue = $transactionData['yearDue'] ?? 1;
+        $yearsPaid = (int)($transactionData['yearsToPay'] ?? 1);
+        $yearsDue  = (int)($transactionData['yearDue']   ?? 1);
 
-        $now = new \DateTime();
-        $profession = method_exists($personne, 'getProfession') ? $personne->getProfession() : null;
-        $currentExpiration = method_exists($personne, 'getDateValidation') ? $personne->getDateValidation() : null;
+        $now         = new \DateTime();
+        $currentYear = (int)$now->format('Y');
 
-        if ($yearsPaid >= $yearsDue) {
-            // Entièrement régularisé : passage à "a_jour" et +1 an à partir d'aujourd'hui
+        // ── Mise à jour du code MS{ANNÉE}OPT... ──────────────────────────────
+        // Format attendu : MS2024OPTLO2992.0038
+        // L'année avance du nombre d'années payées.
+        $currentCode = method_exists($personne, 'getCode') ? ($personne->getCode() ?? '') : '';
+        $newCodeYear = null;
+
+        if (preg_match('/^(MS)(\d{4})(OPT.+)$/i', $currentCode, $m)) {
+            $newCodeYear = (int)$m[2] + $yearsPaid;
+            if (method_exists($personne, 'setCode')) {
+                $personne->setCode($m[1] . $newCodeYear . $m[3]);
+            }
+        }
+
+        // ── Statut et dateValidation ──────────────────────────────────────────
+        // On s'appuie sur le nouveau code year si disponible, sinon sur yearsDue.
+        $fullyPaid = $newCodeYear !== null
+            ? $newCodeYear >= $currentYear
+            : $yearsPaid >= $yearsDue;
+
+        if ($fullyPaid) {
+            // Entièrement régularisé
             $personne->setStatus("a_jour");
-            $newExpiration = (clone $now)->modify('+1 year');
+            // dateValidation alignée sur le 01/01 de l'année du code (ou +1 an si pas de code)
+            $newExpiration = $newCodeYear !== null
+                ? new \DateTime($newCodeYear . '-01-01')
+                : (clone $now)->modify('+1 year');
             if (method_exists($personne, 'setDateValidation')) {
                 $personne->setDateValidation($newExpiration);
             }
         } else {
-            // Paiement partiel : on ajoute juste les années payées à l'expiration actuelle, status inchangé
-            if ($currentExpiration) {
-                $newExpiration = (clone $currentExpiration)->modify("+$yearsPaid years");
-                if (method_exists($personne, 'setDateValidation')) {
-                    $personne->setDateValidation($newExpiration);
-                }
-            } else {
-                // Cas de secours si pas d'expiration en base
-                $newExpiration = (clone $now)->modify("+$yearsPaid years");
-                if (method_exists($personne, 'setDateValidation')) {
-                    $personne->setDateValidation($newExpiration);
-                }
+            // Paiement partiel : le code est déjà avancé, dateValidation suit
+            $newExpiration = $newCodeYear !== null
+                ? new \DateTime($newCodeYear . '-01-01')
+                : (clone $now)->modify("+$yearsPaid years");
+            if (method_exists($personne, 'setDateValidation')) {
+                $personne->setDateValidation($newExpiration);
             }
         }
 
