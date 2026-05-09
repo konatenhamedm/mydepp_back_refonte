@@ -240,12 +240,13 @@ class PaymentProController extends ApiInterface
                 } else {
                     $today = new \DateTime();
 
-                    // Déterminer la date d'expiration
-                    if ($user->getPersonne()->getDateValidation() !== null) {
-                        // $expiration = (clone $user->getPersonne()->getDateValidation())->modify('+1 year');
+                    // Déterminer la date d'expiration depuis le code MS{ANNÉE}OPT... (ex: MS2024OPTLO2992.0038)
+                    $code = $user->getPersonne()->getCode() ?? '';
+                    if (preg_match('/^MS(\d{4})OPT/i', $code, $matches)) {
+                        $expiration = new \DateTime($matches[1] . '-01-01');
+                    } elseif ($user->getPersonne()->getDateValidation() !== null) {
                         $expiration = (clone $user->getPersonne()->getDateValidation());
                     } else {
-                        // $expiration = (clone $dernierAbonnement->getCreatedAt())->modify('+1 year');
                         $expiration = (clone $dernierAbonnement->getCreatedAt());
                     }
 
@@ -256,7 +257,6 @@ class PaymentProController extends ApiInterface
                     if ($expire) {
                         $joursRestants = 0;
                         $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
-                        // dd($yearDue);
                     } else {
                         $joursRestants = $today->diff($expiration)->days;
                     }

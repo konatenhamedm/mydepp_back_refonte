@@ -1002,12 +1002,15 @@ class ApiProfessionnelController extends ApiInterface
         $expire = false;
         $yearDue = 0;
         $joursRestants = 0;
-        $expiration = new \DateTime();
+        $today = new \DateTime();
+        $expiration = clone $today;
 
         if ($profession && $profession->getMontantRenouvellement() !== null) {
-            $today = new \DateTime();
-
-            if ($personne->getDateValidation() !== null) {
+            // Extraire l'année directement du code : MS{ANNÉE}OPT... (ex: MS2024OPTLO2992.0038)
+            $code = $personne->getCode() ?? '';
+            if (preg_match('/^MS(\d{4})OPT/i', $code, $matches)) {
+                $expiration = new \DateTime($matches[1] . '-01-01');
+            } elseif ($personne->getDateValidation() !== null) {
                 $expiration = clone $personne->getDateValidation();
             } else {
                 $dernierAbonnement = $transactionRepository->findOneBy(
@@ -1021,9 +1024,9 @@ class ApiProfessionnelController extends ApiInterface
 
             $expire = $expiration < $today;
             if ($expire) {
-                $yearDue = (int)(new \DateTime())->format('Y') - (int)$expiration->format('Y');
+                $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
             } else {
-                $joursRestants = (new \DateTime())->diff($expiration)->days;
+                $joursRestants = $today->diff($expiration)->days;
             }
         }
 
