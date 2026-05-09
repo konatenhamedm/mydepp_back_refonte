@@ -815,7 +815,7 @@ class PaiementProService
             $personne->setStatus("a_jour");
             // dateValidation alignée sur le 01/01 de l'année du code (ou +1 an si pas de code)
             $newExpiration = $newCodeYear !== null
-                ? new \DateTime($newCodeYear . '-01-01')
+                ? new \DateTime($newCodeYear . '-12-31')
                 : (clone $now)->modify('+1 year');
             if (method_exists($personne, 'setDateValidation')) {
                 $personne->setDateValidation($newExpiration);
@@ -823,7 +823,7 @@ class PaiementProService
         } else {
             // Paiement partiel : le code est déjà avancé, dateValidation suit
             $newExpiration = $newCodeYear !== null
-                ? new \DateTime($newCodeYear . '-01-01')
+                ? new \DateTime($newCodeYear . '-12-31')
                 : (clone $now)->modify("+$yearsPaid years");
             if (method_exists($personne, 'setDateValidation')) {
                 $personne->setDateValidation($newExpiration);

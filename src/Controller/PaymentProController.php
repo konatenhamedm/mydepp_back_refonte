@@ -248,7 +248,7 @@ class PaymentProController extends ApiInterface
                         : '';
                     $codeSource = preg_match('/^MS(\d{4})OPT/i', $code, $m1) ? $code : $numeroInscription;
                     if (preg_match('/^MS(\d{4})OPT/i', $codeSource, $matches)) {
-                        $expiration = new \DateTime($matches[1] . '-01-01');
+                        $expiration = new \DateTime($matches[1] . '-12-31');
                     } elseif ($user->getPersonne()->getDateValidation() !== null) {
                         $expiration = (clone $user->getPersonne()->getDateValidation());
                     } else {

@@ -1013,7 +1013,7 @@ class ApiProfessionnelController extends ApiInterface
                 : '';
             $codeSource = preg_match('/^MS(\d{4})OPT/i', $code, $m1) ? $code : $numeroInscription;
             if (preg_match('/^MS(\d{4})OPT/i', $codeSource, $matches)) {
-                $expiration = new \DateTime($matches[1] . '-01-01');
+                $expiration = new \DateTime($matches[1] . '-12-31');
             } elseif ($personne->getDateValidation() !== null) {
                 $expiration = clone $personne->getDateValidation();
             } else {
