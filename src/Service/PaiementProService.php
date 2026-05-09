@@ -784,13 +784,23 @@ class PaiementProService
         // ── Mise à jour du code MS{ANNÉE}OPT... ──────────────────────────────
         // Format attendu : MS2024OPTLO2992.0038
         // L'année avance du nombre d'années payées.
+        // On cherche dans code puis dans numeroInscription (selon le chemin de création du pro)
         $currentCode = method_exists($personne, 'getCode') ? ($personne->getCode() ?? '') : '';
+        $currentNumeroInscription = method_exists($personne, 'getNumeroInscription')
+            ? ($personne->getNumeroInscription() ?? '')
+            : '';
+        $useNumeroInscription = !preg_match('/^MS\d{4}OPT/i', $currentCode)
+            && preg_match('/^(MS)(\d{4})(OPT.+)$/i', $currentNumeroInscription);
+        $codeToUpdate = $useNumeroInscription ? $currentNumeroInscription : $currentCode;
         $newCodeYear = null;
 
-        if (preg_match('/^(MS)(\d{4})(OPT.+)$/i', $currentCode, $m)) {
+        if (preg_match('/^(MS)(\d{4})(OPT.+)$/i', $codeToUpdate, $m)) {
             $newCodeYear = (int)$m[2] + $yearsPaid;
-            if (method_exists($personne, 'setCode')) {
-                $personne->setCode($m[1] . $newCodeYear . $m[3]);
+            $updatedCode = $m[1] . $newCodeYear . $m[3];
+            if ($useNumeroInscription && method_exists($personne, 'setNumeroInscription')) {
+                $personne->setNumeroInscription($updatedCode);
+            } elseif (method_exists($personne, 'setCode')) {
+                $personne->setCode($updatedCode);
             }
         }
 

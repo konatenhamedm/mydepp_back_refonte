@@ -1006,9 +1006,13 @@ class ApiProfessionnelController extends ApiInterface
         $expiration = clone $today;
 
         if ($profession && $profession->getMontantRenouvellement() !== null) {
-            // Extraire l'année directement du code : MS{ANNÉE}OPT... (ex: MS2024OPTLO2992.0038)
+            // Extraire l'année depuis code ou numeroInscription (selon chemin de création du pro)
             $code = $personne->getCode() ?? '';
-            if (preg_match('/^MS(\d{4})OPT/i', $code, $matches)) {
+            $numeroInscription = method_exists($personne, 'getNumeroInscription')
+                ? ($personne->getNumeroInscription() ?? '')
+                : '';
+            $codeSource = preg_match('/^MS(\d{4})OPT/i', $code, $m1) ? $code : $numeroInscription;
+            if (preg_match('/^MS(\d{4})OPT/i', $codeSource, $matches)) {
                 $expiration = new \DateTime($matches[1] . '-01-01');
             } elseif ($personne->getDateValidation() !== null) {
                 $expiration = clone $personne->getDateValidation();

@@ -241,8 +241,13 @@ class PaymentProController extends ApiInterface
                     $today = new \DateTime();
 
                     // Déterminer la date d'expiration depuis le code MS{ANNÉE}OPT... (ex: MS2024OPTLO2992.0038)
+                    // On cherche dans code puis dans numeroInscription (selon le chemin de création du pro)
                     $code = $user->getPersonne()->getCode() ?? '';
-                    if (preg_match('/^MS(\d{4})OPT/i', $code, $matches)) {
+                    $numeroInscription = method_exists($user->getPersonne(), 'getNumeroInscription')
+                        ? ($user->getPersonne()->getNumeroInscription() ?? '')
+                        : '';
+                    $codeSource = preg_match('/^MS(\d{4})OPT/i', $code, $m1) ? $code : $numeroInscription;
+                    if (preg_match('/^MS(\d{4})OPT/i', $codeSource, $matches)) {
                         $expiration = new \DateTime($matches[1] . '-01-01');
                     } elseif ($user->getPersonne()->getDateValidation() !== null) {
                         $expiration = (clone $user->getPersonne()->getDateValidation());
