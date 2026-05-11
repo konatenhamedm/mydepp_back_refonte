@@ -410,8 +410,13 @@ class PaiementService
         $currentExpiration = method_exists($professionnel, 'getDateValidation') ? $professionnel->getDateValidation() : null;
         $expiration = $currentExpiration ? (clone $currentExpiration) : null;
         $today = new \DateTime();
-        // $yearDue = $today->diff($expiration)->y ;
-        $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
+        
+        $code = method_exists($professionnel, 'getCode') ? $professionnel->getCode() : null;
+        if ($code && preg_match('/^MS(\d{4})/', $code, $matches)) {
+            $yearDue = (int)$today->format('Y') - (int)$matches[1];
+        } else {
+            $yearDue = $expiration ? ((int)$today->format('Y') - (int)$expiration->format('Y')) : 1;
+        }
         // dd($yearDue);
 
         $transaction = new Transaction();

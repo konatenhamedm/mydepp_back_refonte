@@ -592,7 +592,12 @@ class PaiementProService
         $today = new \DateTime();
 
         if ($expiration) {
-            $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
+            $code = method_exists($personne, 'getCode') ? $personne->getCode() : null;
+            if ($code && preg_match('/^MS(\d{4})/', $code, $matches)) {
+                $yearDue = (int)$today->format('Y') - (int)$matches[1];
+            } else {
+                $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
+            }
         } else {
             $yearDue = 1;
         }
