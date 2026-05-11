@@ -255,8 +255,12 @@ class ApiPaiementController extends ApiInterface
                     // Calculer les jours restants (0 si déjà expiré)
                     if ($expire) {
                         $joursRestants = 0;
-                        $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
-                        // dd($yearDue);
+                        $code = $user->getPersonne()->getCode();
+                        if ($code && preg_match('/^MS(\d{4})/', $code, $matches)) {
+                            $yearDue = (int)$today->format('Y') - (int)$matches[1];
+                        } else {
+                            $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
+                        }
                     } else {
                         $joursRestants = $today->diff($expiration)->days;
                     }
