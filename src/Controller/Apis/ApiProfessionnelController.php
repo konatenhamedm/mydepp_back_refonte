@@ -1102,12 +1102,14 @@ class ApiProfessionnelController extends ApiInterface
         $user->setCreatedAtValue();
 
 
-        $errorResponse1 = $request->get('password') !== $request->get('confirmPassword') ?  $this->errorResponse($user, "Les mots de passe ne sont pas identiques") :  $this->errorResponse($user);
-        if ($errorResponse1 !== null) {
-            return $errorResponse1; // Retourne la réponse d'erreur si des erreurs sont présentes
-        } else {
+        if ($request->get('password') !== $request->get('confirmPassword')) {
+            return $this->errorResponse($user, "Les mots de passe ne sont pas identiques");
+        }
 
-            $this->userRepository->add($user, true);
+        $errorResponse1 = $this->errorResponse($user);
+        if ($errorResponse1 !== null) {
+            return $errorResponse1;
+        } else {
 
             $professionnel = new Professionnel();
 
@@ -1166,10 +1168,6 @@ class ApiProfessionnelController extends ApiInterface
             }
 
 
-            $professionnel->setUpdatedAt();
-            $professionnel->setCreatedAtValue();
-
-
             $uploadedPhoto = $request->files->get('photo');
             $uploadedCasier = $request->files->get('casier');
             $uploadedCni = $request->files->get('cni');
@@ -1222,18 +1220,14 @@ class ApiProfessionnelController extends ApiInterface
             $professionnel->setUpdatedBy($user);
 
             $errorResponse = $this->errorResponse($professionnel);
-            $errorResponseUser = $this->errorResponse($user);
             if ($errorResponse !== null) {
-                return $errorResponse; // Retourne la réponse d'erreur si des erreurs sont présentes
+                return $errorResponse;
             } else {
-
-                if ($errorResponseUser !== null) {
-                    return $errorResponseUser;
-                } else {
-                    $professionnelRepository->add($professionnel, true);
-                    $user->setPersonne($professionnel);
-                    $this->userRepository->add($user, true);
-                }
+                // Persiste user et professionnel seulement si tout est valide
+                $this->userRepository->add($user, true);
+                $professionnelRepository->add($professionnel, true);
+                $user->setPersonne($professionnel);
+                $this->userRepository->add($user, true);
                 $info_user = [
                     'login' => $request->get('email'),
 
