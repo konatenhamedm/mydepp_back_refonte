@@ -161,7 +161,7 @@ class ApiProfessionnelController extends ApiInterface
                 $professionnel->setImputation($userRepository->find($data->imputation));
 
                 $professionnel->setUpdatedBy($this->getUser());
-                $professionnel->setUpdatedAt(new \DateTime('now'));
+                $professionnel->setUpdatedAt();
                 $errorResponse = $this->errorResponse($professionnel);
 
                 if ($errorResponse !== null) {
@@ -907,6 +907,71 @@ class ApiProfessionnelController extends ApiInterface
             ];
 
             return $this->responseData($responseData, 'group_pro', ['Content-Type' => 'application/json']);
+        } catch (\Exception $exception) {
+            $this->setMessage($exception->getMessage());
+            return $this->response('[]');
+        }
+    }
+
+
+    #[Route('/search/by/identifier', methods: ['GET'])]
+    #[OA\Tag(name: 'professionnel')]
+    public function searchByIdentifier(Request $request, UserRepository $userRepository, ProfessionnelRepository $professionnelRepository): Response
+    {
+        try {
+            $query = trim($request->query->get('query', ''));
+            if (!$query) {
+                $this->setMessage('Paramètre de recherche manquant');
+                $this->setStatusCode(400);
+                return $this->response('[]');
+            }
+
+            $personne = null;
+            $user     = null;
+
+            // 1. Recherche par code
+            /** @var Professionnel|null $personne */
+            $personne = $professionnelRepository->findOneBy(['code' => $query]);
+            if ($personne) {
+                $user = $userRepository->findOneBy(['personne' => $personne->getId(), 'typeUser' => 'PROFESSIONNEL']);
+            }
+
+            // 2. Recherche par email
+            if (!$user) {
+                /** @var User|null $user */
+                $user = $userRepository->findOneBy(['email' => $query, 'typeUser' => 'PROFESSIONNEL']);
+                if ($user) {
+                    /** @var Professionnel|null $personne */
+                    $personne = $user->getPersonne();
+                }
+            }
+
+            if (!$personne || !$user) {
+                $this->setMessage('Aucun professionnel trouvé pour cet email ou ce code.');
+                $this->setStatusCode(404);
+                return $this->response('[]');
+            }
+
+            /** @var Professionnel $personne */
+            $profession = $personne->getProfession();
+
+            return $this->responseData([
+                'userId'     => $user->getId(),
+                'personneId' => $personne->getId(),
+                'nom'        => $personne->getNom(),
+                'prenoms'    => $personne->getPrenoms(),
+                'email'      => $user->getEmail(),
+                'number'     => $personne->getNumber(),
+                'code'       => $personne->getCode(),
+                'status'     => $personne->getStatus(),
+                'type'       => $user->getTypeUser(),
+                'profession' => $profession ? [
+                    'id'                   => $profession->getId(),
+                    'libelle'              => $profession->getLibelle(),
+                    'montantRenouvellement' => $profession->getMontantRenouvellement(),
+                ] : null,
+            ], 'group_pro', ['Content-Type' => 'application/json']);
+
         } catch (\Exception $exception) {
             $this->setMessage($exception->getMessage());
             return $this->response('[]');
