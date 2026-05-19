@@ -677,7 +677,7 @@ class ApiProfessionnelController extends ApiInterface
                 return $this->json(['errors' => $errorMessages], Response::HTTP_BAD_REQUEST);
             }
 
-            $validationCompteWorkflow = $workflowRegistry->get($professionnel);
+            $validationCompteWorkflow = $workflowRegistry->get($professionnel, 'validation_compte');
 
             // Vérifier la transition du workflow
             if (!$validationCompteWorkflow->can($professionnel, $dto->status)) {
@@ -1655,7 +1655,7 @@ Situation professionnelle * */
         ]
     )]
     #[OA\Tag(name: 'professionnel')]
-    public function updateAllProfessionnelDocuments(Request $request, Professionnel $professionnel, ProfessionnelRepository $professionnelRepository): Response
+    public function updateAllProfessionnelDocuments(Request $request, Professionnel $professionnel, ProfessionnelRepository $professionnelRepository, Registry $workflowRegistry): Response
     {
         try {
             $names = 'document_' . '01';
@@ -1721,6 +1721,14 @@ Situation professionnelle * */
             }
 
             $professionnel->setStatus("accepte");
+
+            // Si l'ancien professionnel est à l'état "init", on le fait passer à "soumis"
+            if ($professionnel->getEtatOld() === 'init') {
+                $ancienWorkflow = $workflowRegistry->get($professionnel, 'validation_ancien_professionnel');
+                if ($ancienWorkflow->can($professionnel, 'soumettre_dossier')) {
+                    $ancienWorkflow->apply($professionnel, 'soumettre_dossier');
+                }
+            }
 
             $this->em->persist($professionnel);
             $this->em->flush();
@@ -1879,5 +1887,175 @@ Situation professionnelle * */
             $response = $this->response('[]');
         }
         return $response;
+    }
+
+    #[Route('/anciens/list', name: 'api_anciens_professionnels_list', methods: ['GET'])]
+    public function listAnciensProfessionnels(
+        Request $request,
+        ProfessionnelRepository $professionnelRepository,
+    ): Response {
+        try {
+            $etatOld = $request->query->get('etat_old');
+            $page    = (int) $request->query->get('page', 1);
+            $limit   = (int) $request->query->get('limit', 20);
+
+            $qb = $professionnelRepository->createQueryBuilder('p')
+                ->where('p.etatOld IS NOT NULL');
+
+            if ($etatOld) {
+                $qb->andWhere('p.etatOld = :etat')->setParameter('etat', $etatOld);
+            }
+
+            $search = $request->query->get('search');
+            if ($search) {
+                $qb->andWhere('p.nom LIKE :search OR p.prenoms LIKE :search OR p.code LIKE :search')
+                   ->setParameter('search', '%' . $search . '%');
+            }
+
+            $total = (clone $qb)->select('COUNT(p.id)')->getQuery()->getSingleScalarResult();
+
+            $professionnels = $qb
+                ->orderBy('p.createdAt', 'DESC')
+                ->setFirstResult(($page - 1) * $limit)
+                ->setMaxResults($limit)
+                ->getQuery()
+                ->getResult();
+
+            $data = array_map(function (Professionnel $p) {
+                $profession = $p->getProfession();
+                return [
+                    'id'              => $p->getId(),
+                    'nom'             => $p->getNom(),
+                    'prenoms'         => $p->getPrenoms(),
+                    'code'            => $p->getCode(),
+                    'etatOld'         => $p->getEtatOld(),
+                    'dateValidation'  => $p->getDateValidation()?->format('d/m/Y'),
+                    'createdAt'       => $p->getCreatedAt()?->format('d/m/Y'),
+                    'profession'      => $profession?->getLibelle(),
+                    'civilite'        => $p->getCivilite()?->getLibelle(),
+                ];
+            }, $professionnels);
+
+            return $this->json([
+                'code'    => 200,
+                'message' => 'Liste des anciens professionnels',
+                'data'    => $data,
+                'meta'    => [
+                    'total' => (int) $total,
+                    'page'  => $page,
+                    'limit' => $limit,
+                    'pages' => (int) ceil($total / $limit),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return $this->json(['code' => 500, 'message' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/anciens/{id}/transition', name: 'api_anciens_professionnels_transition', methods: ['POST'])]
+    public function transitionAncienProfessionnel(
+        Request $request,
+        Professionnel $professionnel,
+        ProfessionnelRepository $professionnelRepository,
+        Registry $workflowRegistry,
+        SendMailService $sendMailService,
+        UserRepository $userRepository,
+    ): Response {
+        try {
+            if ($professionnel->getEtatOld() === null) {
+                return $this->json(['code' => 400, 'message' => 'Ce professionnel n\'est pas un ancien professionnel.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $data       = json_decode($request->getContent(), true);
+            $transition = $data['transition'] ?? null;
+
+            if (!$transition) {
+                return $this->json(['code' => 400, 'message' => 'Transition manquante.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $workflow = $workflowRegistry->get($professionnel, 'validation_ancien_professionnel');
+
+            if (!$workflow->can($professionnel, $transition)) {
+                return $this->json([
+                    'code'    => 400,
+                    'message' => sprintf('Transition "%s" impossible depuis l\'état "%s".', $transition, $professionnel->getEtatOld()),
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            $workflow->apply($professionnel, $transition);
+            $professionnelRepository->add($professionnel, true);
+
+            // Envoi email au professionnel
+            try {
+                $emailTo = $professionnel->getEmail();
+
+                // Fallback : email du compte User lié
+                if (!$emailTo || !filter_var($emailTo, FILTER_VALIDATE_EMAIL)) {
+                    $linkedUser = $userRepository->findOneBy(['personne' => $professionnel->getId()]);
+                    $emailTo = $linkedUser?->getEmail();
+                }
+
+                if ($emailTo && filter_var($emailTo, FILTER_VALIDATE_EMAIL)) {
+                    $sendMailService->send(
+                        'depps@leadagro.net',
+                        $emailTo,
+                        $this->getMailSubject($transition),
+                        'ancien_professionnel_transition',
+                        [
+                            'professionnel' => [
+                                'nom'       => $professionnel->getNom(),
+                                'prenoms'   => $professionnel->getPrenoms(),
+                                'civilite'  => $professionnel->getCivilite()?->getLibelle() ?? '',
+                                'profession' => $professionnel->getProfession()?->getLibelle() ?? '',
+                            ],
+                            'transition' => $transition,
+                        ]
+                    );
+                }
+
+                // Notification interne
+                $linkedUser = $linkedUser ?? $userRepository->findOneBy(['personne' => $professionnel->getId()]);
+                $adminUser  = $this->getUser();
+                if ($linkedUser && $adminUser) {
+                    $sendMailService->sendNotification(
+                        $this->getNotificationMessage($transition),
+                        $linkedUser,
+                        $adminUser
+                    );
+                }
+            } catch (\Exception $e) {
+                error_log("Erreur envoi email ancien professionnel: " . $e->getMessage());
+            }
+
+            return $this->json([
+                'code'    => 200,
+                'message' => 'Transition appliquée avec succès.',
+                'data'    => ['etatOld' => $professionnel->getEtatOld()],
+            ]);
+        } catch (\Exception $e) {
+            return $this->json(['code' => 500, 'message' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private function getMailSubject(string $transition): string
+    {
+        return match ($transition) {
+            'soumettre_dossier' => 'Votre dossier est en cours de validation - DEPPS',
+            'accepter_ancien'   => 'Félicitations ! Votre dossier a été accepté - DEPPS',
+            'refuser_ancien'    => 'Information concernant votre dossier - DEPPS',
+            'reinitialiser'     => 'Votre dossier a été réinitialisé - DEPPS',
+            default             => 'Mise à jour de votre dossier - DEPPS',
+        };
+    }
+
+    private function getNotificationMessage(string $transition): string
+    {
+        return match ($transition) {
+            'soumettre_dossier' => 'Votre dossier ancien professionnel a été soumis à validation.',
+            'accepter_ancien'   => 'Votre dossier ancien professionnel a été accepté.',
+            'refuser_ancien'    => 'Votre dossier ancien professionnel a été refusé.',
+            'reinitialiser'     => 'Votre dossier ancien professionnel a été réinitialisé.',
+            default             => 'Votre dossier a été mis à jour.',
+        };
     }
 }

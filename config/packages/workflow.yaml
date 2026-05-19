@@ -111,3 +111,32 @@ framework:
                 rejet_final:
                     from: oep_visite_effectue_attente_validation_directrice
                     to: oep_dossier_non_conforme
+
+        validation_ancien_professionnel:
+            type: 'state_machine'
+            audit_trail:
+                enabled: true
+            marking_store:
+                type: 'method'
+                property: 'etatOld'
+            supports:
+                - App\Entity\Professionnel
+            initial_marking: init
+            places:
+                - init
+                - soumis
+                - accepte
+                - refuser
+            transitions:
+                soumettre_dossier:
+                    from: init
+                    to: soumis
+                accepter_ancien:
+                    from: soumis
+                    to: accepte
+                refuser_ancien:
+                    from: soumis
+                    to: refuser
+                reinitialiser:
+                    from: refuser
+                    to: init

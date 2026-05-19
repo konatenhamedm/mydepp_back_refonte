@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Verdana, sans-serif; background-color: #f4f6f9; color: #333; }
+        .wrapper { max-width: 600px; margin: 30px auto; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .header { background-color: #0052CC; padding: 24px; text-align: center; }
+        .header img { width: 80px; }
+        .header h2 { color: #fff; font-size: 18px; margin-top: 12px; }
+        .body { padding: 32px; }
+        .body p { font-size: 15px; line-height: 1.7; color: #444; margin-bottom: 14px; }
+        .body strong { color: #222; }
+        .badge { display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: bold; margin-bottom: 20px; }
+        .badge-soumis  { background: #FEF3C7; color: #92400E; }
+        .badge-accepte { background: #D1FAE5; color: #065F46; }
+        .badge-refuser { background: #FEE2E2; color: #991B1B; }
+        .badge-init    { background: #DBEAFE; color: #1E40AF; }
+        .divider { border: none; border-top: 2px solid #f0f0f0; margin: 24px 0; }
+        .footer { background-color: #0052CC; text-align: center; padding: 14px; color: #fff; font-size: 12px; }
+        .contact { background: #f8fafc; border-left: 4px solid #0052CC; padding: 14px 18px; border-radius: 4px; margin-top: 20px; font-size: 13px; color: #555; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+    <div class="header">
+        <img src="https://mydepps.net/_files/logo-depps.png" alt="DEPPS">
+        <h2>Direction des Établissements Privés et des Professions Sanitaires</h2>
+    </div>
+
+    <div class="body">
+        <p>Bonjour <strong>{{ professionnel.civilite }} {{ professionnel.nom }} {{ professionnel.prenoms }}</strong>,</p>
+
+        {% if transition == 'soumettre_dossier' %}
+            <span class="badge badge-soumis">Dossier soumis — en cours de validation</span>
+            <p>Nous vous confirmons que votre dossier a bien été <strong>soumis à validation</strong>.</p>
+            <p>Notre équipe va procéder à l'examen de votre dossier dans les meilleurs délais. Vous serez informé(e) par e-mail de la suite donnée à votre demande.</p>
+
+        {% elseif transition == 'accepter_ancien' %}
+            <span class="badge badge-accepte">Dossier accepté</span>
+            <p>Nous avons le plaisir de vous informer que votre dossier a été <strong>accepté</strong> par nos services.</p>
+            <p>Vous êtes désormais inscrit(e) au registre{% if professionnel.profession %} des <em>{{ professionnel.profession }}</em>{% endif %} et habilité(e) à exercer votre activité.</p>
+            <p>Nous vous invitons à vous rendre à la DEPPS pour le retrait de vos documents officiels.</p>
+
+        {% elseif transition == 'refuser_ancien' %}
+            <span class="badge badge-refuser">Dossier refusé</span>
+            <p>Après examen de votre dossier, nous regrettons de vous informer que votre demande a été <strong>refusée</strong>.</p>
+            <p>Pour toute information complémentaire concernant les motifs de ce refus ou les démarches à suivre, veuillez contacter directement nos services.</p>
+
+        {% elseif transition == 'reinitialiser' %}
+            <span class="badge badge-init">Dossier réinitialisé</span>
+            <p>Votre dossier a été <strong>réinitialisé</strong> par notre administration.</p>
+            <p>Vous pouvez à nouveau soumettre votre dossier à validation. N'hésitez pas à nous contacter pour toute question.</p>
+
+        {% endif %}
+
+        <hr class="divider">
+
+        <div class="contact">
+            Pour toute information complémentaire, veuillez contacter la DEPPS :<br>
+            <strong>Tél :</strong> 07 68 15 32 21 &nbsp;|&nbsp; <strong>Email :</strong> depps@leadagro.net
+        </div>
+    </div>
+
+    <div class="footer">
+        &copy; {{ "now"|date("Y") }} DEPPS &mdash; Tous droits réservés
+    </div>
+
+</div>
+</body>
+</html>
