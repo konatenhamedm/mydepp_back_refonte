@@ -240,12 +240,14 @@ class PaymentProController extends ApiInterface
                 } else {
                     $today = new \DateTime();
 
-                    // Déterminer la date d'expiration
-                    if ($user->getPersonne()->getDateValidation() !== null) {
-                        // $expiration = (clone $user->getPersonne()->getDateValidation())->modify('+1 year');
+                    // Déterminer la date d'expiration depuis le code MS{ANNÉE}OPT... (ex: MS2024OPTLO2992.0038)
+                    $code = $user->getPersonne()->getCode() ?? '';
+
+                    if (preg_match('/MS(\d{4})/', $code, $matches)) {
+                        $expiration = new \DateTime($matches[1] . '-12-31');
+                    } elseif ($user->getPersonne()->getDateValidation() !== null) {
                         $expiration = (clone $user->getPersonne()->getDateValidation());
                     } else {
-                        // $expiration = (clone $dernierAbonnement->getCreatedAt())->modify('+1 year');
                         $expiration = (clone $dernierAbonnement->getCreatedAt());
                     }
 
@@ -255,12 +257,7 @@ class PaymentProController extends ApiInterface
                     // Calculer les jours restants (0 si déjà expiré)
                     if ($expire) {
                         $joursRestants = 0;
-                        $code = $user->getPersonne()->getCode();
-                        if ($code && preg_match('/^MS(\d{4})/', $code, $matches)) {
-                            $yearDue = (int)$today->format('Y') - (int)$matches[1];
-                        } else {
-                            $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
-                        }
+                        $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
                     } else {
                         $joursRestants = $today->diff($expiration)->days;
                     }
@@ -286,8 +283,8 @@ class PaymentProController extends ApiInterface
             }
 
 
-            $montantUnitaire = $user->getTypeUser() == "PROFESSIONNEL" ? (int) $user->getPersonne()->getProfession()->getMontantRenouvellement() : null;
-            $montantTotal = $user->getTypeUser() == "PROFESSIONNEL" ? $montantUnitaire * (int) $yearDue : "";
+            $montantUnitaire = $user->getTypeUser() == "PROFESSIONNEL" ? $user->getPersonne()->getProfession()->getMontantRenouvellement() : null;
+            $montantTotal = $user->getTypeUser() == "PROFESSIONNEL" ? $montantUnitaire * $yearDue : "";
 
             $transactions = [
                 'expire' => $expire,
