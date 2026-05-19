@@ -204,7 +204,20 @@ class Professionnel extends Entite
     #[ORM\ManyToOne(inversedBy: 'professionnels')]
     private ?Ordre $ordre = null;
 
-  
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $etatOld = null;
+
+    public function getEtatOld(): ?string
+    {
+        return $this->etatOld;
+    }
+
+    public function setEtatOld(?string $etatOld): static
+    {
+        $this->etatOld = $etatOld;
+
+        return $this;
+    }
 
     public function __construct()
     {
