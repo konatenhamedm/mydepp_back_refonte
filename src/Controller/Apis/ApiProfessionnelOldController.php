@@ -7,6 +7,7 @@ use App\Entity\Professionnel;
 use App\Entity\ValidationWorkflow;
 use App\Repository\ProfessionnelRepository;
 use App\Repository\UserRepository;
+use App\Repository\TransactionRepository;
 use App\Service\SendMailService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -249,6 +250,103 @@ class ApiProfessionnelOldController extends ApiInterface
             ]);
         } catch (\Exception $e) {
             return $this->json(['code' => 500, 'message' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/recu/recherche', name: 'api_professionnel_old_recu_recherche', methods: ['GET'])]
+    #[OA\Tag(name: 'professionnel')]
+    public function searchTransactions(
+        Request $request,
+        UserRepository $userRepository,
+        TransactionRepository $transactionRepository
+    ): Response {
+        try {
+            $email = $request->query->get('email');
+            $code  = $request->query->get('code');
+
+            if (empty($email) || empty($code)) {
+                return $this->json([
+                    'statut' => 0,
+                    'message' => 'L\'adresse e-mail et le code professionnel sont obligatoires.'
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            $user = $userRepository->findOneBy(['email' => trim($email)]);
+            if (!$user) {
+                return $this->json([
+                    'statut' => 0,
+                    'message' => 'Aucun utilisateur trouvé avec cette adresse e-mail.'
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            $personne = $user->getPersonne();
+            if (!$personne || !$personne instanceof Professionnel) {
+                return $this->json([
+                    'statut' => 0,
+                    'message' => 'Cet utilisateur n\'est pas enregistré en tant que professionnel.'
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            if (trim($personne->getCode()) !== trim($code)) {
+                return $this->json([
+                    'statut' => 0,
+                    'message' => 'Le code professionnel fourni ne correspond pas à cet utilisateur.'
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            // Fetch successful transactions
+            $transactions = $transactionRepository->findBy(
+                ['user' => $user, 'state' => 1],
+                ['createdAt' => 'DESC']
+            );
+
+            // Format transactions identically to standard index format in ApiPaiementController
+            $formattedTransactions = array_map(function (Transaction $transaction) use ($personne) {
+                $profession = $personne->getProfession();
+                return [
+                    "id" => $transaction->getId(),
+                    "montant" => $transaction->getMontant(),
+                    "reference" => $transaction->getReference(),
+                    "reference_channel" => $transaction->getReferenceChannel(),
+                    "channel" => $transaction->getChannel(),
+                    "type" => $transaction->getType(),
+                    "state" => $transaction->getState(),
+                    "typeUser" => $transaction->getUser()->getTypeUser(),
+                    "createdAt" => $transaction->getCreatedAt()->format('Y-m-d H:i:s'),
+                    "email" => $transaction->getUser()->getEmail(),
+                    "user" => [
+                        'profession' => $profession ? [
+                            'libelle' => $profession->getLibelle() ?? "",
+                            'id' => $profession->getId(),
+                            'code' => $profession->getCode(),
+                            'montantNouvelleDemande' => $profession->getMontantNouvelleDemande(),
+                            'montantRenouvellement' => $profession->getMontantRenouvellement(),
+                        ] : null,
+                        "typeUser" => $transaction->getUser()->getTypeUser(),
+                        "code" => $personne->getCode(),
+                        "poleSanitaire" => $personne->getPoleSanitaire(),
+                        "nom" => $personne->getNom(),
+                        "prenoms" => $personne->getPrenoms(),
+                        "lieuExercicePro" => $personne->getLieuExercicePro(),
+                        "email" => $personne->getEmail(),
+                        "number" => $personne->getNumber(),
+                        "quartier" => $personne->getQuartier(),
+                        "id" => $personne->getId(),
+                        "createdAt" => $personne->getCreatedAt()?->format('Y-m-d H:i:s'),
+                    ]
+                ];
+            }, $transactions);
+
+            return $this->json([
+                'statut' => 1,
+                'data' => $formattedTransactions
+            ], Response::HTTP_OK);
+
+        } catch (\Exception $e) {
+            return $this->json([
+                'statut' => 0,
+                'message' => 'Une erreur est survenue lors de la recherche : ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 

@@ -164,7 +164,7 @@ class ApiUploadControler extends ApiInterface
                                 $personne->setPrenoms($prenoms);
                                 $personne->setActived(true);
                                 $personne->setCode($rowData['numId']);
-                                $personne->setEtatOld('init');
+                                $personne->setEtatOld('inite');
                                 
                                 $personne->setDateNaissance($rowData['dateNaissance']);
 
