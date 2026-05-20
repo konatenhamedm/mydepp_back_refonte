@@ -368,6 +368,141 @@ class ApiProfessionnelOldController extends ApiInterface
         }
     }
 
+    #[Route('/code/recherche', name: 'api_professionnel_old_code_recherche', methods: ['GET'])]
+    #[OA\Tag(name: 'professionnel')]
+    public function searchByCode(Request $request, ProfessionnelRepository $professionnelRepository, UserRepository $userRepository): Response
+    {
+        try {
+            $code = trim($request->query->get('code', ''));
+            if (empty($code)) {
+                return $this->json([
+                    'statut' => 0,
+                    'message' => 'Veuillez renseigner le code professionnel.'
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            $professionnel = $professionnelRepository->findOneBy(['code' => $code]);
+            if (!$professionnel) {
+                return $this->json([
+                    'statut' => 0,
+                    'message' => 'Aucun professionnel trouvé avec ce code.'
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            $user = $userRepository->findOneBy(['personne' => $professionnel->getId()]);
+            $profession = $professionnel->getProfession();
+
+            $formattedData = [
+                'id' => $professionnel->getId(),
+                'nom' => $professionnel->getNom(),
+                'prenoms' => $professionnel->getPrenoms(),
+                'dateNaissance' => $professionnel->getDateNaissance()?->format('d/m/Y') ?? '—',
+                'lieuNaissance' => $professionnel->getLieuNaissance() ?? '—',
+                'contactPersonnel' => $professionnel->getNumber() ?? $professionnel->getEmail() ?? '—',
+                'residenceProfessionnelle' => $professionnel->getLieuExercicePro() ?? $professionnel->getQuartier() ?? '—',
+                'dateInscription' => $professionnel->getCreatedAt()?->format('d/m/Y') ?? '—',
+                'specialite' => $profession ? ($profession->getLibelle() ?? '—') : '—',
+                'code' => $professionnel->getCode(),
+                'email' => $professionnel->getEmail() ?? ($user ? $user->getEmail() : '—'),
+                'civilite' => $professionnel->getCivilite()?->getLibelle() ?? '—',
+                'photo' => $user ? $this->getFichierUrl($user->getAvatar(), $request) : null
+            ];
+
+            return $this->json([
+                'statut' => 1,
+                'data' => $formattedData
+            ], Response::HTTP_OK);
+
+        } catch (\Exception $e) {
+            return $this->json([
+                'statut' => 0,
+                'message' => 'Une erreur est survenue : ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/code/update', name: 'api_professionnel_old_code_update', methods: ['POST'])]
+    #[OA\Tag(name: 'professionnel')]
+    public function updateCode(Request $request, ProfessionnelRepository $professionnelRepository, UserRepository $userRepository): Response
+    {
+        try {
+            $data = json_decode($request->getContent(), true);
+            $id = $data['id'] ?? null;
+            $newYear = trim($data['year'] ?? '');
+
+            if (!$id || empty($newYear)) {
+                return $this->json([
+                    'statut' => 0,
+                    'message' => 'Informations manquantes.'
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            $professionnel = $professionnelRepository->find($id);
+            if (!$professionnel) {
+                return $this->json([
+                    'statut' => 0,
+                    'message' => 'Professionnel introuvable.'
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            $oldCode = $professionnel->getCode();
+            $newCode = $oldCode;
+
+            if (preg_match('/MS(\d{4})/', $oldCode, $matches)) {
+                $newCode = preg_replace('/MS\d{4}/', 'MS' . $newYear, $oldCode);
+            } elseif (preg_match('/(19|20)\d{2}/', $oldCode, $matches)) {
+                $newCode = str_replace($matches[0], $newYear, $oldCode);
+            } else {
+                if (str_starts_with($oldCode, 'MS')) {
+                    $newCode = 'MS' . $newYear . substr($oldCode, 2);
+                } else {
+                    $newCode = 'MS' . $newYear . $oldCode;
+                }
+            }
+
+            $professionnel->setCode($newCode);
+            $this->em->persist($professionnel);
+
+            $user = $userRepository->findOneBy(['personne' => $professionnel->getId()]);
+            if ($user && $user->getUsername() === $oldCode) {
+                $user->setUsername($newCode);
+                $this->em->persist($user);
+            }
+
+            $this->em->flush();
+
+            $profession = $professionnel->getProfession();
+            $formattedData = [
+                'id' => $professionnel->getId(),
+                'nom' => $professionnel->getNom(),
+                'prenoms' => $professionnel->getPrenoms(),
+                'dateNaissance' => $professionnel->getDateNaissance()?->format('d/m/Y') ?? '—',
+                'lieuNaissance' => $professionnel->getLieuNaissance() ?? '—',
+                'contactPersonnel' => $professionnel->getNumber() ?? $professionnel->getEmail() ?? '—',
+                'residenceProfessionnelle' => $professionnel->getLieuExercicePro() ?? $professionnel->getQuartier() ?? '—',
+                'dateInscription' => $professionnel->getCreatedAt()?->format('d/m/Y') ?? '—',
+                'specialite' => $profession ? ($profession->getLibelle() ?? '—') : '—',
+                'code' => $newCode,
+                'oldCode' => $oldCode,
+                'email' => $professionnel->getEmail() ?? ($user ? $user->getEmail() : '—'),
+                'civilite' => $professionnel->getCivilite()?->getLibelle() ?? '—',
+                'photo' => $user ? $this->getFichierUrl($user->getAvatar(), $request) : null
+            ];
+
+            return $this->json([
+                'statut' => 1,
+                'message' => 'Code mis à jour avec succès.',
+                'data' => $formattedData
+            ], Response::HTTP_OK);
+
+        } catch (\Exception $e) {
+            return $this->json([
+                'statut' => 0,
+                'message' => 'Une erreur est survenue lors de la mise à jour : ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     private function getFichierUrl(?\App\Entity\Fichier $fichier, Request $request): ?string
     {
         if (!$fichier) {
