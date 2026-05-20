@@ -239,20 +239,13 @@ class PaymentProController extends ApiInterface
                 } else {
                     $today = new \DateTime();
 
-                    // Déterminer la date d'expiration depuis le code professionnel
-                    // Stratégie universelle : cherche la première année (19xx ou 20xx) dans le code,
+                    // Détermine la date d'expiration depuis le code professionnel
+                    // Cherche la première année (19xx ou 20xx) dans le code,
                     // quelle que soit la structure du préfixe (MS, MSNI, MSDK, etc.)
-                    // Ex: MS2024OPTLO2992.0038 → 2024, MSNI2024OPTLO... → 2024
+                    // Ex: MS2026APDENT1725.0006 → 2026 (1725 ignoré car ne commence pas par 19 ou 20)
                     $code = $user->getPersonne()->getCode() ?? '';
 
-                    dd(preg_match('/\b((?:19|20)\d{2})\b/', $code, $matches));
-
-
-                
-
-                    if (preg_match('/\b((?:19|20)\d{2})\b/', $code, $matches)) {
-
-                   
+                    if (preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $code, $matches)) {
                         $expiration = new \DateTime($matches[1] . '-12-31');
                     } elseif ($user->getPersonne()->getDateValidation() !== null) {
                         $expiration = (clone $user->getPersonne()->getDateValidation());

@@ -455,7 +455,7 @@ class ApiProfessionnelOldController extends ApiInterface
             //   MS2024OPTLO2989.0032   → MS{newYear}OPTLO2989.0032
             //   MSNI2024OPTLO2989.0032 → MSNI{newYear}OPTLO2989.0032
             //   MS10250299.0001        → pas d'année valide, cas fallback
-            if (preg_match('/\b((?:19|20)\d{2})\b/', $oldCode, $matches, PREG_OFFSET_CAPTURE)) {
+            if (preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $oldCode, $matches, PREG_OFFSET_CAPTURE)) {
                 // Remplacer UNIQUEMENT la première occurrence de l'année trouvée
                 $yearFound = $matches[1][0];
                 $yearPos   = $matches[1][1];
