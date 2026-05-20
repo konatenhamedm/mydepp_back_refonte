@@ -4,6 +4,7 @@ namespace App\Controller\Apis;
 
 use App\Controller\Apis\Config\ApiInterface;
 use App\Entity\Professionnel;
+use App\Entity\Transaction;
 use App\Entity\ValidationWorkflow;
 use App\Repository\ProfessionnelRepository;
 use App\Repository\UserRepository;
@@ -258,40 +259,57 @@ class ApiProfessionnelOldController extends ApiInterface
     public function searchTransactions(
         Request $request,
         UserRepository $userRepository,
-        TransactionRepository $transactionRepository
+        TransactionRepository $transactionRepository,
+        ProfessionnelRepository $professionnelRepository
     ): Response {
         try {
-            $email = $request->query->get('email');
-            $code  = $request->query->get('code');
+            $email = trim($request->query->get('email', ''));
+            $code  = trim($request->query->get('code', ''));
 
-            if (empty($email) || empty($code)) {
+            if (empty($email) && empty($code)) {
                 return $this->json([
                     'statut' => 0,
-                    'message' => 'L\'adresse e-mail et le code professionnel sont obligatoires.'
+                    'message' => 'Veuillez saisir au moins une adresse e-mail ou un code professionnel.'
                 ], Response::HTTP_BAD_REQUEST);
             }
 
-            $user = $userRepository->findOneBy(['email' => trim($email)]);
-            if (!$user) {
-                return $this->json([
-                    'statut' => 0,
-                    'message' => 'Aucun utilisateur trouvé avec cette adresse e-mail.'
-                ], Response::HTTP_NOT_FOUND);
-            }
+            $user = null;
+            $personne = null;
 
-            $personne = $user->getPersonne();
-            if (!$personne || !$personne instanceof Professionnel) {
-                return $this->json([
-                    'statut' => 0,
-                    'message' => 'Cet utilisateur n\'est pas enregistré en tant que professionnel.'
-                ], Response::HTTP_BAD_REQUEST);
-            }
+            if (!empty($code)) {
+                // Recherche par code professionnel
+                $personne = $professionnelRepository->findOneBy(['code' => $code]);
+                if (!$personne) {
+                    return $this->json([
+                        'statut' => 0,
+                        'message' => 'Aucun professionnel trouvé avec ce code.'
+                    ], Response::HTTP_NOT_FOUND);
+                }
 
-            if (trim($personne->getCode()) !== trim($code)) {
-                return $this->json([
-                    'statut' => 0,
-                    'message' => 'Le code professionnel fourni ne correspond pas à cet utilisateur.'
-                ], Response::HTTP_BAD_REQUEST);
+                $user = $userRepository->findOneBy(['personne' => $personne->getId()]);
+                if (!$user) {
+                    return $this->json([
+                        'statut' => 0,
+                        'message' => 'Aucun compte utilisateur n\'est associé à ce professionnel.'
+                    ], Response::HTTP_NOT_FOUND);
+                }
+            } else {
+                // Recherche par email
+                $user = $userRepository->findOneBy(['email' => $email]);
+                if (!$user) {
+                    return $this->json([
+                        'statut' => 0,
+                        'message' => 'Aucun compte utilisateur trouvé avec cette adresse e-mail.'
+                    ], Response::HTTP_NOT_FOUND);
+                }
+
+                $personne = $user->getPersonne();
+                if (!$personne || !$personne instanceof Professionnel) {
+                    return $this->json([
+                        'statut' => 0,
+                        'message' => 'Cet utilisateur n\'est pas enregistré en tant que professionnel.'
+                    ], Response::HTTP_BAD_REQUEST);
+                }
             }
 
             // Fetch successful transactions
