@@ -1889,68 +1889,7 @@ Situation professionnelle * */
         return $response;
     }
 
-    #[Route('/anciens/list', name: 'api_anciens_professionnels_list', methods: ['GET'])]
-    public function listAnciensProfessionnels(
-        Request $request,
-        ProfessionnelRepository $professionnelRepository,
-    ): Response {
-        try {
-            $etatOld = $request->query->get('etat_old');
-            $page    = (int) $request->query->get('page', 1);
-            $limit   = (int) $request->query->get('limit', 20);
 
-            $qb = $professionnelRepository->createQueryBuilder('p')
-                ->where('p.etatOld IS NOT NULL');
-
-            if ($etatOld) {
-                $qb->andWhere('p.etatOld = :etat')->setParameter('etat', $etatOld);
-            }
-
-            $search = $request->query->get('search');
-            if ($search) {
-                $qb->andWhere('p.nom LIKE :search OR p.prenoms LIKE :search OR p.code LIKE :search')
-                   ->setParameter('search', '%' . $search . '%');
-            }
-
-            $total = (clone $qb)->select('COUNT(p.id)')->getQuery()->getSingleScalarResult();
-
-            $professionnels = $qb
-                ->orderBy('p.createdAt', 'DESC')
-                ->setFirstResult(($page - 1) * $limit)
-                ->setMaxResults($limit)
-                ->getQuery()
-                ->getResult();
-
-            $data = array_map(function (Professionnel $p) {
-                $profession = $p->getProfession();
-                return [
-                    'id'              => $p->getId(),
-                    'nom'             => $p->getNom(),
-                    'prenoms'         => $p->getPrenoms(),
-                    'code'            => $p->getCode(),
-                    'etatOld'         => $p->getEtatOld(),
-                    'dateValidation'  => $p->getDateValidation()?->format('d/m/Y'),
-                    'createdAt'       => $p->getCreatedAt()?->format('d/m/Y'),
-                    'profession'      => $profession?->getLibelle(),
-                    'civilite'        => $p->getCivilite()?->getLibelle(),
-                ];
-            }, $professionnels);
-
-            return $this->json([
-                'code'    => 200,
-                'message' => 'Liste des anciens professionnels',
-                'data'    => $data,
-                'meta'    => [
-                    'total' => (int) $total,
-                    'page'  => $page,
-                    'limit' => $limit,
-                    'pages' => (int) ceil($total / $limit),
-                ],
-            ]);
-        } catch (\Exception $e) {
-            return $this->json(['code' => 500, 'message' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
 
     #[Route('/anciens/{id}/transition', name: 'api_anciens_professionnels_transition', methods: ['POST'])]
     public function transitionAncienProfessionnel(

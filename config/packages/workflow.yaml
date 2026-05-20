@@ -121,22 +121,17 @@ framework:
                 property: 'etatOld'
             supports:
                 - App\Entity\Professionnel
-            initial_marking: init
+            initial_marking: inite
             places:
-                - init
-                - soumis
-                - accepte
-                - refuser
+                - inite
+                - soumis_attente_documents
+                - documents_recus_valide
+                - documents_recus_invalide
             transitions:
-                soumettre_dossier:
-                    from: init
-                    to: soumis
-                accepter_ancien:
-                    from: soumis
-                    to: accepte
-                refuser_ancien:
-                    from: soumis
-                    to: refuser
-                reinitialiser:
-                    from: refuser
-                    to: init
+                documents_valider:
+                    from: soumis_attente_documents
+                    to: documents_recus_valide
+                documents_invalider:
+                    from: soumis_attente_documents
+                    to: documents_recus_invalide
+               
