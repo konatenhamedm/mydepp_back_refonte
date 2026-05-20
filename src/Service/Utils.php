@@ -73,27 +73,30 @@ class Utils
      */
     public function sauvegardeFichier($filePath, $filePrefix, $uploadedFile, string $basePath = self::BASE_PATH): ?Fichier
     {
-
-        if (!$filePrefix) {
-            return false;
+        if (!$filePrefix || !$uploadedFile) {
+            return null;
         }
 
+        // Créer le répertoire s'il n'existe pas
+        if (!is_dir($filePath)) {
+            mkdir($filePath, 0777, true);
+        }
+
+        // $path est passé par référence : après l'appel il contiendra le chemin complet du fichier
         $path = $filePath;
-        //dd($uploadedFile, $path, $filePrefix);
         $this->fileUploader->upload($uploadedFile, null, $path, $filePrefix, true);
 
+        // $path est maintenant "$filePath/nomFichier.ext" grâce au passage par référence
         $fileExtension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 
         $fichier = new Fichier();
         $fichier->setAlt(basename($path));
         $fichier->setPath($basePath);
-        $fichier->setSize(filesize($path));
+        $fichier->setSize(file_exists($path) ? filesize($path) : 0);
         $fichier->setUrl($fileExtension);
 
         $this->em->persist($fichier);
         $this->em->flush();
-        //dd('');
-
 
         return $fichier;
     }
