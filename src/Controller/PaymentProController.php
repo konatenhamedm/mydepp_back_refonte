@@ -228,7 +228,7 @@ class PaymentProController extends ApiInterface
             );
             if ($user->getTypeUser() == "PROFESSIONNEL") {
                 // $profession = $professionRepository->findOneByCode($user->getPersonne());
-
+dd($user);
 
 
 
