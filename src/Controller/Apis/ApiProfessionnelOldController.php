@@ -389,15 +389,14 @@ class ApiProfessionnelOldController extends ApiInterface
                 ], Response::HTTP_NOT_FOUND);
             }
 
-            $user = $userRepository->findOneBy(['personne' => $professionnel->getId()]);
-            $profession = $professionnel->getProfession();
+            $photoFile = ($user ? $user->getAvatar() : null) ?? $professionnel->getPhoto();
 
             $formattedData = [
                 'id' => $professionnel->getId(),
                 'nom' => $professionnel->getNom(),
                 'prenoms' => $professionnel->getPrenoms(),
                 'dateNaissance' => $professionnel->getDateNaissance()?->format('d/m/Y') ?? '—',
-                'lieuNaissance' => $professionnel->getLieuNaissance() ?? '—',
+                'lieuNaissance' => '—', // Professionnel entity doesn't store birth place
                 'contactPersonnel' => $professionnel->getNumber() ?? $professionnel->getEmail() ?? '—',
                 'residenceProfessionnelle' => $professionnel->getLieuExercicePro() ?? $professionnel->getQuartier() ?? '—',
                 'dateInscription' => $professionnel->getCreatedAt()?->format('d/m/Y') ?? '—',
@@ -405,7 +404,7 @@ class ApiProfessionnelOldController extends ApiInterface
                 'code' => $professionnel->getCode(),
                 'email' => $professionnel->getEmail() ?? ($user ? $user->getEmail() : '—'),
                 'civilite' => $professionnel->getCivilite()?->getLibelle() ?? '—',
-                'photo' => $user ? $this->getFichierUrl($user->getAvatar(), $request) : null
+                'photo' => $photoFile ? $this->getFichierUrl($photoFile, $request) : null
             ];
 
             return $this->json([
@@ -471,13 +470,14 @@ class ApiProfessionnelOldController extends ApiInterface
 
             $this->em->flush();
 
-            $profession = $professionnel->getProfession();
+            $photoFile = ($user ? $user->getAvatar() : null) ?? $professionnel->getPhoto();
+
             $formattedData = [
                 'id' => $professionnel->getId(),
                 'nom' => $professionnel->getNom(),
                 'prenoms' => $professionnel->getPrenoms(),
                 'dateNaissance' => $professionnel->getDateNaissance()?->format('d/m/Y') ?? '—',
-                'lieuNaissance' => $professionnel->getLieuNaissance() ?? '—',
+                'lieuNaissance' => '—', // Professionnel entity doesn't store birth place
                 'contactPersonnel' => $professionnel->getNumber() ?? $professionnel->getEmail() ?? '—',
                 'residenceProfessionnelle' => $professionnel->getLieuExercicePro() ?? $professionnel->getQuartier() ?? '—',
                 'dateInscription' => $professionnel->getCreatedAt()?->format('d/m/Y') ?? '—',
@@ -486,7 +486,7 @@ class ApiProfessionnelOldController extends ApiInterface
                 'oldCode' => $oldCode,
                 'email' => $professionnel->getEmail() ?? ($user ? $user->getEmail() : '—'),
                 'civilite' => $professionnel->getCivilite()?->getLibelle() ?? '—',
-                'photo' => $user ? $this->getFichierUrl($user->getAvatar(), $request) : null
+                'photo' => $photoFile ? $this->getFichierUrl($photoFile, $request) : null
             ];
 
             return $this->json([
