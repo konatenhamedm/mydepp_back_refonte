@@ -389,6 +389,8 @@ class ApiProfessionnelOldController extends ApiInterface
                 ], Response::HTTP_NOT_FOUND);
             }
 
+            $user = $userRepository->findOneBy(['personne' => $professionnel->getId()]);
+            $profession = $professionnel->getProfession();
             $photoFile = ($user ? $user->getAvatar() : null) ?? $professionnel->getPhoto();
 
             $formattedData = [
@@ -470,6 +472,7 @@ class ApiProfessionnelOldController extends ApiInterface
 
             $this->em->flush();
 
+            $profession = $professionnel->getProfession();
             $photoFile = ($user ? $user->getAvatar() : null) ?? $professionnel->getPhoto();
 
             $formattedData = [
