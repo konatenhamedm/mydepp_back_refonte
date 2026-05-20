@@ -663,7 +663,6 @@ class ApiUserController extends ApiInterface
     public function updateMembre(Request $request, User $user, UserRepository $userRepository): Response
     {
         try {
-            $data = json_decode($request->getContent());
             $names = 'document_' . '01';
             $filePrefix  = str_slug($names);
             $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
@@ -673,7 +672,8 @@ class ApiUserController extends ApiInterface
 
                 $password = $request->get('password');
                 $newPassword = $request->get('newPassword');
-                $userUpdate = $this->userRepository->find($request->get('userUpdate'));
+                /* $userUpdateId = $request->get('userUpdate'); */
+               // $userUpdate = $userUpdateId ? $this->userRepository->find($userUpdateId) : null;
 
                 if (!empty($password) && !empty($newPassword)) {
                     if (!$this->hasher->isPasswordValid($user, $password)) {
@@ -683,7 +683,9 @@ class ApiUserController extends ApiInterface
                 }
 
                 // Mise à jour des informations utilisateur
-                $user->setUpdatedBy($userUpdate);
+                /* if ($userUpdate) {
+                    } */
+               $user->setUpdatedBy($this->getUser());
                 $user->setUpdatedAt();
 
                 // Gestion de l'upload de l'avatar
@@ -691,11 +693,6 @@ class ApiUserController extends ApiInterface
                     if ($fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH)) {
                         $user->setAvatar($fichier);
                     }
-                }
-
-                // Vérification des erreurs
-                if ($errorResponse = $this->errorResponse($user)) {
-                    return $errorResponse;
                 }
 
                 $userRepository->add($user, true);
@@ -708,7 +705,7 @@ class ApiUserController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur : " . $exception->getMessage());
             $response = $this->response('[]');
         }
         return $response;
