@@ -449,15 +449,26 @@ class ApiProfessionnelOldController extends ApiInterface
             $oldCode = $professionnel->getCode();
             $newCode = $oldCode;
 
-            if (preg_match('/MS(\d{4})/', $oldCode, $matches)) {
-                $newCode = preg_replace('/MS\d{4}/', 'MS' . $newYear, $oldCode);
-            } elseif (preg_match('/(19|20)\d{2}/', $oldCode, $matches)) {
-                $newCode = str_replace($matches[0], $newYear, $oldCode);
+            // Stratégie universelle : chercher la première occurrence d'une année
+            // 4 chiffres (19xx ou 20xx) dans le code, quelle que soit sa structure
+            // Exemples supportés :
+            //   MS2024OPTLO2989.0032   → MS{newYear}OPTLO2989.0032
+            //   MSNI2024OPTLO2989.0032 → MSNI{newYear}OPTLO2989.0032
+            //   MS10250299.0001        → pas d'année valide, cas fallback
+            if (preg_match('/\b((?:19|20)\d{2})\b/', $oldCode, $matches, PREG_OFFSET_CAPTURE)) {
+                // Remplacer UNIQUEMENT la première occurrence de l'année trouvée
+                $yearFound = $matches[1][0];
+                $yearPos   = $matches[1][1];
+                $newCode   = substr($oldCode, 0, $yearPos)
+                           . $newYear
+                           . substr($oldCode, $yearPos + strlen($yearFound));
             } else {
-                if (str_starts_with($oldCode, 'MS')) {
-                    $newCode = 'MS' . $newYear . substr($oldCode, 2);
+                // Cas de secours : aucune année trouvée dans le code
+                // On insère l'année après le préfixe alphabétique initial
+                if (preg_match('/^([A-Za-z]+)(.*)$/', $oldCode, $parts)) {
+                    $newCode = $parts[1] . $newYear . $parts[2];
                 } else {
-                    $newCode = 'MS' . $newYear . $oldCode;
+                    $newCode = $newYear . $oldCode;
                 }
             }
 
