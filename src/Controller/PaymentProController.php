@@ -245,6 +245,8 @@ class PaymentProController extends ApiInterface
                     // Ex: MS2024OPTLO2992.0038 → 2024, MSNI2024OPTLO... → 2024
                     $code = $user->getPersonne()->getCode() ?? '';
 
+                    dd($code);
+
                 
 
                     if (preg_match('/\b((?:19|20)\d{2})\b/', $code, $matches)) {
