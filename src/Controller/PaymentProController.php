@@ -247,6 +247,8 @@ class PaymentProController extends ApiInterface
                     $code = $user->getPersonne()->getCode() ?? '';
 
                     if (preg_match('/\b((?:19|20)\d{2})\b/', $code, $matches)) {
+
+                        dd($matches[1]);
                         $expiration = new \DateTime($matches[1] . '-12-31');
                     } elseif ($user->getPersonne()->getDateValidation() !== null) {
                         $expiration = (clone $user->getPersonne()->getDateValidation());
