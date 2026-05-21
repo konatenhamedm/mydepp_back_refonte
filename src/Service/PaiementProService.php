@@ -639,8 +639,9 @@ class PaiementProService
         $transaction->setReferenceChannel($myUuid);
         $transaction->setType('RENOUVELLEMENT');
         $transaction->setTypeUser($data['type'] ?? 'professionnel');
+        $transaction->setNbreAnnee($yearsToPay);  // ← champ dédié, plus lisible que getData()
         $transaction->setState(0);
-        $transaction->setData(json_encode(['yearsToPay' => $yearsToPay, 'yearDue' => $yearDue]));
+        $transaction->setData(json_encode(['yearsToPay' => $yearsToPay, 'yearDue' => $yearDue])); // conservé pour compatibilité
         $transaction->setCreatedAtValue();
         $transaction->setUpdatedAt();
         $this->transactionRepository->add($transaction, true);
@@ -779,8 +780,9 @@ class PaiementProService
         $personne = $user->getPersonne();
         if (!$personne) return ['code' => 400, 'message' => 'Personne not found'];
 
-        $transactionData = json_decode($transaction->getData() ?? "[]", true);
-        $yearsPaid = $transactionData['yearsToPay'] ?? 1;
+        // Nombre d'années payées : lire depuis le champ dédié en priorité, fallback sur data JSON
+        $yearsPaid = $transaction->getNbreAnnee() ?? (json_decode($transaction->getData() ?? '{}', true)['yearsToPay'] ?? 1);
+        $transactionData = json_decode($transaction->getData() ?? '{}', true);
         $yearsDue = $transactionData['yearDue'] ?? 1;
 
         $now = new \DateTime();

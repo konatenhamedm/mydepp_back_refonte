@@ -52,6 +52,10 @@ class Transaction
     #[Group(["group_user_trx"])]
     private ?string $typeUser = null;
 
+    #[ORM\Column(nullable: true)]
+    #[Group(["group_user_trx"])]
+    private ?int $nbreAnnee = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -161,6 +165,18 @@ class Transaction
     public function setTypeUser(?string $typeUser): static
     {
         $this->typeUser = $typeUser;
+
+        return $this;
+    }
+
+    public function getNbreAnnee(): ?int
+    {
+        return $this->nbreAnnee;
+    }
+
+    public function setNbreAnnee(?int $nbreAnnee): static
+    {
+        $this->nbreAnnee = $nbreAnnee;
 
         return $this;
     }
