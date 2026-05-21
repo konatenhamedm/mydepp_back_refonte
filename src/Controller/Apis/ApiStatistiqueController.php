@@ -381,7 +381,12 @@ class ApiStatistiqueController extends ApiInterface
                 'statistiques' => $stats2
             ];
 
-            return $this->responseData($result, 'group_user', ['Content-Type' => 'application/json']);
+            return $this->json([
+                'code' => 200,
+                'message' => 'Operation effectuée avec succes',
+                'data' => $result,
+                'errors' => []
+            ]);
         } catch (\Exception $exception) {
             return $this->json([
                 'message' => $exception->getMessage(),
