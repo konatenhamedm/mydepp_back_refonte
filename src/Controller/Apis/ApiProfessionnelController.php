@@ -1722,11 +1722,20 @@ Situation professionnelle * */
 
             $professionnel->setStatus("accepte");
 
-            // Si l'ancien professionnel est à l'état "init", on le fait passer à "soumis"
-            if ($professionnel->getEtatOld() === 'init') {
-                $ancienWorkflow = $workflowRegistry->get($professionnel, 'validation_ancien_professionnel');
-                if ($ancienWorkflow->can($professionnel, 'soumettre_dossier')) {
-                    $ancienWorkflow->apply($professionnel, 'soumettre_dossier');
+            // Transition de workflow selon l'état courant :
+            // - inite                  → soumettre_dossier  → soumis_attente_documents
+            // - documents_recus_invalide → resoumettre_dossier → soumis_attente_documents
+            $etatOld = $professionnel->getEtatOld();
+            if (in_array($etatOld, ['inite', 'documents_recus_invalide'], true)) {
+                try {
+                    $ancienWorkflow = $workflowRegistry->get($professionnel, 'validation_ancien_professionnel');
+                    $transition = $etatOld === 'inite' ? 'soumettre_dossier' : 'resoumettre_dossier';
+                    if ($ancienWorkflow->can($professionnel, $transition)) {
+                        $ancienWorkflow->apply($professionnel, $transition);
+                    }
+                } catch (\Exception $wfEx) {
+                    // Ne pas bloquer l'upload si le workflow échoue
+                    $errors[] = 'Avertissement workflow : ' . $wfEx->getMessage();
                 }
             }
 
@@ -1740,17 +1749,18 @@ Situation professionnelle * */
             }
 
             $response = $this->responseData([
-                'id' => $professionnel->getId(),
-                'code' => $professionnel->getCode(),
-                'status' => $professionnel->getStatus(),
-                'nom' => $professionnel->getNom(),
-                'prenom' => $professionnel->getPrenoms(),
-                'email' => $professionnel->getEmail(),
+                'id'           => $professionnel->getId(),
+                'code'         => $professionnel->getCode(),
+                'status'       => $professionnel->getStatus(),
+                'etatOld'      => $professionnel->getEtatOld(),
+                'nom'          => $professionnel->getNom(),
+                'prenom'       => $professionnel->getPrenoms(),
+                'email'        => $professionnel->getEmail(),
                 'professionnel' => $professionnel->getProfessionnel(),
-                'errors' => $errors,
+                'errors'       => $errors,
             ], 'group_pro', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur : " . $exception->getMessage());
             $response = $this->response('[]');
         }
         return $response;

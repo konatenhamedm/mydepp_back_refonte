@@ -128,10 +128,15 @@ framework:
                 - documents_recus_valide
                 - documents_recus_invalide
             transitions:
+                soumettre_dossier:
+                    from: inite
+                    to: soumis_attente_documents
+                resoumettre_dossier:
+                    from: documents_recus_invalide
+                    to: soumis_attente_documents
                 documents_valider:
                     from: soumis_attente_documents
                     to: documents_recus_valide
                 documents_invalider:
                     from: soumis_attente_documents
                     to: documents_recus_invalide
-               
