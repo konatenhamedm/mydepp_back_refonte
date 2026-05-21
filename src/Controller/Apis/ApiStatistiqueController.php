@@ -296,15 +296,14 @@ class ApiStatistiqueController extends ApiInterface
             $annee = $request->query->get('annee');
             $mois = $request->query->get('mois');
             $tranche = $request->query->get('tranche');
-            // dd($mois,$periode,$annee,$tranche);
-            // Calcul de la plage de dates
-            [$startDate, $endDate] = $this->getDateRangeFromPeriode((int)$annee, $periode, (int)$mois, (int)$tranche);
-
-            //dd($startDate,$endDate);
-            // dd($startDate,$endDate,$annee,$mois,$tranche);
-
-            // Requête optimisée sans filtres supplémentaires
-            $stats2 = $professionnelRepository->findDiplomeStats(new \DateTime($startDate), new \DateTime($endDate));
+            $startDate = null;
+            $endDate = null;
+            if ($annee !== "null" && $annee !== null && $periode !== "null" && $periode !== null) {
+                [$startDate, $endDate] = $this->getDateRangeFromPeriode((int)$annee, $periode, (int)$mois, (int)$tranche);
+                $stats2 = $professionnelRepository->findDiplomeStats(new \DateTime($startDate), new \DateTime($endDate));
+            } else {
+                $stats2 = $professionnelRepository->findDiplomeStats(null, null);
+            }
             //dd($stats2);
             //dd($startDate,$endDate,$annee);
 
@@ -384,7 +383,10 @@ class ApiStatistiqueController extends ApiInterface
 
             return $this->responseData($result, 'group_user', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            return $this->response($exception->getMessage());
+            return $this->json([
+                'message' => $exception->getMessage(),
+                'trace' => $exception->getTraceAsString()
+            ]);
         }
     }
 

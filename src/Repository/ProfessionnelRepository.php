@@ -129,11 +129,11 @@ class ProfessionnelRepository extends ServiceEntityRepository
             ->leftJoin(Professionnel::class, 'e', 'WITH', 'e.civilite = c.id')
             ->groupBy('c.id');
 
-        if ($annee != "null" && $periode != "null") {
+        if ($annee !== "null" && $annee !== null && $periode !== "null" && $periode !== null) {
             [$start, $end] = $this->getDateRangeFromPeriode($annee, $periode, $mois, $tranche);
             $qb->andWhere("DATE_FORMAT(e.createdAt, '%Y-%m-%d') BETWEEN :start AND :end")
-                ->setParameter('start', $start)
-                ->setParameter('end', $end);
+                ->setParameter('start', $start->format('Y-m-d'))
+                ->setParameter('end', $end->format('Y-m-d'));
         }
 
         return $qb->getQuery()->getResult();
@@ -145,7 +145,7 @@ class ProfessionnelRepository extends ServiceEntityRepository
             ->leftJoin('p.profession', 'prof')
             ->groupBy('libelle');
 
-        if ($annee != "null" && $periode != "null") {
+        if ($annee !== "null" && $annee !== null && $periode !== "null" && $periode !== null) {
             [$start, $end] = $this->getDateRangeFromPeriode($annee, $periode, $mois, $tranche);
             $qb->where("DATE_FORMAT(p.createdAt, '%Y-%m-%d') BETWEEN :start AND :end")
                 ->setParameter('start', $start->format('Y-m-d'))
@@ -173,11 +173,11 @@ class ProfessionnelRepository extends ServiceEntityRepository
             ->leftJoin(Professionnel::class, 'e', 'WITH', 'e.ville = c.id')
             ->groupBy('c.id');
 
-        if ($annee != "null" && $periode != "null") {
+        if ($annee !== "null" && $annee !== null && $periode !== "null" && $periode !== null) {
             [$start, $end] = $this->getDateRangeFromPeriode($annee, $periode, $mois, $tranche);
             $qb->andWhere("DATE_FORMAT(e.createdAt, '%Y-%m-%d') BETWEEN :start AND :end")
-                ->setParameter('start', $start)
-                ->setParameter('end', $end);
+                ->setParameter('start', $start->format('Y-m-d'))
+                ->setParameter('end', $end->format('Y-m-d'));
         }
 
         return $qb->getQuery()->getResult();
@@ -191,11 +191,11 @@ class ProfessionnelRepository extends ServiceEntityRepository
             ->leftJoin(Professionnel::class, 'e', 'WITH', 'e.region = c.id')
             ->groupBy('c.id');
 
-        if ($annee != "null" && $periode != "null") {
+        if ($annee !== "null" && $annee !== null && $periode !== "null" && $periode !== null) {
             [$start, $end] = $this->getDateRangeFromPeriode($annee, $periode, $mois, $tranche);
             $qb->andWhere("DATE_FORMAT(e.createdAt, '%Y-%m-%d') BETWEEN :start AND :end")
-                ->setParameter('start', $start)
-                ->setParameter('end', $end);
+                ->setParameter('start', $start->format('Y-m-d'))
+                ->setParameter('end', $end->format('Y-m-d'));
         }
 
         return $qb->getQuery()->getResult();
@@ -209,11 +209,11 @@ class ProfessionnelRepository extends ServiceEntityRepository
             ->leftJoin(Professionnel::class, 'e', 'WITH', 'e.nationate = c.id')
             ->groupBy('c.id');
 
-        if ($annee != "null" && $periode != "null") {
+        if ($annee !== "null" && $annee !== null && $periode !== "null" && $periode !== null) {
             [$start, $end] = $this->getDateRangeFromPeriode($annee, $periode, $mois, $tranche);
             $qb->andWhere("DATE_FORMAT(e.createdAt, '%Y-%m-%d') BETWEEN :start AND :end")
-                ->setParameter('start', $start)
-                ->setParameter('end', $end);
+                ->setParameter('start', $start->format('Y-m-d'))
+                ->setParameter('end', $end->format('Y-m-d'));
         }
 
         return $qb->getQuery()->getResult();
@@ -296,7 +296,7 @@ class ProfessionnelRepository extends ServiceEntityRepository
 
 
 
-    public function findDiplomeStats(\DateTimeInterface $startDate, \DateTimeInterface $endDate): array
+    public function findDiplomeStats(?\DateTimeInterface $startDate = null, ?\DateTimeInterface $endDate = null): array
     {
         $qb = $this->createQueryBuilder('p')
             ->select([
@@ -308,10 +308,13 @@ class ProfessionnelRepository extends ServiceEntityRepository
                 'p.id'
             ])
             ->leftJoin('p.lieuObtentionDiplome', 'l')
-            ->leftJoin('p.civilite', 'c')
-            ->where('p.createdAt BETWEEN :start AND :end')
-            ->setParameter('start', $startDate)
-            ->setParameter('end', $endDate);
+            ->leftJoin('p.civilite', 'c');
+
+        if ($startDate !== null && $endDate !== null) {
+            $qb->where('p.createdAt BETWEEN :start AND :end')
+               ->setParameter('start', $startDate)
+               ->setParameter('end', $endDate);
+        }
 
         $results = $qb->getQuery()->getArrayResult();
 
