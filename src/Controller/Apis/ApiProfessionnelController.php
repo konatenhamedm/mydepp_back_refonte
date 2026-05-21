@@ -903,6 +903,7 @@ class ApiProfessionnelController extends ApiInterface
                     'certificat' => $personne->getCertificat() ? $this->formatFile($personne->getCertificat()) : null,
                     'diplomeFile' => $personne->getDiplomeFile() ? $this->formatFile($personne->getDiplomeFile()) : null,
                     'cni' => $personne->getCni() ? $this->formatFile($personne->getCni()) : null,
+                    'etatOld' => $personne->getEtatOld(),
                 ]
             ];
 
