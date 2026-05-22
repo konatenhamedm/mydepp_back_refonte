@@ -923,7 +923,7 @@ class ApiProfessionnelController extends ApiInterface
 
             
             $personne = $professionnelRepository->findOneBy(['code' => $query]);
-            $user     = null;
+            dd($personne);
 
             if ($personne) {
                 $user = $userRepository->findOneBy(['personne' => $personne->getId()]);
