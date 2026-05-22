@@ -517,6 +517,114 @@ class ApiProfessionnelOldController extends ApiInterface
         }
     }
 
+    #[Route('/attestation/recherche', name: 'api_professionnel_attestation_recherche', methods: ['GET'])]
+    #[OA\Tag(name: 'professionnel')]
+    public function searchForAttestation(
+        Request $request,
+        ProfessionnelRepository $professionnelRepository,
+        UserRepository $userRepository
+    ): Response {
+        try {
+            $query = trim($request->query->get('query', ''));
+
+            if (empty($query)) {
+                return $this->json([
+                    'statut' => 0,
+                    'message' => 'Veuillez saisir un code professionnel ou une adresse e-mail.'
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            $professionnel = null;
+            $user = null;
+
+            // 1. Try by code
+            $professionnel = $professionnelRepository->findOneBy(['code' => $query]);
+            if ($professionnel) {
+                $user = $userRepository->findOneBy(['personne' => $professionnel->getId()]);
+            }
+
+            // 2. Try by email
+            if (!$professionnel) {
+                $user = $userRepository->findOneBy(['email' => $query]);
+                if ($user) {
+                    $personne = $user->getPersonne();
+                    if ($personne instanceof \App\Entity\Professionnel) {
+                        $professionnel = $personne;
+                    }
+                }
+            }
+
+            if (!$professionnel) {
+                return $this->json([
+                    'statut' => 0,
+                    'message' => 'Aucun professionnel trouvé pour ce code ou cet e-mail.'
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            $profession      = $professionnel->getProfession();
+            $civilite        = $professionnel->getCivilite();
+            $ville           = $professionnel->getVille();
+            $commune         = $professionnel->getCommune();
+            $district        = $professionnel->getDistrict();
+            $region          = $professionnel->getRegion();
+            $photoFile       = ($user ? $user->getAvatar() : null) ?? $professionnel->getPhoto();
+
+            // Build lieu de naissance from available location data
+            $lieuParts = array_filter([
+                $professionnel->getQuartier(),
+                $commune?->getLibelle(),
+                $ville?->getLibelle(),
+                $district?->getLibelle(),
+                $region?->getLibelle(),
+            ]);
+            $lieuNaissance = !empty($lieuParts) ? implode('/', array_slice(array_values($lieuParts), 0, 2)) . ' (Côte d\'Ivoire)' : 'Côte d\'Ivoire';
+
+            // Extract year from code for renewal year
+            $code = $professionnel->getCode();
+            $codeYear = null;
+            if ($code && preg_match('/MS(\d{4})/', $code, $m)) {
+                $codeYear = (int)$m[1];
+            }
+            $renewalYear = $codeYear ? $codeYear + 1 : (int)date('Y');
+
+            // Inscription date (month + year)
+            $createdAt = $professionnel->getCreatedAt();
+            $inscriptionDate = $createdAt ? $createdAt->format('d/m/Y') : '—';
+            $inscriptionMonthYear = $createdAt ? strftime('%B %Y', $createdAt->getTimestamp()) : '—';
+
+            $data = [
+                'id'                    => $professionnel->getId(),
+                'civilite'              => $civilite?->getLibelle() ?? '',
+                'nom'                   => $professionnel->getNom() ?? '',
+                'prenoms'               => $professionnel->getPrenoms() ?? '',
+                'dateNaissance'         => $professionnel->getDateNaissance()?->format('d/m/Y') ?? '—',
+                'lieuNaissance'         => $lieuNaissance,
+                'profession'            => $profession?->getLibelle() ?? '—',
+                'code'                  => $code ?? '—',
+                'email'                 => $professionnel->getEmail() ?? ($user?->getEmail() ?? '—'),
+                'number'                => $professionnel->getNumber() ?? '—',
+                'dateInscription'       => $inscriptionDate,
+                'dateInscriptionLabel'  => $inscriptionMonthYear,
+                'lieuExercicePro'       => $professionnel->getLieuExercicePro() ?? '—',
+                'status'                => $professionnel->getStatus() ?? '',
+                'renewalYear'           => $renewalYear,
+                'photo'                 => $photoFile ? $this->getFichierUrl($photoFile, $request) : null,
+            ];
+
+            return $this->json([
+                'statut' => 1,
+                'message' => 'Professionnel trouvé.',
+                'data'    => $data,
+            ], Response::HTTP_OK);
+
+        } catch (\Exception $e) {
+            return $this->json([
+                'statut' => 0,
+                'message' => 'Erreur lors de la recherche : ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     private function getFichierUrl(?\App\Entity\Fichier $fichier, Request $request): ?string
     {
         if (!$fichier) {
