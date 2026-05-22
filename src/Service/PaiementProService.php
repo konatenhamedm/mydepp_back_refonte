@@ -135,6 +135,7 @@ class PaiementProService
         $transaction->setChannel('momo');
         $transaction->setReference($myUuid);
         $transaction->setMontant($montant);
+        $transaction->setNumero($phoneNumber);
         $transaction->setReferenceChannel($myUuid);
         $transaction->setType('NOUVELLE DEMANDE');
         $transaction->setTypeUser($type);
@@ -305,6 +306,7 @@ class PaiementProService
         $transaction->setChannel('momo');
         $transaction->setReference($referenceId);
         $transaction->setMontant($montant);
+        $transaction->setNumero($request->get('numero') ?? $request->get('phoneNumber'));
         $transaction->setReferenceChannel($referenceId);
         $transaction->setType('PAIEMENT MOMO PRO');
         $transaction->setTypeUser($request->get('type'));
@@ -636,6 +638,7 @@ class PaiementProService
         $transaction->setChannel('momo');
         $transaction->setReference($myUuid);
         $transaction->setMontant($montantTotal);
+        $transaction->setNumero($phoneNumber);
         $transaction->setReferenceChannel($myUuid);
         $transaction->setType('RENOUVELLEMENT');
         $transaction->setTypeUser($data['type'] ?? 'professionnel');
@@ -692,6 +695,7 @@ class PaiementProService
 
         $transaction = new Transaction();
         $transaction->setChannel("momo");
+        $transaction->setNumero($phoneNumber);
 
         if ($request->get('user')) {
             $transaction->setUser($this->userRepository->find($request->get('user')));

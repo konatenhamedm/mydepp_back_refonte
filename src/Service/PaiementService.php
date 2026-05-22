@@ -277,6 +277,7 @@ class PaiementService
         $transaction->setChannel("");
         $transaction->setReference($this->genererNumero());
         $transaction->setMontant($montant);
+        $transaction->setNumero($request->get('numero') ?? $request->get('telephone'));
         $transaction->setReferenceChannel("");
         $transaction->setType("NOUVELLE DEMANDE");
         $transaction->setTypeUser($request->get('type'));
@@ -349,6 +350,7 @@ class PaiementService
         $transaction->setUser($this->userRepository->find($request->get('user')));
         $transaction->setReference($this->genererNumero());
         $transaction->setMontant($montant);
+        $transaction->setNumero($request->get('numero') ?? $request->get('telephone'));
         $transaction->setReferenceChannel("");
         $transaction->setType("OUVERTURE D'EXPLOITATION");
         $transaction->setTypeUser('etablissement');
@@ -423,6 +425,7 @@ class PaiementService
         $transaction->setChannel("");
         $transaction->setReference($this->genererNumero());
         $transaction->setMontant($montant * $yearDue);
+        $transaction->setNumero($data['numero'] ?? $data['telephone'] ?? null);
         $transaction->setReferenceChannel("");
         $transaction->setType("RENOUVELLEMENT");
         $transaction->setTypeUser($data['type']);

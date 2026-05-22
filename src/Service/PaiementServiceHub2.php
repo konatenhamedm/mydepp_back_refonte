@@ -69,6 +69,7 @@ class PaiementServiceHub2
         $transaction->setChannel($data['provider']);
         $transaction->setReference($reference);
         $transaction->setMontant($montant);
+        $transaction->setNumero($data['numero'] ?? null);
         $transaction->setReferenceChannel("");
         $transaction->setType($this->determinerType($data));
         $transaction->setTypeUser($data['type'] ?? 'professionnel');

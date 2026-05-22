@@ -198,7 +198,7 @@ class Professionnel extends Entite
     private ?string $specialiteAutre = null;
 
     #[ORM\ManyToOne(inversedBy: 'professionnels')]
-    #[Group(["group_pro"])]
+    #[Group(["group_pro", "group_user_trx"])]
     private ?Profession $profession = null;
 
     #[ORM\ManyToOne(inversedBy: 'professionnels')]

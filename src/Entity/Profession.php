@@ -19,11 +19,11 @@ class Profession
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Group(["group1","group2","group_pro","group_autre"])]
+    #[Group(["group1","group2","group_pro","group_autre", "group_user_trx"])]
     private ?int $id = null;
 
 
-    #[Group(["group1","group2","group_pro","group_autre"])]
+    #[Group(["group1","group2","group_pro","group_autre", "group_user_trx"])]
     #[ORM\Column(type: 'string', unique: true, nullable: true,length: 255)]
     private ?string $libelle = null;
 

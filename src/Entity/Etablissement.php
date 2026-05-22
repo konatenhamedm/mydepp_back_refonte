@@ -17,7 +17,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 class Etablissement extends Entite
 {
     #[ORM\ManyToOne(inversedBy: 'etablissements')]
-    #[Group(["group_pro","group_user"])]
+    #[Group(["group_pro","group_user", "group_user_trx"])]
     private ?TypePersonne $typePersonne = null;
 
     /**

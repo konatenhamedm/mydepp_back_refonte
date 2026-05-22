@@ -735,6 +735,7 @@ class ApiPaiementController extends ApiInterface
         $transaction->setChannel("");
         $transaction->setReference($this->numero());
         $transaction->setMontant($data['montant']);
+        $transaction->setNumero($data['numero'] ?? null);
         $transaction->setReferenceChannel("");
         $transaction->setUser($userRepository->find($data['user']));
         $transaction->setType("Renouvellement");

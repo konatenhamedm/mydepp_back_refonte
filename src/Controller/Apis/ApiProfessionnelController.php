@@ -1439,7 +1439,7 @@ Situation professionnelle * */
             //return $this->responseData($professionnel, 'group_pro', ['Content-Type' => 'application/json']);
             if ($professionnel) {
                 //ETAPE 2
-                /* $professionnel->setCode($request->get('code')); */
+             
                 if (!empty($request->get('poleSanitaire'))) {
                     $professionnel->setPoleSanitaire($request->get('poleSanitaire'));
                 }
