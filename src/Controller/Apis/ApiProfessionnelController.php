@@ -920,7 +920,7 @@ class ApiProfessionnelController extends ApiInterface
                 $this->setStatusCode(400);
                 return $this->response('[]');
             }
-
+dd($query);
             
             $personne = $professionnelRepository->findOneBy(['code' => $query]);
             dd($personne);
