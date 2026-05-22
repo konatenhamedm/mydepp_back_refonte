@@ -723,16 +723,15 @@ class ApiProfessionnelController extends ApiInterface
                         $professionMaxCode,
                         "new",
                         $professionCode,
-                        $code
+                        $code,
+                        $professionnel->getNationate(),   // NI flag
+                        $profession                       // chronoMax update
                     );
 
                     $professionnel->setCode($numeroGenere);
                     $professionnel->setDateValidation(new DateTime());
                 } catch (\Exception $e) {
-                    // Log l'erreur mais continue le processus
                     error_log("Erreur génération code: " . $e->getMessage());
-                    // Optionnel: retourner une erreur
-                    // return $this->json(['error' => 'Erreur lors de la génération du code'], Response::HTTP_INTERNAL_SERVER_ERROR);
                 }
             }
 
@@ -749,12 +748,7 @@ class ApiProfessionnelController extends ApiInterface
             $this->em->persist($validationWorkflow);
             $this->em->flush();
 
-            if ($dto->status == "validation" && isset($numeroGenere)) {
-                $lastFourDigits = substr($numeroGenere, -4);
-                $profession->setMaxCode($lastFourDigits);
-                $this->em->persist($profession);
-                $this->em->flush();
-            }
+            // chronoMax est déjà mis à jour dans Utils::numeroGeneration (flush ci-dessous)
 
             // Messages selon le statut
             $messages = [
