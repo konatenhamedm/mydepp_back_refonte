@@ -909,19 +909,18 @@ class ApiProfessionnelController extends ApiInterface
     }
 
 
-    #[Route('/search/by/identifier', methods: ['GET'])]
+    #[Route('/search/by/identifier/{query}', methods: ['GET'])]
     #[OA\Tag(name: 'professionnel')]
-    public function searchByIdentifier(Request $request, UserRepository $userRepository, ProfessionnelRepository $professionnelRepository): Response
+    public function searchByIdentifier(string $query, UserRepository $userRepository, ProfessionnelRepository $professionnelRepository): Response
     {
         try {
-            $query = trim($request->query->get('query', ''));
+            $query = trim($query);
             if (!$query) {
                 $this->setMessage('Paramètre de recherche manquant');
                 $this->setStatusCode(400);
                 return $this->response('[]');
             }
 
-            // Recherche uniquement par code professionnel
             /** @var Professionnel|null $personne */
             $personne = $professionnelRepository->findOneBy(['code' => $query]);
             /** @var \App\Entity\User|null $user */
@@ -931,11 +930,11 @@ class ApiProfessionnelController extends ApiInterface
                 $user = $userRepository->findOneBy(['personne' => $personne->getId()]);
             }
 
-            if (!$personne || !$user) {
+           /*  if (!$personne || !$user) {
                 $this->setMessage('Aucun professionnel trouvé pour ce code.');
                 $this->setStatusCode(404);
                 return $this->response('[]');
-            }
+            } */
 
 
         
