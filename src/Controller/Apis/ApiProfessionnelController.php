@@ -921,8 +921,7 @@ class ApiProfessionnelController extends ApiInterface
                 return $this->response('[]');
             }
 
-            // Recherche uniquement par code professionnel
-            /** @var Professionnel|null $personne */
+            
             $personne = $professionnelRepository->findOneBy(['code' => $query]);
             $user     = null;
 
@@ -930,13 +929,13 @@ class ApiProfessionnelController extends ApiInterface
                 $user = $userRepository->findOneBy(['personne' => $personne->getId()]);
             }
 
-            if (!$personne || !$user) {
+            if (!$user) {
                 $this->setMessage('Aucun professionnel trouvé pour ce code.');
                 $this->setStatusCode(404);
                 return $this->response('[]');
             }
 
-            /** @var Professionnel $personne */
+        
             $profession = $personne->getProfession();
 
             return $this->responseData([
