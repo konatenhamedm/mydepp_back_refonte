@@ -921,28 +921,17 @@ class ApiProfessionnelController extends ApiInterface
                 return $this->response('[]');
             }
 
-            $personne = null;
-            $user     = null;
-
-            // 1. Recherche par code
+            // Recherche uniquement par code professionnel
             /** @var Professionnel|null $personne */
             $personne = $professionnelRepository->findOneBy(['code' => $query]);
-            if ($personne) {
-                $user = $userRepository->findOneBy(['personne' => $personne->getId(), 'typeUser' => 'PROFESSIONNEL']);
-            }
+            $user     = null;
 
-            // 2. Recherche par email
-            if (!$user) {
-                /** @var User|null $user */
-                $user = $userRepository->findOneBy(['email' => $query, 'typeUser' => 'PROFESSIONNEL']);
-                if ($user) {
-                    /** @var Professionnel|null $personne */
-                    $personne = $user->getPersonne();
-                }
+            if ($personne) {
+                $user = $userRepository->findOneBy(['personne' => $personne->getId()]);
             }
 
             if (!$personne || !$user) {
-                $this->setMessage('Aucun professionnel trouvé pour cet email ou ce code.');
+                $this->setMessage('Aucun professionnel trouvé pour ce code.');
                 $this->setStatusCode(404);
                 return $this->response('[]');
             }

@@ -76,9 +76,6 @@ class ApiAvisController extends ApiInterface
         try {
 
             $avis = $avisRepository->findBy(['forum' => $forum]);
-
-
-
             $response =  $this->responseData($avis, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("");
