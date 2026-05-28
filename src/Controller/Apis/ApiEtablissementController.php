@@ -589,6 +589,8 @@ class ApiEtablissementController extends ApiInterface
                         'code' => $personne->getCode(), //
                         'type' => "etablissement",
                         'status' => $personne->getStatus(),
+                        'latitude' => $personne->getLatitude(),
+                        'longitude' => $personne->getLongitude(),
                         'createdAt' => $personne->getCreatedAt(),
                         'dateExamenRapport' => $personne->getDateExamenRapport(),
                         'rapportExamen' => $personne->getRapportExamen() ? $this->formatFile($personne->getRapportExamen()) : null,
@@ -708,6 +710,8 @@ class ApiEtablissementController extends ApiInterface
                     'code' => $personne->getCode(), //
                     'type' => "etablissement",
                     'status' => $personne->getStatus(),
+                    'latitude' => $personne->getLatitude(),
+                    'longitude' => $personne->getLongitude(),
                     'createdAt' => $personne->getCreatedAt(),
                     'dateExamenRapport' => $personne->getDateExamenRapport(),
                     'rapportExamen' => $personne->getRapportExamen() ? $this->formatFile($personne->getRapportExamen()) : null,
