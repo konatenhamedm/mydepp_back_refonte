@@ -1059,4 +1059,66 @@ class ApiUserController extends ApiInterface
 
         return $this->json(['message' => 'Utilisateur créé avec succès']);
     }
+
+    #[Route('/update/location/{id}', methods: ['POST', 'PUT'])]
+    #[OA\Post(
+        summary: "Mettre à jour la géolocalisation d'une entité",
+        description: "Permet d'enregistrer la latitude et la longitude pour une entité (professionnel ou établissement) par son identifiant.",
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "latitude", type: "string"),
+                    new OA\Property(property: "longitude", type: "string"),
+                ],
+                type: "object"
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: "Géolocalisation mise à jour avec succès"),
+            new OA\Response(response: 404, description: "Entité non trouvée"),
+            new OA\Response(response: 500, description: "Erreur interne du serveur")
+        ]
+    )]
+    #[OA\Tag(name: 'user')]
+    public function updateLocation(int $id, Request $request, \App\Repository\EntiteRepository $entiteRepository): Response
+    {
+        try {
+            $entite = $entiteRepository->find($id);
+            if (!$entite) {
+                $this->setMessage("Entité non trouvée");
+                $this->setStatusCode(404);
+                return $this->response('[]');
+            }
+
+            $data = json_decode($request->getContent(), true);
+            $latitude = $data['latitude'] ?? null;
+            $longitude = $data['longitude'] ?? null;
+
+            if ($latitude === null || $longitude === null) {
+                $this->setMessage("Latitude et Longitude sont requises");
+                $this->setStatusCode(400);
+                return $this->response('[]');
+            }
+
+            $entite->setLatitude($latitude);
+            $entite->setLongitude($longitude);
+            $entite->setUpdatedAt(new \DateTimeImmutable());
+
+            $this->em->flush();
+
+            return $this->responseData([
+                'success' => true,
+                'id' => $entite->getId(),
+                'latitude' => $entite->getLatitude(),
+                'longitude' => $entite->getLongitude()
+            ], 'group_pro', ['Content-Type' => 'application/json']);
+
+        } catch (\Exception $exception) {
+            $this->setMessage($exception->getMessage());
+            $this->setStatusCode(500);
+            return $this->response('[]');
+        }
+    }
 }
+

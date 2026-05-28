@@ -75,6 +75,14 @@ class Entite
     #[Group(["group_pro"])]
     private ?bool $actived = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Group(["group_pro", "group_user", "group_user_trx"])]
+    private ?string $latitude = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Group(["group_pro", "group_user", "group_user_trx"])]
+    private ?string $longitude = null;
+
  
     public function __construct()
     {
@@ -207,6 +215,30 @@ class Entite
     public function setActived(?bool $actived): static
     {
         $this->actived = $actived;
+
+        return $this;
+    }
+
+    public function getLatitude(): ?string
+    {
+        return $this->latitude;
+    }
+
+    public function setLatitude(?string $latitude): static
+    {
+        $this->latitude = $latitude;
+
+        return $this;
+    }
+
+    public function getLongitude(): ?string
+    {
+        return $this->longitude;
+    }
+
+    public function setLongitude(?string $longitude): static
+    {
+        $this->longitude = $longitude;
 
         return $this;
     }
