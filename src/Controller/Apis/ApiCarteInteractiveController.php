@@ -44,8 +44,9 @@ class ApiCarteInteractiveController extends ApiInterface
 
                 // Get details of professionnels (limit to avoid huge payloads if many)
                 $qbDetails = $professionnelRepository->createQueryBuilder('p');
-                $qbDetails->select('p.id', 'p.nom', 'p.prenoms', 'p.code', 'p.number', 'p.email', 'prof.libelle as profession')
+                $qbDetails->select('p.id', 'p.nom', 'p.prenoms', 'p.code', 'p.number', 'p.email', 'prof.libelle as profession', 'nat.libelle as nationalite')
                     ->leftJoin('p.profession', 'prof')
+                    ->leftJoin('p.nationate', 'nat')
                     ->where('p.region = :region')
                     ->setParameter('region', $region);
 
