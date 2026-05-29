@@ -579,18 +579,34 @@ class ApiProfessionnelOldController extends ApiInterface
             ]);
             $lieuNaissance = $professionnel->getLieuNaissance() ?: (!empty($lieuParts) ? implode('/', array_slice(array_values($lieuParts), 0, 2)) . ' (Côte d\'Ivoire)' : 'Côte d\'Ivoire');
 
-            // Extract year from code for renewal year
-            $code = $professionnel->getCode();
-            $codeYear = null;
-            if ($code && preg_match('/MS(\d{4})/', $code, $m)) {
-                $codeYear = (int)$m[1];
-            }
-            $renewalYear = $codeYear ? $codeYear + 1 : (int)date('Y');
+            // Extract year from code for renewal year - updated to use current year
+            $renewalYear = (int)date('Y');
 
-            // Inscription date (month + year)
-            $createdAt = $professionnel->getCreatedAt();
-            $inscriptionDate = $createdAt ? $createdAt->format('d/m/Y') : '—';
-            $inscriptionMonthYear = $createdAt ? strftime('%B %Y', $createdAt->getTimestamp()) : '—';
+            // Inscription date (month + year) based on dateValidation
+            $validationDate = $professionnel->getDateValidation() ?? $professionnel->getCreatedAt();
+            $inscriptionDate = $validationDate ? $validationDate->format('d/m/Y') : '—';
+            
+            $inscriptionMonthYear = '—';
+            if ($validationDate) {
+                $frenchMonths = [
+                    1 => 'janvier',
+                    2 => 'février',
+                    3 => 'mars',
+                    4 => 'avril',
+                    5 => 'mai',
+                    6 => 'juin',
+                    7 => 'juillet',
+                    8 => 'août',
+                    9 => 'septembre',
+                    10 => 'octobre',
+                    11 => 'novembre',
+                    12 => 'décembre',
+                ];
+                $monthNum = (int)$validationDate->format('n');
+                $year = $validationDate->format('Y');
+                $frenchMonth = ucfirst($frenchMonths[$monthNum] ?? 'janvier');
+                $inscriptionMonthYear = $frenchMonth . ' ' . $year;
+            }
 
             $data = [
                 'id'                    => $professionnel->getId(),
@@ -651,4 +667,33 @@ class ApiProfessionnelOldController extends ApiInterface
             default               => 'Votre dossier a été mis à jour.',
         };
     }
+
+    #[Route('/update-lieu-naissance', name: 'api_professionnel_old_update_lieu', methods: ['POST'])]
+    #[OA\Tag(name: 'professionnel')]
+    public function updateLieuNaissance(Request $request, ProfessionnelRepository $professionnelRepository): Response
+    {
+        try {
+            $data = json_decode($request->getContent(), true);
+            $id = $data['id'] ?? null;
+            $lieu = $data['lieuNaissance'] ?? null;
+
+            if (!$id || !$lieu) {
+                return $this->json(['statut' => 0, 'message' => 'ID et lieuNaissance requis.'], 400);
+            }
+
+            $professionnel = $professionnelRepository->find($id);
+            if (!$professionnel) {
+                return $this->json(['statut' => 0, 'message' => 'Professionnel introuvable.'], 404);
+            }
+
+            $professionnel->setLieuNaissance($lieu);
+            $this->em->persist($professionnel);
+            $this->em->flush();
+
+            return $this->json(['statut' => 1, 'message' => 'Lieu de naissance mis à jour avec succès.']);
+        } catch (\Exception $e) {
+            return $this->json(['statut' => 0, 'message' => 'Erreur : ' . $e->getMessage()], 500);
+        }
+    }
+
 }
