@@ -889,6 +889,7 @@ class ApiProfessionnelController extends ApiInterface
                     'typeDiplome' => $this->formatEntity($personne->getTypeDiplome()) ?? "",
                     'poleSanitaire' => $personne->getPoleSanitaire() ?? "",
                     'specialiteAutre' => $personne->getSpecialiteAutre() ?? "",
+                    'lieuNaissance' => $personne->getLieuNaissance() ?? "",
                     'organisationNom' => $personne->getOrganisationNom() ?? "",
                     'poleSanitairePro' => $personne->getPoleSanitairePro() ?? "",
                     'lieuExercicePro' => $personne->getLieuExercicePro() ?? "",
