@@ -69,6 +69,11 @@ class Professionnel extends Entite
     private ?\DateTimeInterface $dateNaissance = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Group(["professionnel"])]
+    private ?string $lieuNaissance = null;
+
+
+    #[ORM\Column(length: 255, nullable: true)]
     #[Group(["group_pro", "group_user_trx"])]
     private ?string $number = null;
 
@@ -758,4 +763,16 @@ class Professionnel extends Entite
     }
 
    
+
+    public function getLieuNaissance(): ?string
+    {
+        return $this->lieuNaissance;
+    }
+
+    public function setLieuNaissance(?string $lieuNaissance): static
+    {
+        $this->lieuNaissance = $lieuNaissance;
+
+        return $this;
+    }
 }

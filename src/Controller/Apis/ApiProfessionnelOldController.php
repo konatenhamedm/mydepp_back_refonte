@@ -577,7 +577,7 @@ class ApiProfessionnelOldController extends ApiInterface
                 $district?->getLibelle(),
                 $region?->getLibelle(),
             ]);
-            $lieuNaissance = !empty($lieuParts) ? implode('/', array_slice(array_values($lieuParts), 0, 2)) . ' (Côte d\'Ivoire)' : 'Côte d\'Ivoire';
+            $lieuNaissance = $professionnel->getLieuNaissance() ?: (!empty($lieuParts) ? implode('/', array_slice(array_values($lieuParts), 0, 2)) . ' (Côte d\'Ivoire)' : 'Côte d\'Ivoire');
 
             // Extract year from code for renewal year
             $code = $professionnel->getCode();
@@ -609,6 +609,7 @@ class ApiProfessionnelOldController extends ApiInterface
                 'status'                => $professionnel->getStatus() ?? '',
                 'renewalYear'           => $renewalYear,
                 'photo'                 => $photoFile ? $this->getFichierUrl($photoFile, $request) : null,
+                'piece'                 => $professionnel->getCni() ? $this->getFichierUrl($professionnel->getCni(), $request) : null,
             ];
 
             return $this->json([

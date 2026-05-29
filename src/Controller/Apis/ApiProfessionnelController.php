@@ -1475,6 +1475,9 @@ Situation professionnelle * */
                 if (!empty($request->get('dateNaissance'))) {
                     $professionnel->setDateNaissance(new DateTimeImmutable($request->get('dateNaissance')));
                 }
+                if (!empty($request->get('lieuNaissance'))) {
+                    $professionnel->setLieuNaissance($request->get('lieuNaissance'));
+                }
                 if (!empty($request->get('numero'))) {
                     $professionnel->setNumber($request->get('numero'));
                 }

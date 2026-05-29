@@ -16,11 +16,11 @@ final class Version20260519000000 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->addSql('ALTER TABLE professionnel ADD etat_old VARCHAR(50) DEFAULT NULL');
+        $this->addSql('ALTER TABLE membre_professionnel ADD etat_old VARCHAR(50) DEFAULT NULL');
     }
 
     public function down(Schema $schema): void
     {
-        $this->addSql('ALTER TABLE professionnel DROP COLUMN etat_old');
+        $this->addSql('ALTER TABLE membre_professionnel DROP COLUMN etat_old');
     }
 }
