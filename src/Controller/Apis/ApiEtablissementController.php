@@ -915,7 +915,7 @@ class ApiEtablissementController extends ApiInterface
                             if ($uploadedFile) {
 
                                 // Sauvegarde du nouveau fichier
-                                $fichier = $utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH);
+                                $fichier = $utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH, $document->getPath());
                                 if ($fichier) {
                                     $document->setPath($fichier);
                                 }

@@ -39,7 +39,7 @@ class FileUploader
 
 
 
-        $fileName = $newFileName === false ? md5(uniqid()) : (substr($newFileName . $realFileName, 0, 200));
+        $fileName = $newFileName === false ? md5(uniqid()) : (substr($newFileName . '_' . uniqid() . '_' . $realFileName, 0, 200));
         $fileName .= '.' . $extension;
 
 

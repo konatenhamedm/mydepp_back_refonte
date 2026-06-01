@@ -690,7 +690,7 @@ class ApiUserController extends ApiInterface
 
                 // Gestion de l'upload de l'avatar
                 if ($uploadedFile) {
-                    if ($fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH)) {
+                    if ($fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH, $user->getAvatar())) {
                         $user->setAvatar($fichier);
                     }
                 }

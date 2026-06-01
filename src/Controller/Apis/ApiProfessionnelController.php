@@ -1530,37 +1530,37 @@ Situation professionnelle * */
 
 
                   if ($uploadedPhoto) {
-                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedPhoto, self::UPLOAD_PATH);
+                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedPhoto, self::UPLOAD_PATH, $professionnel->getPhoto());
                     if ($fichier) {
                         $professionnel->setPhoto($fichier);
                     }
                 }
                 if ($uploadedCasier) {
-                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCasier, self::UPLOAD_PATH);
+                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCasier, self::UPLOAD_PATH, $professionnel->getCasier());
                     if ($fichier) {
                         $professionnel->setCasier($fichier);
                     }
                 }
                 if ($uploadedCni) {
-                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCni, self::UPLOAD_PATH);
+                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCni, self::UPLOAD_PATH, $professionnel->getCni());
                     if ($fichier) {
                         $professionnel->setCni($fichier);
                     }
                 }
                 if ($uploadedDiplome) {
-                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedDiplome, self::UPLOAD_PATH);
+                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedDiplome, self::UPLOAD_PATH, $professionnel->getDiplomeFile());
                     if ($fichier) {
                         $professionnel->setDiplomeFile($fichier);
                     }
                 }
                 if ($uploadedCertificat) {
-                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCertificat, self::UPLOAD_PATH);
+                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCertificat, self::UPLOAD_PATH, $professionnel->getCertificat());
                     if ($fichier) {
                         $professionnel->setCertificat($fichier);
                     }
                 }
                 if ($uploadedCv) {
-                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCv, self::UPLOAD_PATH);
+                    $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCv, self::UPLOAD_PATH, $professionnel->getCv());
                     if ($fichier) {
                         $professionnel->setCv($fichier);
                     }
@@ -1667,7 +1667,7 @@ Situation professionnelle * */
             $errors = [];
 
             if ($uploadedPhoto) {
-                $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedPhoto, self::UPLOAD_PATH);
+                $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedPhoto, self::UPLOAD_PATH, $professionnel->getPhoto());
                 if ($fichier) {
                     $professionnel->setPhoto($fichier);
                 } else {
@@ -1675,7 +1675,7 @@ Situation professionnelle * */
                 }
             }
             if ($uploadedCasier) {
-                $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCasier, self::UPLOAD_PATH);
+                $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCasier, self::UPLOAD_PATH, $professionnel->getCasier());
                 if ($fichier) {
                     $professionnel->setCasier($fichier);
                 } else {
@@ -1683,7 +1683,7 @@ Situation professionnelle * */
                 }
             }
             if ($uploadedCni) {
-                $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCni, self::UPLOAD_PATH);
+                $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCni, self::UPLOAD_PATH, $professionnel->getCni());
                 if ($fichier) {
                     $professionnel->setCni($fichier);
                 } else {
@@ -1691,7 +1691,7 @@ Situation professionnelle * */
                 }
             }
             if ($uploadedDiplome) {
-                $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedDiplome, self::UPLOAD_PATH);
+                $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedDiplome, self::UPLOAD_PATH, $professionnel->getDiplomeFile());
                 if ($fichier) {
                     $professionnel->setDiplomeFile($fichier);
                 } else {
@@ -1699,7 +1699,7 @@ Situation professionnelle * */
                 }
             }
             if ($uploadedCertificat) {
-                $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCertificat, self::UPLOAD_PATH);
+                $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCertificat, self::UPLOAD_PATH, $professionnel->getCertificat());
                 if ($fichier) {
                     $professionnel->setCertificat($fichier);
                 } else {
@@ -1707,7 +1707,7 @@ Situation professionnelle * */
                 }
             }
             if ($uploadedCv) {
-                $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCv, self::UPLOAD_PATH);
+                $fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedCv, self::UPLOAD_PATH, $professionnel->getCv());
                 if ($fichier) {
                     $professionnel->setCv($fichier);
                 } else {

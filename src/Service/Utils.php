@@ -74,7 +74,7 @@ class Utils
      *
      * @return Fichier|null
      */
-    public function sauvegardeFichier($filePath, $filePrefix, $uploadedFile, string $basePath = self::BASE_PATH): ?Fichier
+    public function sauvegardeFichier($filePath, $filePrefix, $uploadedFile, string $basePath = self::BASE_PATH, ?Fichier $oldFichier = null): ?Fichier
     {
         if (!$filePrefix || !$uploadedFile) {
             return null;
@@ -83,6 +83,11 @@ class Utils
         // Créer le répertoire s'il n'existe pas
         if (!is_dir($filePath)) {
             mkdir($filePath, 0777, true);
+        }
+
+        // Supprimer l'ancien fichier s'il existe
+        if ($oldFichier) {
+            $this->em->remove($oldFichier);
         }
 
         // $path est passé par référence : après l'appel il contiendra le chemin complet du fichier
