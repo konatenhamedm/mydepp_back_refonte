@@ -69,7 +69,7 @@ class PaiementProService
             ? $this->em->getRepository(\App\Entity\Profession::class)->find($professionInfo)->getMontantNouvelleDemande()
             : $this->em->getRepository(\App\Entity\NiveauIntervention::class)->find($niveauInterventionInfo)->getMontant();
 
-        $phoneNumber = $data['phoneNumber'] ?? $data['numero'] ?? $request->get('numero') ?? $request->get('phoneNumber');
+        $phoneNumber = $data['phoneNumber'] ?? $data['numero']  ?? $request->get('phoneNumber') ?? $request->get('numero');
 
         $username = $_ENV['MOMO_USERNAME'];
         $password = $_ENV['MOMO_PASSWORD'];
