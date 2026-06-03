@@ -287,7 +287,7 @@ class PaymentProController extends ApiInterface
 
 
             $montantUnitaire = $user->getTypeUser() == "PROFESSIONNEL" ? $user->getPersonne()->getProfession()->getMontantRenouvellement() : null;
-            $montantTotal = $user->getTypeUser() == "PROFESSIONNEL" ? (int)$montantUnitaire * $yearDue : "";
+            $montantTotal = $user->getTypeUser() === "PROFESSIONNEL" ? (int) $montantUnitaire * (int) $yearDue : 0; // ou calcul spécifique à ETABLISSEMENT
 
             $transactions = [
                 'expire' => $expire,
@@ -344,8 +344,15 @@ class PaymentProController extends ApiInterface
             // Vérifier le statut via l'API MTN MoMo
             $statusResult = $paiementService->verifierStatutPaiementPro($transactionId);
 
+            // DEBUG: réponse brute complète renvoyée par le service / MTN
+            // À retirer une fois le diagnostic terminé.
+            $debug = [
+                'referenceId'  => $transactionId,
+                'statusResult' => $statusResult,
+            ];
+
             if (!isset($statusResult['status'])) {
-                return $this->json(['data' => ['state' => 0, 'message' => 'Statut inconnu, en attente']]);
+                return $this->json(['data' => ['state' => 0, 'message' => 'Statut inconnu, en attente'], 'debug' => $debug]);
             }
 
             $momoStatus = $statusResult['status'];
@@ -405,10 +412,10 @@ class PaymentProController extends ApiInterface
                 $transaction->setState(-1);
                 $transaction->setUpdatedAt();
                 $transactionRepository->add($transaction, true);
-                return $this->json(['data' => ['state' => -1, 'message' => 'Paiement échoué']]);
+                return $this->json(['data' => ['state' => -1, 'message' => 'Paiement échoué'], 'debug' => $debug]);
             } else {
                 // PENDING ou autre
-                return $this->json(['data' => ['state' => 0, 'message' => 'Paiement en attente de validation MTN']]);
+                return $this->json(['data' => ['state' => 0, 'message' => 'Paiement en attente de validation MTN', 'momoStatus' => $momoStatus], 'debug' => $debug]);
             }
         } catch (\Exception $exception) {
             return $this->json(['data' => ['state' => 0, 'message' => $exception->getMessage()]], 500);
