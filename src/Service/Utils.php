@@ -85,9 +85,15 @@ class Utils
             mkdir($filePath, 0777, true);
         }
 
-        // Supprimer l'ancien fichier s'il existe
+        // Si un ancien fichier existe, on le supprime physiquement mais on réutilise l'entité
+        // pour éviter les erreurs de contrainte de clé étrangère lors du flush()
         if ($oldFichier) {
-            $this->em->remove($oldFichier);
+            if ($oldFichier->getAlt()) {
+                $oldPhysicalPath = rtrim($filePath, '/') . '/' . $oldFichier->getAlt();
+                if (file_exists($oldPhysicalPath) && is_file($oldPhysicalPath)) {
+                    @unlink($oldPhysicalPath);
+                }
+            }
         }
 
         // $path est passé par référence : après l'appel il contiendra le chemin complet du fichier
@@ -97,7 +103,7 @@ class Utils
         // $path est maintenant "$filePath/nomFichier.ext" grâce au passage par référence
         $fileExtension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 
-        $fichier = new Fichier();
+        $fichier = $oldFichier ?: new Fichier();
         $fichier->setAlt(basename($path));
         $fichier->setPath($basePath);
         $fichier->setSize(file_exists($path) ? filesize($path) : 0);
