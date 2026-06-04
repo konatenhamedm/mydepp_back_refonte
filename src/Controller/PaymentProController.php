@@ -287,7 +287,7 @@ class PaymentProController extends ApiInterface
 
 
             $montantUnitaire = $user->getTypeUser() == "PROFESSIONNEL" ? $user->getPersonne()->getProfession()->getMontantRenouvellement() : null;
-            $montantTotal = $user->getTypeUser() == "PROFESSIONNEL" ? (int)$montantUnitaire * $yearDue : "";
+            $montantTotal = $user->getTypeUser() === "PROFESSIONNEL" ? (int) $montantUnitaire * (int) $yearDue : 0; // ou calcul spécifique à ETABLISSEMENT
 
             $transactions = [
                 'expire' => $expire,
@@ -344,6 +344,7 @@ class PaymentProController extends ApiInterface
             // Vérifier le statut via l'API MTN MoMo
             $statusResult = $paiementService->verifierStatutPaiementPro($transactionId);
 
+          
             if (!isset($statusResult['status'])) {
                 return $this->json(['data' => ['state' => 0, 'message' => 'Statut inconnu, en attente']]);
             }
@@ -408,7 +409,7 @@ class PaymentProController extends ApiInterface
                 return $this->json(['data' => ['state' => -1, 'message' => 'Paiement échoué']]);
             } else {
                 // PENDING ou autre
-                return $this->json(['data' => ['state' => 0, 'message' => 'Paiement en attente de validation MTN']]);
+                return $this->json(['data' => ['state' => 0, 'message' => 'Paiement en attente de validation MTN', 'momoStatus' => $momoStatus]]);
             }
         } catch (\Exception $exception) {
             return $this->json(['data' => ['state' => 0, 'message' => $exception->getMessage()]], 500);

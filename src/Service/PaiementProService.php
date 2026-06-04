@@ -14,6 +14,7 @@ use App\Repository\TransactionRepository;
 use App\Repository\UserRepository;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -31,7 +32,8 @@ class PaiementProService
         private EntityManagerInterface $em,
         private TempProfessionnelRepository $tempProfessionnelRepository,
         private TempEtablissementRepository $tempEtablissementRepository,
-        private PaiementService $paiementService
+        private PaiementService $paiementService,
+        private LoggerInterface $logger
     ) {}
 
     /**
@@ -67,7 +69,7 @@ class PaiementProService
             ? $this->em->getRepository(\App\Entity\Profession::class)->find($professionInfo)->getMontantNouvelleDemande()
             : $this->em->getRepository(\App\Entity\NiveauIntervention::class)->find($niveauInterventionInfo)->getMontant();
 
-        $phoneNumber = $data['numero'] ?? $data['phoneNumber'] ?? $request->get('numero') ?? $request->get('phoneNumber');
+        $phoneNumber = $data['phoneNumber'] ?? $data['numero']  ?? $request->get('phoneNumber') ?? $request->get('numero');
 
         $username = $_ENV['MOMO_USERNAME'];
         $password = $_ENV['MOMO_PASSWORD'];
@@ -162,6 +164,13 @@ class PaiementProService
         $response = null;
         $basicToken = base64_encode("$username:$password");
         $momoPrimaryKey = $_ENV['MOMO_PRIMARY_KEY'] ?? '';
+
+        $this->logger->info('[MOMO][CHECK] Début vérification statut', [
+            'referenceId'      => $referenceId,
+            'momo_username'    => $username,
+            'primary_key_set'  => $momoPrimaryKey !== '',
+        ]);
+
         // Obtenir le token
         $tokenResponse = $this->httpClient->request('POST', 'https://proxy.momoapi.mtn.com/collection/token/', [
             'headers' => [
@@ -170,10 +179,21 @@ class PaiementProService
                 'Ocp-Apim-Subscription-Key' => $momoPrimaryKey,
             ],
         ]);
-        if ($tokenResponse->getStatusCode() !== 200) {
-            return ['error' => 'Erreur lors de la récupération du token'];
+        // getContent(false) => ne lève PAS d'exception sur 4xx/5xx, on récupère le corps brut
+        $tokenStatusCode = $tokenResponse->getStatusCode();
+        $tokenRawBody    = $tokenResponse->getContent(false);
+        $this->logger->info('[MOMO][CHECK] Réponse token', [
+            'http_code' => $tokenStatusCode,
+            'body'      => $tokenRawBody,
+        ]);
+        if ($tokenStatusCode !== 200) {
+            return [
+                'error'       => 'Erreur lors de la récupération du token',
+                'debug_token' => ['http_code' => $tokenStatusCode, 'body' => $tokenRawBody],
+            ];
         }
-        $token = $tokenResponse->toArray()['access_token'];
+        $token = json_decode($tokenRawBody, true)['access_token'] ?? null;
+
         // Vérifier le statut
         $statusResponse = $this->httpClient->request(
             'GET',
@@ -187,10 +207,28 @@ class PaiementProService
                 ],
             ]
         );
-        if ($statusResponse->getStatusCode() !== 200) {
-            return ['error' => 'Erreur lors de la vérification du statut'];
+        // On lit le corps brut AVANT de tester le code => visible même sur 4xx/5xx
+        $statusCode = $statusResponse->getStatusCode();
+        $rawBody    = $statusResponse->getContent(false);
+        $this->logger->info('[MOMO][CHECK] Réponse statut requesttopay', [
+            'referenceId' => $referenceId,
+            'http_code'   => $statusCode,
+            'raw_body'    => $rawBody,
+        ]);
+
+        if ($statusCode !== 200) {
+            return [
+                'error'        => 'Erreur lors de la vérification du statut',
+                'debug_status' => ['http_code' => $statusCode, 'body' => $rawBody],
+            ];
         }
-        $statusData = $statusResponse->toArray();
+        $statusData = json_decode($rawBody, true) ?? [];
+        $this->logger->info('[MOMO][CHECK] Statut MTN décodé', [
+            'referenceId' => $referenceId,
+            'status'      => $statusData['status'] ?? null,
+            'reason'      => $statusData['reason'] ?? null,
+            'full'        => $statusData,
+        ]);
         $transaction = $this->transactionRepository->findOneBy(['reference' => $referenceId]);
         // dd($transaction->getTypeUser());
         if ($transaction) {
