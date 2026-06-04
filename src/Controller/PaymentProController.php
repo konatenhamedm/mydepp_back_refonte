@@ -344,15 +344,9 @@ class PaymentProController extends ApiInterface
             // Vérifier le statut via l'API MTN MoMo
             $statusResult = $paiementService->verifierStatutPaiementPro($transactionId);
 
-            // DEBUG: réponse brute complète renvoyée par le service / MTN
-            // À retirer une fois le diagnostic terminé.
-            $debug = [
-                'referenceId'  => $transactionId,
-                'statusResult' => $statusResult,
-            ];
-
+          
             if (!isset($statusResult['status'])) {
-                return $this->json(['data' => ['state' => 0, 'message' => 'Statut inconnu, en attente'], 'debug' => $debug]);
+                return $this->json(['data' => ['state' => 0, 'message' => 'Statut inconnu, en attente']]);
             }
 
             $momoStatus = $statusResult['status'];
@@ -412,10 +406,10 @@ class PaymentProController extends ApiInterface
                 $transaction->setState(-1);
                 $transaction->setUpdatedAt();
                 $transactionRepository->add($transaction, true);
-                return $this->json(['data' => ['state' => -1, 'message' => 'Paiement échoué'], 'debug' => $debug]);
+                return $this->json(['data' => ['state' => -1, 'message' => 'Paiement échoué']]);
             } else {
                 // PENDING ou autre
-                return $this->json(['data' => ['state' => 0, 'message' => 'Paiement en attente de validation MTN', 'momoStatus' => $momoStatus], 'debug' => $debug]);
+                return $this->json(['data' => ['state' => 0, 'message' => 'Paiement en attente de validation MTN', 'momoStatus' => $momoStatus]]);
             }
         } catch (\Exception $exception) {
             return $this->json(['data' => ['state' => 0, 'message' => $exception->getMessage()]], 500);
