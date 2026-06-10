@@ -195,9 +195,13 @@ class Professionnel extends Entite
     #[Group(["group_pro"])]
     private ?StatusPro $statusPro = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Group(["fichier", "group_pro"])]
+    private ?string $lieuObtentionDiplome = null;
+
     #[ORM\ManyToOne(inversedBy: 'professionnels')]
     #[Group(["fichier", "group_pro"])]
-    private ?LieuDiplome $lieuObtentionDiplome = null;
+    private ?LieuDiplome $origineDiplome = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $specialiteAutre = null;
@@ -719,9 +723,21 @@ class Professionnel extends Entite
         return $this->lieuObtentionDiplome;
     }
 
-    public function setLieuObtentionDiplome(?LieuDiplome $lieuObtentionDiplome): static
+    public function setLieuObtentionDiplome(?string $lieuObtentionDiplome): static
     {
         $this->lieuObtentionDiplome = $lieuObtentionDiplome;
+
+        return $this;
+    }
+
+    public function getOrigineDiplome(): ?LieuDiplome
+    {
+        return $this->origineDiplome;
+    }
+
+    public function setOrigineDiplome(?LieuDiplome $origineDiplome): static
+    {
+        $this->origineDiplome = $origineDiplome;
 
         return $this;
     }
