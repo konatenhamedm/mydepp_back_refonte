@@ -718,7 +718,7 @@ class Professionnel extends Entite
         return $this;
     }
 
-    public function getLieuObtentionDiplome(): ?LieuDiplome
+    public function getLieuObtentionDiplome(): ?string
     {
         return $this->lieuObtentionDiplome;
     }
