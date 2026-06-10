@@ -52,43 +52,21 @@ class ApiPaiementController extends ApiInterface
     )]
     #[OA\Tag(name: 'paiements')]
     // 
-    public function index(TransactionRepository $transactionRepository, ProfessionRepository $professionRepository, $type): Response
+    public function index(Request $request, TransactionRepository $transactionRepository, ProfessionRepository $professionRepository, $type): Response
     {
         try {
+            $search = $request->query->get('search');
+            $montant = $request->query->get('montant');
+            $startDate = $request->query->get('startDate');
+            $endDate = $request->query->get('endDate');
+            $professionId = $request->query->get('profession');
 
-            /* {
-                "user": {
-                    "id": 112,
-                    "username": "Doudou DEPPS25059008",
-                    "email": "adoudanidani@live.fr",
-                    "typeUser": "PROFESSIONNEL",
-                    "personne": {
-                        "code": "MS10250299.0001",
-                        "poleSanitaire": "",
-                        "nom": "Doudou",
-                        "prenoms": "DANI",
-                        "lieuExercicePro": "Adzopé",
-                        "email": "adoudanidani@gmail.com",
-                        "profession": "rd_kinesithérapie",
-                        "number": "0707937156",
-                        "quartier": "KOKO",
-                        "id": 76,
-                        "createdAt": "2025-05-09T13:10:32+02:00"
-                    },
-                    "createdAt": "2025-05-09T13:10:33+02:00"
-                },
-                "montant": "15000",
-                "reference": "DEPPS250509130852007",
-                "reference_channel": "LJV250509P1109412191",
-                "channel": "Wave",
-                "type": "NOUVELLE DEMANDE",
-                "state": 1,
-                "typeUser": "professionnel",
-                "createdAt": "2025-05-09T13:08:52+02:00"
-            }, */
+            if ($startDate === 'null' || $startDate === '') $startDate = null;
+            if ($endDate === 'null' || $endDate === '') $endDate = null;
+            if ($professionId === 'null' || $professionId === '') $professionId = null;
+            if ($montant === 'null' || $montant === '') $montant = null;
 
-            $transactions = $transactionRepository->getAllTransaction($type);
-
+            $transactions = $transactionRepository->getFilteredTransactions($type, $search, $montant, $startDate, $endDate, $professionId);
 
             $formattedTransactions = array_map(function (Transaction $transaction) use ($professionRepository, $type) {
                 $personne = $transaction->getUser()->getPersonne();
@@ -177,6 +155,10 @@ class ApiPaiementController extends ApiInterface
                 ];
             }, $transactions);
 
+            $request->query->remove('startDate');
+            $request->query->remove('endDate');
+            $request->query->remove('profession');
+            $request->query->remove('montant');
 
             $response = $this->responseData($formattedTransactions, 'group_user_trx', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -187,6 +169,46 @@ class ApiPaiementController extends ApiInterface
         // On envoie la réponse
         return $response;
     }
+
+    #[Route('/historique-kpis/{type}', methods: ['GET'])]
+    #[OA\Response(
+        response: 200,
+        description: 'KPIs pour l\'historique des paiements',
+        content: new OA\JsonContent(type: 'object')
+    )]
+    #[OA\Tag(name: 'paiements')]
+    public function getHistoriqueKpis(Request $request, TransactionRepository $transactionRepository, $type): Response
+    {
+        try {
+            $search = $request->query->get('search');
+            $montant = $request->query->get('montant');
+            $startDate = $request->query->get('startDate');
+            $endDate = $request->query->get('endDate');
+            $professionId = $request->query->get('profession');
+
+            if ($startDate === 'null' || $startDate === '') $startDate = null;
+            if ($endDate === 'null' || $endDate === '') $endDate = null;
+            if ($professionId === 'null' || $professionId === '') $professionId = null;
+            if ($montant === 'null' || $montant === '') $montant = null;
+
+            $kpis = $transactionRepository->getFilteredTransactionsKpis($type, $search, $montant, $startDate, $endDate, $professionId);
+
+            return $this->json([
+                'code' => 200,
+                'message' => 'KPIs récupérés avec succès',
+                'data' => $kpis,
+                'errors' => []
+            ]);
+        } catch (\Exception $exception) {
+            return $this->json([
+                'code' => 500,
+                'message' => $exception->getMessage(),
+                'data' => null,
+                'errors' => [$exception->getMessage()]
+            ], 500);
+        }
+    }
+
 
 
     private function formatEntityProfession($entity): ?array
