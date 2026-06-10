@@ -878,7 +878,8 @@ class ApiProfessionnelController extends ApiInterface
                     'ordre' => $personne->getOrdre() ? $this->formatEntity($personne->getOrdre()) : null,
                     'region' => $this->formatEntity($personne->getRegion()),
                     'district' => $this->formatEntity($personne->getDistrict()),
-                    'lieuObtentionDiplome' => $personne->getLieuObtentionDiplome() ?  $this->formatEntity($personne->getLieuObtentionDiplome()) : null,
+                    'lieuObtentionDiplome' => $personne->getLieuObtentionDiplome() ?? "",
+                    'origineDiplome' => $personne->getOrigineDiplome() ? $this->formatEntity($personne->getOrigineDiplome()) : null,
                     'commune' => $personne->getCommune() ?  $this->formatEntity($personne->getCommune()) : null,
                     'ville' => $this->formatEntity($personne->getVille()),
                     'nationate' => $this->formatEntity($personne->getNationate()),
@@ -1069,6 +1070,8 @@ class ApiProfessionnelController extends ApiInterface
                         new OA\Property(property: "dateNaissance", type: "string"), //dateNaissance date
                         new OA\Property(property: "numero", type: "string"), //contact
                         new OA\Property(property: "lieuDiplome", type: "string"), //lieu au obtention premier diplome
+                        new OA\Property(property: "lieuObtentionDiplome", type: "string"), //lieu obtention diplome
+                        new OA\Property(property: "origineDiplome", type: "string"), //origine diplome (local, etranger)
                         new OA\Property(property: "nationalite", type: "string"), //nationalite select
                         new OA\Property(property: "situation", type: "string"), //situation matrimonial
                         new OA\Property(property: "datePremierDiplome", type: "string"), //datePremierDiplome
@@ -1199,7 +1202,10 @@ class ApiProfessionnelController extends ApiInterface
             $professionnel->setDateNaissance(new DateTimeImmutable($request->get('dateNaissance')));
             $professionnel->setNumber($request->get('numero'));
             $professionnel->setLieuDiplome($request->get('lieuDiplome'));
-            $professionnel->setLieuObtentionDiplome($lieuDiplomeRepository->find($request->get('lieuObtentionDiplome')));
+            $professionnel->setLieuObtentionDiplome($request->get('lieuObtentionDiplome'));
+            if ($request->get('origineDiplome')) {
+                $professionnel->setOrigineDiplome($lieuDiplomeRepository->find($request->get('origineDiplome')));
+            }
             $professionnel->setNationate($paysRepository->find($request->get('nationalite')));
             $professionnel->setSituation($request->get('situation'));
             $professionnel->setDatePremierDiplome(new DateTimeImmutable($request->get('datePremierDiplome')));
@@ -1357,6 +1363,8 @@ class ApiProfessionnelController extends ApiInterface
                         new OA\Property(property: "dateNaissance", type: "string"), //dateNaissance date
                         new OA\Property(property: "numero", type: "string"), //contact
                         new OA\Property(property: "lieuDiplome", type: "string"), //lieu au obtention premier diplome
+                        new OA\Property(property: "lieuObtentionDiplome", type: "string"), //lieu obtention diplome
+                        new OA\Property(property: "origineDiplome", type: "string"), //origine diplome (local, etranger)
                         new OA\Property(property: "nationalite", type: "string"), //nationalite select
                         new OA\Property(property: "situation", type: "string"), //situation matrimonial
                         new OA\Property(property: "datePremierDiplome", type: "string"), //datePremierDiplome
@@ -1496,6 +1504,9 @@ Situation professionnelle * */
 
                 if (!empty($request->get('lieuObtentionDiplome'))) {
                     $professionnel->setLieuObtentionDiplome($request->get('lieuObtentionDiplome'));
+                }
+                if (!empty($request->get('origineDiplome'))) {
+                    $professionnel->setOrigineDiplome($lieuDiplomeRepository->find($request->get('origineDiplome')));
                 }
                 if (!empty($request->get('nationalite'))) {
                     $professionnel->setNationate($paysRepository->find($request->get('nationalite')));
