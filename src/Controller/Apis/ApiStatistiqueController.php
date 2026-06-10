@@ -670,4 +670,150 @@ class ApiStatistiqueController extends ApiInterface
             return $this->response('[]');
         }
     }
+
+    #[Route('/comptable/bilan', methods: ['GET'])]
+    #[OA\Response(
+        response: 200,
+        description: 'Bilan complet et soft pour le comptable',
+        content: new OA\JsonContent(type: 'object')
+    )]
+    #[OA\Tag(name: 'statistiques')]
+    public function comptableBilan(Request $request, TransactionRepository $transactionRepository): Response
+    {
+        try {
+            $startDate = $request->query->get('startDate');
+            $endDate = $request->query->get('endDate');
+            $professionId = $request->query->get('profession');
+            $regionId = $request->query->get('region');
+
+            if ($startDate === 'null' || $startDate === '') $startDate = null;
+            if ($endDate === 'null' || $endDate === '') $endDate = null;
+            if ($professionId === 'null' || $professionId === '') $professionId = null;
+            if ($regionId === 'null' || $regionId === '') $regionId = null;
+
+            $rawTransactions = $transactionRepository->getComptableBilanData($startDate, $endDate, $professionId, $regionId);
+
+            $montantTotal = 0;
+            $nombreSuccess = 0;
+            $nombreFail = 0;
+
+            $byChannelMap = [];
+            $byTypeUserMap = [];
+            $byProfessionMap = [];
+            $byRegionMap = [];
+            $byMonthMap = [];
+
+            foreach ($rawTransactions as $t) {
+                $state = (int)$t['state'];
+                if ($state === 1) {
+                    $montant = (int)$t['montant'];
+                    $montantTotal += $montant;
+                    $nombreSuccess++;
+
+                    // Channel
+                    $chan = $t['channel'] ?: 'Inconnu';
+                    if (!isset($byChannelMap[$chan])) {
+                        $byChannelMap[$chan] = ['name' => $chan, 'count' => 0, 'montant' => 0];
+                    }
+                    $byChannelMap[$chan]['count']++;
+                    $byChannelMap[$chan]['montant'] += $montant;
+
+                    // Type User
+                    $typeUser = $t['typeUser'] ?: 'Inconnu';
+                    $typeUserUpper = strtoupper($typeUser);
+                    if (!isset($byTypeUserMap[$typeUserUpper])) {
+                        $byTypeUserMap[$typeUserUpper] = ['name' => $typeUserUpper, 'count' => 0, 'montant' => 0];
+                    }
+                    $byTypeUserMap[$typeUserUpper]['count']++;
+                    $byTypeUserMap[$typeUserUpper]['montant'] += $montant;
+
+                    // Month
+                    $dateStr = $t['createdAt'];
+                    $monthYear = 'Inconnu';
+                    if ($dateStr) {
+                        try {
+                            $dt = new \DateTime($dateStr);
+                            $monthYear = $this->frenchMonth($dt->format('n')) . ' ' . $dt->format('Y');
+                        } catch (\Exception $e) {}
+                    }
+                    if (!isset($byMonthMap[$monthYear])) {
+                        $byMonthMap[$monthYear] = ['name' => $monthYear, 'count' => 0, 'montant' => 0];
+                    }
+                    $byMonthMap[$monthYear]['count']++;
+                    $byMonthMap[$monthYear]['montant'] += $montant;
+
+                    // Profession & Region only for PROFESSIONNEL
+                    if ($typeUserUpper === 'PROFESSIONNEL') {
+                        $prof = $t['professionLibelle'] ?: 'Sans profession';
+                        if (!isset($byProfessionMap[$prof])) {
+                            $byProfessionMap[$prof] = ['name' => $prof, 'count' => 0, 'montant' => 0];
+                        }
+                        $byProfessionMap[$prof]['count']++;
+                        $byProfessionMap[$prof]['montant'] += $montant;
+
+                        $reg = $t['regionLibelle'] ?: 'Sans région';
+                        if (!isset($byRegionMap[$reg])) {
+                            $byRegionMap[$reg] = ['name' => $reg, 'count' => 0, 'montant' => 0];
+                        }
+                        $byRegionMap[$reg]['count']++;
+                        $byRegionMap[$reg]['montant'] += $montant;
+                    }
+                } elseif ($state === 0) {
+                    $nombreFail++;
+                }
+            }
+
+            $avgAmount = $nombreSuccess > 0 ? (int)($montantTotal / $nombreSuccess) : 0;
+
+            // Sort maps by amount descending
+            $sortFn = function($a, $b) {
+                return $b['montant'] <=> $a['montant'];
+            };
+            usort($byChannelMap, $sortFn);
+            usort($byTypeUserMap, $sortFn);
+            usort($byProfessionMap, $sortFn);
+            usort($byRegionMap, $sortFn);
+
+            // Keep monthly order (we can sort by date, but let's just convert map values to array)
+            $byMonth = array_values($byMonthMap);
+
+            $result = [
+                'totals' => [
+                    'montantTotal' => $montantTotal,
+                    'nombreSuccess' => $nombreSuccess,
+                    'nombreFail' => $nombreFail,
+                    'avgAmount' => $avgAmount
+                ],
+                'byChannel' => array_values($byChannelMap),
+                'byTypeUser' => array_values($byTypeUserMap),
+                'byProfession' => array_values($byProfessionMap),
+                'byRegion' => array_values($byRegionMap),
+                'byMonth' => $byMonth
+            ];
+
+            return $this->json([
+                'code' => 200,
+                'message' => 'Bilan comptable généré avec succès',
+                'data' => $result,
+                'errors' => []
+            ]);
+
+        } catch (\Exception $exception) {
+            return $this->json([
+                'code' => 500,
+                'message' => $exception->getMessage(),
+                'trace' => $exception->getTraceAsString()
+            ], 500);
+        }
+    }
+
+    private function frenchMonth(int $m): string
+    {
+        $months = [
+            1 => 'Janvier', 2 => 'Février', 3 => 'Mars', 4 => 'Avril',
+            5 => 'Mai', 6 => 'Juin', 7 => 'Juillet', 8 => 'Août',
+            9 => 'Septembre', 10 => 'Octobre', 11 => 'Novembre', 12 => 'Décembre'
+        ];
+        return $months[$m] ?? '';
+    }
 }
