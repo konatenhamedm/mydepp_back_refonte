@@ -940,7 +940,7 @@ class ApiProfessionnelController extends ApiInterface
 
             if (!$personne || !$user) {
                 return $this->json([
-                    'message' => 'Aucun professionnel trouvé pour ce code.'
+                    'message' => "Le professionnel n'a pas encore de compte. Il doit s'inscrire pour en obtenir un."
                 ], Response::HTTP_BAD_REQUEST);
             }
 
