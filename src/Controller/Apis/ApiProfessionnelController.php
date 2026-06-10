@@ -938,11 +938,11 @@ class ApiProfessionnelController extends ApiInterface
                 $user = $userRepository->findOneBy(['personne' => $personne->getId()]);
             }
 
-           /*  if (!$personne || !$user) {
-                $this->setMessage('Aucun professionnel trouvé pour ce code.');
-                $this->setStatusCode(404);
-                return $this->response('[]');
-            } */
+            if (!$personne || !$user) {
+                return $this->json([
+                    'message' => 'Aucun professionnel trouvé pour ce code.'
+                ], Response::HTTP_BAD_REQUEST);
+            }
 
 
         
