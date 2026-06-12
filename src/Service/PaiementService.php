@@ -522,7 +522,7 @@ class PaiementService
 
 
         $professionnel->setPoleSanitaire($dataTemp->getPoleSanitaire());
-        $professionnel->setLieuObtentionDiplome($this->lieuDiplomeRepository->find($dataTemp->getLieuObtentionDiplome()));
+        $professionnel->setLieuObtentionDiplome($dataTemp->getLieuDiplome());
         $professionnel->setDateValidation(new DateTime());
         $professionnel->setLieuDiplome($dataTemp->getLieuDiplome());
 
@@ -559,7 +559,7 @@ class PaiementService
         //$professionnel->setSpecialite($this->professionRepository->findOneBy(['code' => $dataTemp->getProfession()]));
         $professionnel->setAppartenirOrganisation($dataTemp->getAppartenirOrganisation());
         $professionnel->setAppartenirOrdre($dataTemp->getAppartenirOrdre());
-        $professionnel->setLieuDiplome($dataTemp->getLieuDiplome());
+       // $professionnel->setLieuDiplome($dataTemp->getLieuDiplome());
         if ($dataTemp->getCivilite())
             $professionnel->setCivilite($this->civiliteRepository->find($dataTemp->getCivilite()));
 
