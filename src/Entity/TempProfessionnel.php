@@ -14,6 +14,7 @@ class TempProfessionnel
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Group(["group1", "group_user", 'group_pro', "group_user_trx"])]
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', nullable: true)]
