@@ -507,7 +507,7 @@ class Professionnel extends Entite
         return $this->lieuDiplome;
     }
 
-    public function setLieuDiplome(string $lieuDiplome): static
+    public function setLieuDiplome(?string $lieuDiplome): static
     {
         $this->lieuDiplome = $lieuDiplome;
 
