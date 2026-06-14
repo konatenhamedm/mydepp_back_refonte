@@ -406,6 +406,7 @@ class PaiementProService
         $professionnel->setDateNaissance($request->get('dateNaissance'));
         $professionnel->setNumber($request->get('numero'));
         $professionnel->setLieuDiplome($request->get('lieuDiplome'));
+        $professionnel->setOrigineDiplome($request->get('origineDiplome'));
         $professionnel->setLieuObtentionDiplome($request->get('lieuObtentionDiplome'));
         $professionnel->setNationate($request->get('nationalite'));
         $professionnel->setSituation($request->get('situation'));

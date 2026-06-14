@@ -91,7 +91,8 @@ class PaiementService
         private DocumentRepository $documentRepository,
         private DocumentOepRepository $documentOepRepository,
         private EtablissementRepository $etablissementRepository,
-        private OrdreRepository $ordreRepository
+        private OrdreRepository $ordreRepository,
+       
 
 
     ) {
@@ -527,6 +528,7 @@ class PaiementService
         $professionnel->setLieuDiplome($dataTemp->getLieuDiplome() ?? null);
 
        // $professionnel->setLieuObtentionDiplome();
+       $professionnel->setOrigineDiplome($this->lieuDiplomeRepository->find($dataTemp->getOrigineDiplome()));
         $professionnel->setRegion($this->regionRepository->find($dataTemp->getRegion()));
         $professionnel->setDistrict($this->districtRepository->find($dataTemp->getDistrict()));
         $professionnel->setVille($this->villeRepository->find($dataTemp->getVille()));

@@ -240,6 +240,10 @@ class TempProfessionnel
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $ordre = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Group(["group_pro","group_user_trx"])]
+    private ?string $origineDiplome = null;
+
 
     public function getReference(): ?string
     {
@@ -1079,6 +1083,18 @@ class TempProfessionnel
     public function setOrdre(?string $ordre): static
     {
         $this->ordre = $ordre;
+
+        return $this;
+    }
+
+    public function getOrigineDiplome(): ?string
+    {
+        return $this->origineDiplome;
+    }
+
+    public function setOrigineDiplome(?string $origineDiplome): static
+    {
+        $this->origineDiplome = $origineDiplome;
 
         return $this;
     }
