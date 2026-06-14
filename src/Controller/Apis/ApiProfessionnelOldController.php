@@ -616,7 +616,7 @@ class ApiProfessionnelOldController extends ApiInterface
                 'dateNaissance'         => $professionnel->getDateNaissance()?->format('d/m/Y') ?? '—',
                 'lieuNaissance'         => $lieuNaissance,
                 'profession'            => $profession?->getLibelle() ?? '—',
-                'code'                  => $code ?? '—',
+                'code'                  => $professionnel->getCode() ?? '—',
                 'numeroIdentitification' => $professionnel->getCode() ?? '—',
                 'email'                 => $professionnel->getEmail() ?? ($user?->getEmail() ?? '—'),
                 'number'                => $professionnel->getNumber() ?? '—',
