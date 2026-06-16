@@ -588,14 +588,20 @@ class ApiPaiementController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'paiements')]
-    // 
-    public function getTransaction(TransactionRepository $transactionRepository, $trxReference): Response
+    public function getTransaction(TransactionRepository $transactionRepository, \App\Service\PaiementProService $paiementProService, $trxReference): Response
     {
         $transaction = $transactionRepository->findOneBy(['reference' => $trxReference]);
 
+        if ($transaction && $transaction->getState() == 0) {
+            // Polling MTN Momo activement si le webhook n'a pas été reçu
+            $paiementProService->verifierStatutPaiementPro($trxReference);
+            // Re-fetch transaction state after checking
+            $transaction = $transactionRepository->findOneBy(['reference' => $trxReference]);
+        }
+
         return $this->json(
             [
-                "data" => $transaction->getState() == 1 ? true : false
+                "data" => $transaction && $transaction->getState() == 1 ? true : false
             ]
         );
     }
@@ -987,6 +993,7 @@ class ApiPaiementController extends ApiInterface
         $professionnel->setNumber($request->get('numero'));
         $professionnel->setLieuDiplome($request->get('lieuDiplome'));
         $professionnel->setLieuObtentionDiplome($request->get('lieuObtentionDiplome'));
+        $professionnel->setOrigineDiplome($request->get('origineDiplome'));
         $professionnel->setNationate($request->get('nationalite'));
         $professionnel->setSituation($request->get('situation'));
         $professionnel->setDatePremierDiplome(new DateTimeImmutable($request->get('datePremierDiplome')));

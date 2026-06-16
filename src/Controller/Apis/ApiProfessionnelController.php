@@ -1170,6 +1170,14 @@ class ApiProfessionnelController extends ApiInterface
         if ($errorResponse1 !== null) {
             return $errorResponse1;
         } else {
+            
+            $professionEntity = $professionRepository->find($request->get('profession'));
+            if ($professionEntity && $professionEntity->getMontantNouvelleDemande() > 0) {
+                // If the user is an admin, we might allow it, but for public registration, we block it.
+                if (!$this->isGranted('ROLE_ADMIN')) {
+                    return $this->errorResponse($user, "Cette profession nécessite un paiement. Veuillez utiliser le flux approprié.");
+                }
+            }
 
             $professionnel = new Professionnel();
 
