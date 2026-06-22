@@ -626,15 +626,45 @@ class PaymentProController extends ApiInterface
     )]
     #[OA\Tag(name: 'paiements')]
     // 
-    public function getTransaction(TransactionRepository $transactionRepository, $trxReference): Response
+    public function getTransaction(TransactionRepository $transactionRepository, PaiementProService $paiementProService, $trxReference): Response
     {
         $transaction = $transactionRepository->findOneBy(['reference' => $trxReference]);
 
-        return $this->json(
-            [
-                "data" => $transaction->getState() == 1 ? true : false
-            ]
-        );
+        if (!$transaction) {
+            return $this->json(["data" => false, "error" => "Transaction introuvable"]);
+        }
+
+        $momoResult = null;
+
+        // Si encore en attente, interroger MTN pour mettre à jour le state
+        if ($transaction->getState() == 0) {
+            $momoResult = $paiementProService->verifierStatutPaiementPro($trxReference);
+            // Re-fetch après la mise à jour éventuelle
+            $transaction = $transactionRepository->findOneBy(['reference' => $trxReference]);
+        }
+
+        $state = $transaction->getState();
+
+        if ($state == 1) {
+            return $this->json(["data" => true]);
+        }
+
+        if ($state == -1) {
+            return $this->json([
+                "data" => false,
+                "failed" => true,
+                "reason" => $momoResult['reason'] ?? null,
+                "message" => "Paiement refusé par MTN MoMo : " . ($momoResult['reason'] ?? 'FAILED'),
+            ]);
+        }
+
+        // state == 0 : toujours en attente
+        return $this->json([
+            "data" => false,
+            "failed" => false,
+            "status" => $momoResult['status'] ?? 'PENDING',
+            "mtn" => $momoResult,
+        ]);
     }
 
 
@@ -1031,6 +1061,7 @@ class PaymentProController extends ApiInterface
         $professionnel->setNumber($request->get('numero'));
         $professionnel->setLieuDiplome($request->get('lieuDiplome'));
         $professionnel->setLieuObtentionDiplome($request->get('lieuObtentionDiplome'));
+        $professionnel->setOrigineDiplome($request->get('origineDiplome'));
         $professionnel->setNationate($request->get('nationalite'));
         $professionnel->setSituation($request->get('situation'));
         $professionnel->setDatePremierDiplome(new DateTimeImmutable($request->get('datePremierDiplome')));
