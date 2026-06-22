@@ -232,7 +232,9 @@ class PaiementProService
         $transaction = $this->transactionRepository->findOneBy(['reference' => $referenceId]);
         // dd($transaction->getTypeUser());
         if ($transaction) {
-            if (($statusData['status'] ?? null) === 'SUCCESSFUL') {
+            $momoStatus = $statusData['status'] ?? null;
+
+            if (in_array($momoStatus, ['SUCCESSFUL', 'COMPLETED'])) {
                 if ($transaction->getType() === 'NOUVELLE DEMANDE') {
                     $response = (in_array($transaction->getTypeUser(), ["professionnel", "PROFESSIONNEL"]))
                         ? $this->paiementService->updateProfessionnel($referenceId)
@@ -240,6 +242,10 @@ class PaiementProService
                 } elseif ($transaction->getType() === 'RENOUVELLEMENT') {
                     $response = $this->finaliserRenouvellement($transaction);
                 }
+            } elseif (in_array($momoStatus, ['FAILED', 'REJECTED', 'TIMEOUT', 'CANCELLED'])) {
+                $transaction->setState(-1);
+                $this->em->persist($transaction);
+                $this->em->flush();
             }
 
             if (isset($response['code']) && $response['code'] === 200) {
