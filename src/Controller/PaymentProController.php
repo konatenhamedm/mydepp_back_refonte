@@ -626,9 +626,20 @@ class PaymentProController extends ApiInterface
     )]
     #[OA\Tag(name: 'paiements')]
     // 
-    public function getTransaction(TransactionRepository $transactionRepository, $trxReference): Response
+    public function getTransaction(TransactionRepository $transactionRepository, PaiementProService $paiementProService, $trxReference): Response
     {
         $transaction = $transactionRepository->findOneBy(['reference' => $trxReference]);
+
+        if (!$transaction) {
+            return $this->json(["data" => false, "error" => "Transaction introuvable"]);
+        }
+
+        // Si encore en attente, interroger MTN pour mettre à jour le state
+        if ($transaction->getState() == 0) {
+            $paiementProService->verifierStatutPaiementPro($trxReference);
+            // Re-fetch après la mise à jour éventuelle
+            $transaction = $transactionRepository->findOneBy(['reference' => $trxReference]);
+        }
 
         return $this->json(
             [
@@ -1031,6 +1042,7 @@ class PaymentProController extends ApiInterface
         $professionnel->setNumber($request->get('numero'));
         $professionnel->setLieuDiplome($request->get('lieuDiplome'));
         $professionnel->setLieuObtentionDiplome($request->get('lieuObtentionDiplome'));
+        $professionnel->setOrigineDiplome($request->get('origineDiplome'));
         $professionnel->setNationate($request->get('nationalite'));
         $professionnel->setSituation($request->get('situation'));
         $professionnel->setDatePremierDiplome(new DateTimeImmutable($request->get('datePremierDiplome')));
