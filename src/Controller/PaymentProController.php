@@ -634,18 +634,24 @@ class PaymentProController extends ApiInterface
             return $this->json(["data" => false, "error" => "Transaction introuvable"]);
         }
 
+        $momoResult = null;
+
         // Si encore en attente, interroger MTN pour mettre à jour le state
         if ($transaction->getState() == 0) {
-            $paiementProService->verifierStatutPaiementPro($trxReference);
+            $momoResult = $paiementProService->verifierStatutPaiementPro($trxReference);
             // Re-fetch après la mise à jour éventuelle
             $transaction = $transactionRepository->findOneBy(['reference' => $trxReference]);
         }
 
-        return $this->json(
-            [
-                "data" => $transaction->getState() == 1 ? true : false
-            ]
-        );
+        $success = $transaction->getState() == 1;
+
+        $response = ["data" => $success];
+
+        if (!$success && $momoResult !== null) {
+            $response['mtn'] = $momoResult;
+        }
+
+        return $this->json($response);
     }
 
 
