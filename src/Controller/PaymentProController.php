@@ -643,15 +643,28 @@ class PaymentProController extends ApiInterface
             $transaction = $transactionRepository->findOneBy(['reference' => $trxReference]);
         }
 
-        $success = $transaction->getState() == 1;
+        $state = $transaction->getState();
 
-        $response = ["data" => $success];
-
-        if (!$success && $momoResult !== null) {
-            $response['mtn'] = $momoResult;
+        if ($state == 1) {
+            return $this->json(["data" => true]);
         }
 
-        return $this->json($response);
+        if ($state == -1) {
+            return $this->json([
+                "data" => false,
+                "failed" => true,
+                "reason" => $momoResult['reason'] ?? null,
+                "message" => "Paiement refusé par MTN MoMo : " . ($momoResult['reason'] ?? 'FAILED'),
+            ]);
+        }
+
+        // state == 0 : toujours en attente
+        return $this->json([
+            "data" => false,
+            "failed" => false,
+            "status" => $momoResult['status'] ?? 'PENDING',
+            "mtn" => $momoResult,
+        ]);
     }
 
 
