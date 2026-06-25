@@ -599,11 +599,18 @@ class ApiPaiementController extends ApiInterface
             $transaction = $transactionRepository->findOneBy(['reference' => $trxReference]);
         }
 
-        return $this->json(
-            [
-                "data" => $transaction && $transaction->getState() == 1 ? true : false
-            ]
-        );
+        $failed = $transaction && $transaction->getState() == -1;
+        $reason = null;
+        if ($failed) {
+            $txData = json_decode($transaction->getData() ?? '{}', true);
+            $reason = $txData['reason'] ?? null;
+        }
+
+        return $this->json([
+            "data"   => $transaction && $transaction->getState() == 1 ? true : false,
+            "failed" => $failed,
+            "reason" => $reason,
+        ]);
     }
 
 

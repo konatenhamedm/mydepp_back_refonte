@@ -98,16 +98,23 @@ class ApiProfessionnelController extends ApiInterface
                 // $prenomsMatch = strtolower(trim($pro->getPrenoms())) === strtolower(trim($prenoms));
                 // dd($pro);
                 // if ($nomMatch && $prenomsMatch) {
-                $response = $this->response([
-                     'statut' => true,
-                    'id' => $pro->getId(),
-                    'nom' => $pro->getNom(),
-                    'prenoms' => $pro->getPrenoms(),
-                    'nationalite' => $pro->getNationate()->getId(),
-                    'profession' => $pro->getProfession()->getId(),
-                    'sexe' => $pro->getCivilite()->getId(),
-                    'DateNaissance' => $pro->getDateNaissance() ? $pro->getDateNaissance()->format('d/m/Y') : null,
-                ]);
+                if (!$pro->getProfession()) {
+                    $response = $this->response([
+                        'statut' => false,
+                        'message' => "Votre dossier ne comporte pas de profession enregistrée. Veuillez vous rapprocher des agents de la DEPPS pour régulariser votre situation.",
+                    ]);
+                } else {
+                    $response = $this->response([
+                        'statut' => true,
+                        'id' => $pro->getId(),
+                        'nom' => $pro->getNom(),
+                        'prenoms' => $pro->getPrenoms(),
+                        'nationalite' => $pro->getNationate() ? $pro->getNationate()->getId() : null,
+                        'profession' => $pro->getProfession()->getId(),
+                        'sexe' => $pro->getCivilite() ? $pro->getCivilite()->getId() : null,
+                        'DateNaissance' => $pro->getDateNaissance() ? $pro->getDateNaissance()->format('d/m/Y') : null,
+                    ]);
+                }
                 // } else {
                 //     $response = $this->response([
                 //         'statut' => false,
