@@ -244,6 +244,9 @@ class PaiementProService
                 }
             } elseif (in_array($momoStatus, ['FAILED', 'REJECTED', 'TIMEOUT', 'CANCELLED'])) {
                 $transaction->setState(-1);
+                $existingData = json_decode($transaction->getData() ?? '{}', true) ?? [];
+                $existingData['reason'] = $statusData['reason'] ?? $momoStatus;
+                $transaction->setData(json_encode($existingData, JSON_UNESCAPED_UNICODE));
                 $this->em->persist($transaction);
                 $this->em->flush();
             }
