@@ -1741,7 +1741,7 @@ Situation professionnelle * */
                 }
             }
 
-            $professionnel->setStatus("accepte");
+           // $professionnel->setStatus("accepte");
 
             // Transition de workflow selon l'état courant :
             // - inite                  → soumettre_dossier  → soumis_attente_documents

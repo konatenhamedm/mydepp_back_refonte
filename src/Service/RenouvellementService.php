@@ -43,7 +43,7 @@ class RenouvellementService
         $professionnels = $this->repoProfessionnel->createQueryBuilder('p')
             ->where('p.status NOT IN (:statuts)')
             ->andWhere('p.code IS NOT NULL') 
-            ->setParameter('statuts', ['attente', 'rejete', 'accepte', 'refuse', 'renouvellement','a_jour'])
+            ->setParameter('statuts', ['attente', 'rejete',  'refuse', 'renouvellement'])
             ->getQuery()
             ->getResult();
 
