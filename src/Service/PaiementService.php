@@ -528,15 +528,25 @@ class PaiementService
         $professionnel->setLieuDiplome($dataTemp->getLieuDiplome() ?? null);
 
        // $professionnel->setLieuObtentionDiplome();
-       $professionnel->setOrigineDiplome($this->lieuDiplomeRepository->find($dataTemp->getOrigineDiplome()));
-        $professionnel->setRegion($this->regionRepository->find($dataTemp->getRegion()));
-        $professionnel->setDistrict($this->districtRepository->find($dataTemp->getDistrict()));
-        $professionnel->setVille($this->villeRepository->find($dataTemp->getVille()));
-        $professionnel->setCommune($this->communeRepository->find($dataTemp->getCommune()));
-        $professionnel->setQuartier($dataTemp->getQuartier());
+       if($dataTemp->getOrigineDiplome())
+            $professionnel->setOrigineDiplome($this->lieuDiplomeRepository->find($dataTemp->getOrigineDiplome()));
+       
+       if($dataTemp->getRegion())
+            $professionnel->setRegion($this->regionRepository->find($dataTemp->getRegion()));
+        if($dataTemp->getDistrict())
+            $professionnel->setDistrict($this->districtRepository->find($dataTemp->getDistrict()));
+        if($dataTemp->getVille())
+            $professionnel->setVille($this->villeRepository->find($dataTemp->getVille()));
+        if($dataTemp->getCommune())
+            $professionnel->setCommune($this->communeRepository->find($dataTemp->getCommune()));
+        
+        if($dataTemp->getQuartier())
+            $professionnel->setQuartier($dataTemp->getQuartier());
 
-        $professionnel->setStatusPro($this->statusProRepository->find($dataTemp->getStatusPro()));
-        $professionnel->setTypeDiplome($this->typeDiplomeRepository->find($dataTemp->getTypeDiplome()));
+        if($dataTemp->getStatusPro())
+            $professionnel->setStatusPro($this->statusProRepository->find($dataTemp->getStatusPro()));
+        if($dataTemp->getTypeDiplome())
+            $professionnel->setTypeDiplome($this->typeDiplomeRepository->find($dataTemp->getTypeDiplome()));
 
         $professionnel->setNom($dataTemp->getNom());
         $professionnel->setPrenoms($dataTemp->getPrenoms());
