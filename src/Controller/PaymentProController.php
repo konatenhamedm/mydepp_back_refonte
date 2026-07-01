@@ -263,8 +263,10 @@ class PaymentProController extends ApiInterface
                     } else {
                         if ($user->getPersonne()->getDateValidation() !== null) {
                             $expiration = (clone $user->getPersonne()->getDateValidation());
-                        } else {
+                        } elseif ($dernierAbonnement !== null) {
                             $expiration = (clone $dernierAbonnement->getCreatedAt());
+                        } else {
+                            $expiration = (clone $today)->modify('-1 day');
                         }
 
                         // Vérifier l'expiration
