@@ -515,6 +515,7 @@ class ApiPaiementController extends ApiInterface
                 "typeUser" => $transactions->getUser()->getTypeUser(),
                 "createdAt" => $transactions->getCreatedAt() ? $transactions->getCreatedAt()->format('Y-m-d H:i:s') : null,
                 "email" => $transactions->getUser()->getEmail(),
+                "numero" => $transactions->getNumero(),
             ];
 
 
