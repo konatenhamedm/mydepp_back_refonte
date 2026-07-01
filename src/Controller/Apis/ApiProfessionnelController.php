@@ -708,7 +708,7 @@ class ApiProfessionnelController extends ApiInterface
             $previousStatus = $professionnel->getStatus();
             $validationCompteWorkflow->apply($professionnel, $dto->status);
 
-            if (in_array($dto->status, ['rejet', 'refuse', 'refuse_mise_a_jour', 'demande_document_supplementaire']) && !empty($dto->typeAutreDocuments)) {
+            if ($dto->status === 'demande_document_supplementaire' && !empty($dto->typeAutreDocuments)) {
                 $typeAutreDocRepo = $this->em->getRepository(\App\Entity\TypeAutreDocument::class);
                 foreach ($dto->typeAutreDocuments as $typeId) {
                     $typeDoc = $typeAutreDocRepo->find($typeId);
@@ -771,6 +771,8 @@ class ApiProfessionnelController extends ApiInterface
             $validationWorkflow->setEtape($dto->status);
             $validationWorkflow->setRaison($dto->raison);
             $validationWorkflow->setPersonne($professionnel);
+            $validationWorkflow->setCreatedAtValue(new \DateTimeImmutable());
+            $validationWorkflow->setUpdatedAt(new \DateTimeImmutable());
             $validationWorkflow->setCreatedBy($user);
             $validationWorkflow->setUpdatedBy($user);
 

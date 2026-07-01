@@ -291,8 +291,8 @@ class ApiEtablissementController extends ApiInterface
             $validationWorkflow->setEtape($dto->status);
             $validationWorkflow->setRaison($dto->raison);
             $validationWorkflow->setPersonne($etablissement);
-            $validationWorkflow->setCreatedAtValue(new DateTime());
-            $validationWorkflow->setUpdatedAt(new DateTime());
+            $validationWorkflow->setCreatedAtValue(new \DateTimeImmutable());
+            $validationWorkflow->setUpdatedAt(new \DateTimeImmutable());
             $validationWorkflow->setCreatedBy($userRepository->find($dto->userUpdate));
             $validationWorkflow->setUpdatedBy($userRepository->find($dto->userUpdate));
 

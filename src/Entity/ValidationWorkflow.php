@@ -9,6 +9,7 @@ use Symfony\Component\Serializer\Attribute\Groups as Group;
 
 
 #[ORM\Entity(repositoryClass: ValidationWorkflowRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class ValidationWorkflow
 {
     use TraitEntity; 

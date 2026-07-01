@@ -195,6 +195,8 @@ class ApiProfessionnelOldController extends ApiInterface
             $validationWorkflow->setEtape($status);
             $validationWorkflow->setRaison($raison);
             $validationWorkflow->setPersonne($professionnel);
+            $validationWorkflow->setCreatedAtValue(new \DateTimeImmutable());
+            $validationWorkflow->setUpdatedAt(new \DateTimeImmutable());
             $validationWorkflow->setCreatedBy($this->getUser());
             $validationWorkflow->setUpdatedBy($this->getUser());
 
