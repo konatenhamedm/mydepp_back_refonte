@@ -268,7 +268,7 @@ class Utils
             $candidate = sprintf(
                 "%s%s%s%s%s%s.%04d",
                 $prefixe,
-                $civilite,
+                //$civilite,
                 $anneeInscription,
                 $professionCode,
                 $jour,
