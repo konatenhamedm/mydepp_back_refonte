@@ -127,10 +127,12 @@ class ApiAutreDocumentProfessionnelController extends ApiInterface
                 $professionnel->setStatus($etape);
                 $this->em->persist($professionnel);
                 
-                // Mettre à jour tous les documents au statut 'en attente' (null)
+                // Mettre à jour les documents non validés au statut 'en attente' (null)
                 foreach ($docs as $doc) {
-                    $doc->setStatut(null);
-                    $this->em->persist($doc);
+                    if ($doc->getStatut() !== 'valide') {
+                        $doc->setStatut(null);
+                        $this->em->persist($doc);
+                    }
                 }
 
                 $this->em->flush();
