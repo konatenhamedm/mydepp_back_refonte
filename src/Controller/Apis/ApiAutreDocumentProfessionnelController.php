@@ -21,12 +21,7 @@ class ApiAutreDocumentProfessionnelController extends ApiInterface
     public function getByProfessionnel(int $id, AutreDocumentProfessionnelRepository $repository, ProfessionnelRepository $professionnelRepository): Response
     {
         try {
-            // L'ID reçu est l'ID de la Personne. On cherche le Professionnel associé.
-            $professionnel = $professionnelRepository->findOneBy(['personne' => $id]);
-            if (!$professionnel) {
-                return $this->json([], Response::HTTP_OK);
-            }
-            $documents = $repository->findBy(['professionnel' => $professionnel]);
+            $documents = $repository->findBy(['professionnel' => $id]);
 
             $formatted = array_map(function ($doc) {
                 $fichier = $doc->getDocument();
