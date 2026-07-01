@@ -79,33 +79,69 @@ class ApiAutreDocumentProfessionnelController extends ApiInterface
                 $this->em->flush();
             }
 
-            // Transition uniquement si TOUS les docs sont 'valide'
-            $professionnel       = $doc->getProfessionnel();
-            $transitionTriggered = false;
+            return $this->json([
+                'success' => true,
+                'message' => 'Document uploadé avec succès',
+            ]);
+        } catch (\Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 
-            if ($professionnel) {
-                $allDocs   = $repository->findBy(['professionnel' => $professionnel->getId()]);
-                $allValide = count($allDocs) > 0 && array_reduce(
-                    $allDocs,
-                    fn($carry, $d) => $carry && $d->getStatut() === 'valide',
-                    true
-                );
+    // ─── POST: Soumission globale par le professionnel ───────────────────────
+    #[Route('/professionnel/{id}/soumettre-tout', methods: ['POST'])]
+    #[OA\Tag(name: 'autre_document_professionnel')]
+    public function soumettreTout(
+        int $id,
+        AutreDocumentProfessionnelRepository $repository,
+        ProfessionnelRepository $professionnelRepository
+    ): Response {
+        try {
+            $professionnel = $professionnelRepository->find($id);
+            if (!$professionnel) {
+                return $this->json(['error' => 'Professionnel introuvable'], Response::HTTP_NOT_FOUND);
+            }
 
-                if ($allValide) {
-                    $workflow = $workflowRegistry->get($professionnel, 'validation_compte');
-                    if ($workflow->can($professionnel, 'retour_document_supplementaire')) {
-                        $workflow->apply($professionnel, 'retour_document_supplementaire');
-                        $professionnelRepository->add($professionnel, true);
-                        $this->logWorkflow($professionnel, 'retour_document_supplementaire');
-                        $transitionTriggered = true;
-                    }
+            $docs = $repository->findBy(['professionnel' => $id]);
+            if (empty($docs)) {
+                return $this->json(['error' => 'Aucun document attendu.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            // Vérifier que tous les documents ont un fichier attaché
+            foreach ($docs as $doc) {
+                if (!$doc->getDocument()) {
+                    return $this->json(['error' => 'Veuillez joindre tous les documents requis avant de soumettre.'], Response::HTTP_BAD_REQUEST);
                 }
             }
 
+            // Récupérer l'étape précédente depuis l'un des documents
+            $etape = null;
+            foreach ($docs as $doc) {
+                if ($doc->getEtape()) {
+                    $etape = $doc->getEtape();
+                    break;
+                }
+            }
+
+            if ($etape) {
+                $professionnel->setStatus($etape);
+                $this->em->persist($professionnel);
+                
+                // Mettre à jour tous les documents au statut 'en attente' (null)
+                foreach ($docs as $doc) {
+                    $doc->setStatut(null);
+                    $this->em->persist($doc);
+                }
+
+                $this->em->flush();
+
+                // Historiser l'action manuellement
+                $this->logWorkflow($professionnel, $etape);
+            }
+
             return $this->json([
-                'success'             => true,
-                'message'             => 'Document soumis avec succès',
-                'transitionTriggered' => $transitionTriggered,
+                'success' => true,
+                'message' => 'Dossier soumis avec succès à l\'administration.'
             ]);
         } catch (\Exception $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
