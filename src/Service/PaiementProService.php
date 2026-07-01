@@ -601,7 +601,7 @@ class PaiementProService
                 if ($status === 'SUCCESSFUL') {
                     $transaction->setState(1);
                 } elseif ($status === 'FAILED') {
-                    $transaction->setState(0); // FAILED
+                    $transaction->setState(-1);
                 } else {
                     $transaction->setState(0); // PENDING
                 }
@@ -642,8 +642,9 @@ class PaiementProService
         $today = new \DateTime();
 
         if ($expiration) {
-            $code = method_exists($personne, 'getCode') ? $personne->getCode() : null;
-            if ($code && preg_match('/^MS(\d{4})/', $code, $matches)) {
+            $code = method_exists($personne, 'getCode') ? ($personne->getCode() ?? '') : '';
+            if ($code && preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $code, $matches)) {
+                // Utilise l'année inscrite dans le code (MS2024..., MSNI2024..., etc.)
                 $yearDue = (int)$today->format('Y') - (int)$matches[1];
             } else {
                 $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');

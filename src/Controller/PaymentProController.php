@@ -250,8 +250,11 @@ class PaymentProController extends ApiInterface
                         $expiration = new \DateTime($matches[1] . '-12-31');
                     } elseif ($user->getPersonne()->getDateValidation() !== null) {
                         $expiration = (clone $user->getPersonne()->getDateValidation());
-                    } else {
+                    } elseif ($dernierAbonnement !== null) {
                         $expiration = (clone $dernierAbonnement->getCreatedAt());
+                    } else {
+                        // Aucune donnée fiable : on suppose que le professionnel doit renouveler
+                        $expiration = new \DateTime('last year December 31');
                     }
 
                     // Vérifier l'expiration
@@ -268,19 +271,16 @@ class PaymentProController extends ApiInterface
                     $etatPro = true;
                 }
             } else {
+                $today = new \DateTime();
                 if ($user->getPersonne()->getDateValidation() !== null) {
-
                     $expiration = (clone $user->getPersonne()->getDateValidation())->modify('+1 year');
-                    $today = new \DateTime();
-                    $joursRestants = max(0, $today->diff($expiration)->days);
-                    $expire = $expiration >= $today ? false : true;
-                } else {
-
+                } elseif ($dernierAbonnement !== null) {
                     $expiration = (clone $dernierAbonnement->getCreatedAt())->modify('+1 year');
-                    $today = new \DateTime();
-                    $joursRestants = max(0, $today->diff($expiration)->days);
-                    $expire = $expiration >= $today ? false : true;
+                } else {
+                    $expiration = new \DateTime('last year December 31');
                 }
+                $joursRestants = max(0, $today->diff($expiration)->days);
+                $expire = $expiration < $today;
 
                 $etatPro = true;
             }
@@ -292,7 +292,7 @@ class PaymentProController extends ApiInterface
             $transactions = [
                 'expire' => $expire,
                 'etatPro' => $etatPro,
-                'montant' => $montantTotal,
+                'montantTotal' => $montantTotal,
                 'montantUnitaire' => (int)$montantUnitaire,
                 'yearDue' => $yearDue,
                 'date_expiration' => $expiration->format('Y-m-d'),
