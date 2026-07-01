@@ -247,22 +247,37 @@ class PaymentProController extends ApiInterface
                     $code = $user->getPersonne()->getCode() ?? '';
 
                     if (preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $code, $matches)) {
-                        $expiration = new \DateTime($matches[1] . '-12-31');
-                    } elseif ($user->getPersonne()->getDateValidation() !== null) {
-                        $expiration = (clone $user->getPersonne()->getDateValidation());
+                        $yearInCode = (int)$matches[1];
+                        $currentYear = (int)$today->format('Y');
+                        
+                        $expire = $yearInCode < $currentYear;
+                        $expiration = new \DateTime($yearInCode . '-12-31');
+                        
+                        if ($expire) {
+                            $joursRestants = 0;
+                            $yearDue = $currentYear - $yearInCode;
+                        } else {
+                            $joursRestants = $today->diff($expiration)->days;
+                            $yearDue = 0;
+                        }
                     } else {
-                        $expiration = (clone $dernierAbonnement->getCreatedAt());
-                    }
+                        if ($user->getPersonne()->getDateValidation() !== null) {
+                            $expiration = (clone $user->getPersonne()->getDateValidation());
+                        } else {
+                            $expiration = (clone $dernierAbonnement->getCreatedAt());
+                        }
 
-                    // Vérifier l'expiration
-                    $expire = $expiration < $today;
+                        // Vérifier l'expiration
+                        $expire = $expiration < $today;
 
-                    // Calculer les jours restants (0 si déjà expiré)
-                    if ($expire) {
-                        $joursRestants = 0;
-                        $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
-                    } else {
-                        $joursRestants = $today->diff($expiration)->days;
+                        // Calculer les jours restants (0 si déjà expiré)
+                        if ($expire) {
+                            $joursRestants = 0;
+                            $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
+                        } else {
+                            $joursRestants = $today->diff($expiration)->days;
+                            $yearDue = 0;
+                        }
                     }
 
                     $etatPro = true;

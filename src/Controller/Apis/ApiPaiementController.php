@@ -262,29 +262,44 @@ class ApiPaiementController extends ApiInterface
                 } else {
                     $today = new \DateTime();
 
-                    // Déterminer la date d'expiration
-                    if ($user->getPersonne()->getDateValidation() !== null) {
-                        // $expiration = (clone $user->getPersonne()->getDateValidation())->modify('+1 year');
-                        $expiration = (clone $user->getPersonne()->getDateValidation());
-                    } else {
-                        // $expiration = (clone $dernierAbonnement->getCreatedAt())->modify('+1 year');
-                        $expiration = (clone $dernierAbonnement->getCreatedAt());
-                    }
+                    // Détermine la date d'expiration depuis le code professionnel
+                    // Cherche la première année (19xx ou 20xx) dans le code,
+                    // quelle que soit la structure du préfixe (MS, MSNI, MSDK, etc.)
+                    // Ex: MS2026APDENT1725.0006 → 2026 (1725 ignoré car ne commence pas par 19 ou 20)
+                    $code = $user->getPersonne()->getCode() ?? '';
 
-                    // Vérifier l'expiration
-                    $expire = $expiration < $today;
-
-                    // Calculer les jours restants (0 si déjà expiré)
-                    if ($expire) {
-                        $joursRestants = 0;
-                        $code = $user->getPersonne()->getCode();
-                        if ($code && preg_match('/^MS(\d{4})/', $code, $matches)) {
-                            $yearDue = (int)$today->format('Y') - (int)$matches[1];
+                    if (preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $code, $matches)) {
+                        $yearInCode = (int)$matches[1];
+                        $currentYear = (int)$today->format('Y');
+                        
+                        $expire = $yearInCode < $currentYear;
+                        $expiration = new \DateTime($yearInCode . '-12-31');
+                        
+                        if ($expire) {
+                            $joursRestants = 0;
+                            $yearDue = $currentYear - $yearInCode;
                         } else {
-                            $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
+                            $joursRestants = $today->diff($expiration)->days;
+                            $yearDue = 0;
                         }
                     } else {
-                        $joursRestants = $today->diff($expiration)->days;
+                        if ($user->getPersonne()->getDateValidation() !== null) {
+                            $expiration = (clone $user->getPersonne()->getDateValidation());
+                        } else {
+                            $expiration = (clone $dernierAbonnement->getCreatedAt());
+                        }
+
+                        // Vérifier l'expiration
+                        $expire = $expiration < $today;
+
+                        // Calculer les jours restants (0 si déjà expiré)
+                        if ($expire) {
+                            $joursRestants = 0;
+                            $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
+                        } else {
+                            $joursRestants = $today->diff($expiration)->days;
+                            $yearDue = 0;
+                        }
                     }
 
                     $etatPro = true;
