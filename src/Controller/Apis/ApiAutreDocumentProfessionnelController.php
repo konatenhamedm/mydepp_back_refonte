@@ -18,10 +18,15 @@ class ApiAutreDocumentProfessionnelController extends ApiInterface
     // ─── GET: liste des docs d'un professionnel ──────────────────────────────
     #[Route('/professionnel/{id}', methods: ['GET'])]
     #[OA\Tag(name: 'autre_document_professionnel')]
-    public function getByProfessionnel(int $id, AutreDocumentProfessionnelRepository $repository): Response
+    public function getByProfessionnel(int $id, AutreDocumentProfessionnelRepository $repository, ProfessionnelRepository $professionnelRepository): Response
     {
         try {
-            $documents = $repository->findBy(['professionnel' => $id]);
+            // L'ID reçu est l'ID de la Personne. On cherche le Professionnel associé.
+            $professionnel = $professionnelRepository->findOneBy(['personne' => $id]);
+            if (!$professionnel) {
+                return $this->json([], Response::HTTP_OK);
+            }
+            $documents = $repository->findBy(['professionnel' => $professionnel]);
 
             $formatted = array_map(function ($doc) {
                 $fichier = $doc->getDocument();

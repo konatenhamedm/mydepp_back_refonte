@@ -710,14 +710,22 @@ class ApiProfessionnelController extends ApiInterface
 
             if ($dto->status === 'demande_document_supplementaire' && !empty($dto->typeAutreDocuments)) {
                 $typeAutreDocRepo = $this->em->getRepository(\App\Entity\TypeAutreDocument::class);
+                $autreDocRepo = $this->em->getRepository(\App\Entity\AutreDocumentProfessionnel::class);
                 foreach ($dto->typeAutreDocuments as $typeId) {
                     $typeDoc = $typeAutreDocRepo->find($typeId);
                     if ($typeDoc) {
-                        $autreDoc = new \App\Entity\AutreDocumentProfessionnel();
-                        $autreDoc->setTypeAutreDocument($typeDoc);
-                        $autreDoc->setProfessionnel($professionnel);
-                        $autreDoc->setEtape($previousStatus);
-                        $this->em->persist($autreDoc);
+                        $existingDoc = $autreDocRepo->findOneBy([
+                            'professionnel' => $professionnel,
+                            'typeAutreDocument' => $typeDoc
+                        ]);
+
+                        if (!$existingDoc) {
+                            $autreDoc = new \App\Entity\AutreDocumentProfessionnel();
+                            $autreDoc->setTypeAutreDocument($typeDoc);
+                            $autreDoc->setProfessionnel($professionnel);
+                            $autreDoc->setEtape($previousStatus);
+                            $this->em->persist($autreDoc);
+                        }
                     }
                 }
             }
