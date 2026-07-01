@@ -43,8 +43,8 @@ class TransactionRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('t')
             ->andWhere('t.user = :userId')
-            ->andWhere('t.type = :state')
-            ->setParameter('state', "NOUVELLE DEMANDE")
+            ->andWhere('t.state = :state')
+            ->setParameter('state', 1)
             ->setParameter('userId', $userId)
             ->orderBy('t.createdAt', 'DESC')
             ->setMaxResults(1)
