@@ -24,3 +24,12 @@ Nous avons mis à jour la logique de calcul de la variable `$yearDue` (nombre d'
 
 ## Impact
 Les professionnels avec un ancien code (ex: `MS2022...`) verront automatiquement leur dette de renouvellement ajustée à la réalité de leur ancienneté lorsqu'ils accèderont à leur interface de renouvellement.
+
+
+for table in $(php bin/console dbal:run-sql "SELECT table_name FROM information_schema.columns WHERE column_name = 'created_by_id' AND table_schema = DATABASE();" | grep -v "TABLE_NAME" | grep -v "-" | awk '{print $1}'); do
+  if [ -n "$table" ]; then
+    echo "Nettoyage de $table..."
+    php bin/console dbal:run-sql "UPDATE $table SET created_by_id = NULL WHERE created_by_id NOT IN (SELECT id FROM utilisateur);" > /dev/null 2>&1
+    php bin/console dbal:run-sql "UPDATE $table SET updated_by_id = NULL WHERE updated_by_id NOT IN (SELECT id FROM utilisateur);" > /dev/null 2>&1
+  fi
+done

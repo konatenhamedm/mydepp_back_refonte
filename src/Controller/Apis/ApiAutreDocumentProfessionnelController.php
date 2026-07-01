@@ -37,10 +37,10 @@ class ApiAutreDocumentProfessionnelController extends ApiInterface
                 ];
             }, $documents);
 
-            return $this->response(json_encode($formatted), Response::HTTP_OK, ['Content-Type' => 'application/json']);
+            return $this->json($formatted, Response::HTTP_OK);
         } catch (\Exception $e) {
             $this->setMessage($e->getMessage());
-            return $this->response('[]');
+            return $this->json([], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -175,7 +175,7 @@ class ApiAutreDocumentProfessionnelController extends ApiInterface
     }
 
     // ─── Helper ──────────────────────────────────────────────────────────────
-    private function logWorkflow($professionnel, string $etape): void
+    private function logWorkflow(\App\Entity\Professionnel $professionnel, string $etape): void
     {
         $vw = new \App\Entity\ValidationWorkflow();
         $vw->setEtape($etape);
