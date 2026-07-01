@@ -31,6 +31,10 @@ class AutreDocumentProfessionnel
     #[Group(["group1"])]
     private ?TypeAutreDocument $typeAutreDocument = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Group(["group1"])]
+    private ?string $etape = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -68,6 +72,18 @@ class AutreDocumentProfessionnel
     public function setTypeAutreDocument(?TypeAutreDocument $typeAutreDocument): static
     {
         $this->typeAutreDocument = $typeAutreDocument;
+
+        return $this;
+    }
+
+    public function getEtape(): ?string
+    {
+        return $this->etape;
+    }
+
+    public function setEtape(?string $etape): static
+    {
+        $this->etape = $etape;
 
         return $this;
     }

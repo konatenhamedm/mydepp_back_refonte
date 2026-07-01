@@ -9,11 +9,16 @@ class ActiveProfessionnelRequest
 {
     #[Assert\NotBlank(message: "Le champ status est requis.")]
     #[Assert\Choice(
-        choices: ["acceptation", "rejet","refuse", "validation", "renouvellement", "mis_a_jour","refuse_mise_a_jour"],
-        message: "Le statut doit être l'une des valeurs suivantes : acceptation, rejet,refuse, validation, renouvellement, mis_a_jour."
+        choices: ["acceptation", "rejet","refuse", "validation", "renouvellement", "mis_a_jour","refuse_mise_a_jour", "demande_document_supplementaire"],
+        message: "Le statut doit être l'une des valeurs suivantes : acceptation, rejet, refuse, validation, renouvellement, mis_a_jour, refuse_mise_a_jour, demande_document_supplementaire."
     )]
     public ?string $status = null;
 
 
     public ?string $raison = null;
+
+    /**
+     * @var int[]|null
+     */
+    public ?array $typeAutreDocuments = [];
 }

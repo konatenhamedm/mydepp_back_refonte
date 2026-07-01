@@ -680,6 +680,7 @@ class ApiProfessionnelController extends ApiInterface
             $dto = new ActiveProfessionnelRequest();
             $dto->status = $data['status'] ?? null;
             $dto->raison = $data['raison'] ?? null;
+            $dto->typeAutreDocuments = $data['typeAutreDocuments'] ?? [];
 
             $errors = $validator->validate($dto);
             if (count($errors) > 0) {
@@ -704,7 +705,22 @@ class ApiProfessionnelController extends ApiInterface
                 return $this->json(['error' => 'Utilisateur non trouvé'], Response::HTTP_BAD_REQUEST);
             }
 
+            $previousStatus = $professionnel->getStatus();
             $validationCompteWorkflow->apply($professionnel, $dto->status);
+
+            if (in_array($dto->status, ['rejet', 'refuse', 'refuse_mise_a_jour', 'demande_document_supplementaire']) && !empty($dto->typeAutreDocuments)) {
+                $typeAutreDocRepo = $this->em->getRepository(\App\Entity\TypeAutreDocument::class);
+                foreach ($dto->typeAutreDocuments as $typeId) {
+                    $typeDoc = $typeAutreDocRepo->find($typeId);
+                    if ($typeDoc) {
+                        $autreDoc = new \App\Entity\AutreDocumentProfessionnel();
+                        $autreDoc->setTypeAutreDocument($typeDoc);
+                        $autreDoc->setProfessionnel($professionnel);
+                        $autreDoc->setEtape($previousStatus);
+                        $this->em->persist($autreDoc);
+                    }
+                }
+            }
 
             $profession = $professionnel->getProfession();
             if (!$profession) {
@@ -770,7 +786,7 @@ class ApiProfessionnelController extends ApiInterface
                 'refuse' => "Votre dossier a été refusé pour la raison suivante: " . ($dto->raison ?? 'Non spécifié'),
                 'validation' => "Votre dossier a été jugé conforme et est désormais en attente de validation finale. Vous recevrez une notification dès que le processus sera complété.",
                 'refuse_mise_a_jour' => "Votre dossier a été refusé pour la raison suivante: " . ($dto->raison ?? 'Non spécifié'),
-
+                'demande_document_supplementaire' => "Des documents supplémentaires sont requis pour l'analyse de votre dossier. Motif : " . ($dto->raison ?? 'Veuillez consulter votre espace pour plus de détails.'),
             ];
 
             $message = $messages[$dto->status] ?? "Statut du dossier mis à jour";
