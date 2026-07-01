@@ -6,8 +6,6 @@ use App\Controller\Apis\Config\ApiInterface;
 use App\Entity\AutreDocumentProfessionnel;
 use App\Repository\AutreDocumentProfessionnelRepository;
 use App\Repository\ProfessionnelRepository;
-use App\Repository\UserRepository;
-use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,42 +15,36 @@ use Symfony\Component\Workflow\Registry;
 #[Route('/api/autre-document-professionnel')]
 class ApiAutreDocumentProfessionnelController extends ApiInterface
 {
+    // ─── GET: liste des docs d'un professionnel ──────────────────────────────
     #[Route('/professionnel/{id}', methods: ['GET'])]
-    #[OA\Response(
-        response: 200,
-        description: 'Retourne la liste des documents supplémentaires demandés pour un professionnel',
-        content: new OA\JsonContent(
-            type: 'array',
-            items: new OA\Items(ref: new Model(type: AutreDocumentProfessionnel::class, groups: ['group1', 'fichier']))
-        )
-    )]
     #[OA\Tag(name: 'autre_document_professionnel')]
     public function getByProfessionnel(int $id, AutreDocumentProfessionnelRepository $repository): Response
     {
         try {
             $documents = $repository->findBy(['professionnel' => $id]);
-            
-            $formatted = array_map(function($doc) {
+
+            $formatted = array_map(function ($doc) {
                 $fichier = $doc->getDocument();
                 return [
                     'id'          => $doc->getId(),
-                    'typeLibelle' => $doc->getTypeAutreDocument() ? $doc->getTypeAutreDocument()->getLibelle() : '',
+                    'typeLibelle' => $doc->getTypeAutreDocument()?->getLibelle() ?? '',
                     'etape'       => $doc->getEtape(),
-                    'document'    => $fichier ? ['path' => $fichier->getPath(), 'alt' => $fichier->getAlt()] : null,
+                    'statut'      => $doc->getStatut(),   // null | 'valide' | 'invalide'
+                    'message'     => $doc->getMessage(),   // message admin
+                    'document'    => $fichier
+                        ? ['path' => $fichier->getPath(), 'alt' => $fichier->getAlt()]
+                        : null,
                 ];
             }, $documents);
 
             return $this->response(json_encode($formatted), Response::HTTP_OK, ['Content-Type' => 'application/json']);
-        } catch (\Exception $exception) {
-            $this->setMessage($exception->getMessage());
+        } catch (\Exception $e) {
+            $this->setMessage($e->getMessage());
             return $this->response('[]');
         }
     }
 
-    /**
-     * Upload le fichier d'un document supplémentaire et déclenche la transition
-     * retour_document_supplementaire si tous les docs du professionnel sont soumis.
-     */
+    // ─── POST: le professionnel soumet (upload) un document ──────────────────
     #[Route('/{id}/soumettre', methods: ['POST'])]
     #[OA\Tag(name: 'autre_document_professionnel')]
     public function soumettre(
@@ -60,7 +52,6 @@ class ApiAutreDocumentProfessionnelController extends ApiInterface
         Request $request,
         AutreDocumentProfessionnelRepository $repository,
         ProfessionnelRepository $professionnelRepository,
-        UserRepository $userRepository,
         Registry $workflowRegistry
     ): Response {
         try {
@@ -74,54 +65,126 @@ class ApiAutreDocumentProfessionnelController extends ApiInterface
                 return $this->json(['error' => 'Fichier manquant'], Response::HTTP_BAD_REQUEST);
             }
 
-            // Sauvegarde du fichier
-            $names      = 'autre_doc_' . $id;
-            $filePrefix = str_slug($names);
+            // Sauvegarde fichier
+            $filePrefix = str_slug('autre_doc_' . $id);
             $filePath   = $this->getUploadDir(self::UPLOAD_PATH, true);
             $fichier    = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH);
 
             if ($fichier) {
                 $doc->setDocument($fichier);
+                // Reset du statut → admin devra re-valider ce document
+                $doc->setStatut(null);
+                $doc->setMessage(null);
                 $this->em->persist($doc);
                 $this->em->flush();
             }
 
-            // Vérifier si TOUS les docs du professionnel sont maintenant soumis
-            $professionnel = $doc->getProfessionnel();
-            if ($professionnel) {
-                $allDocs    = $repository->findBy(['professionnel' => $professionnel->getId()]);
-                $allFilled  = array_reduce($allDocs, fn($carry, $d) => $carry && $d->getDocument() !== null, true);
+            // Transition uniquement si TOUS les docs sont 'valide'
+            $professionnel       = $doc->getProfessionnel();
+            $transitionTriggered = false;
 
-                if ($allFilled && count($allDocs) > 0) {
+            if ($professionnel) {
+                $allDocs   = $repository->findBy(['professionnel' => $professionnel->getId()]);
+                $allValide = count($allDocs) > 0 && array_reduce(
+                    $allDocs,
+                    fn($carry, $d) => $carry && $d->getStatut() === 'valide',
+                    true
+                );
+
+                if ($allValide) {
                     $workflow = $workflowRegistry->get($professionnel, 'validation_compte');
                     if ($workflow->can($professionnel, 'retour_document_supplementaire')) {
                         $workflow->apply($professionnel, 'retour_document_supplementaire');
                         $professionnelRepository->add($professionnel, true);
-
-                        // Log ValidationWorkflow
-                        $validationWorkflow = new \App\Entity\ValidationWorkflow();
-                        $validationWorkflow->setEtape('retour_document_supplementaire');
-                        $validationWorkflow->setPersonne($professionnel);
-                        $validationWorkflow->setCreatedAtValue(new \DateTimeImmutable());
-                        $validationWorkflow->setUpdatedAt(new \DateTimeImmutable());
-                        $validationWorkflow->setCreatedBy($this->getUser());
-                        $validationWorkflow->setUpdatedBy($this->getUser());
-                        $this->em->persist($validationWorkflow);
-                        $this->em->flush();
+                        $this->logWorkflow($professionnel, 'retour_document_supplementaire');
+                        $transitionTriggered = true;
                     }
                 }
             }
 
             return $this->json([
-                'success'  => true,
-                'message'  => 'Document soumis avec succès',
-                'etapeCible' => $doc->getEtape(),
+                'success'             => true,
+                'message'             => 'Document soumis avec succès',
+                'transitionTriggered' => $transitionTriggered,
             ]);
-        } catch (\Exception $exception) {
-            return $this->json([
-                'error'   => 'Une erreur est survenue',
-                'details' => $exception->getMessage(),
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        } catch (\Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    // ─── PUT: l'admin valide ou invalide un document ─────────────────────────
+    #[Route('/{id}/valider', methods: ['PUT', 'PATCH'])]
+    #[OA\Tag(name: 'autre_document_professionnel')]
+    public function valider(
+        int $id,
+        Request $request,
+        AutreDocumentProfessionnelRepository $repository,
+        ProfessionnelRepository $professionnelRepository,
+        Registry $workflowRegistry
+    ): Response {
+        try {
+            $doc = $repository->find($id);
+            if (!$doc) {
+                return $this->json(['error' => 'Document introuvable'], Response::HTTP_NOT_FOUND);
+            }
+
+            $body    = json_decode($request->getContent(), true) ?? [];
+            $statut  = $body['statut']  ?? null;   // 'valide' | 'invalide'
+            $message = $body['message'] ?? null;
+
+            if (!in_array($statut, ['valide', 'invalide'])) {
+                return $this->json(['error' => 'Statut invalide (valide|invalide)'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $doc->setStatut($statut);
+            $doc->setMessage($message);
+            $this->em->persist($doc);
+            $this->em->flush();
+
+            // Si tous 'valide' → déclencher la transition
+            $professionnel       = $doc->getProfessionnel();
+            $transitionTriggered = false;
+
+            if ($professionnel && $statut === 'valide') {
+                $allDocs   = $repository->findBy(['professionnel' => $professionnel->getId()]);
+                $allValide = count($allDocs) > 0 && array_reduce(
+                    $allDocs,
+                    fn($carry, $d) => $carry && $d->getStatut() === 'valide',
+                    true
+                );
+
+                if ($allValide) {
+                    $workflow = $workflowRegistry->get($professionnel, 'validation_compte');
+                    if ($workflow->can($professionnel, 'retour_document_supplementaire')) {
+                        $workflow->apply($professionnel, 'retour_document_supplementaire');
+                        $professionnelRepository->add($professionnel, true);
+                        $this->logWorkflow($professionnel, 'retour_document_supplementaire');
+                        $transitionTriggered = true;
+                    }
+                }
+            }
+
+            return $this->json([
+                'success'             => true,
+                'statut'              => $doc->getStatut(),
+                'transitionTriggered' => $transitionTriggered,
+            ]);
+        } catch (\Exception $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // ─── Helper ──────────────────────────────────────────────────────────────
+    private function logWorkflow($professionnel, string $etape): void
+    {
+        $vw = new \App\Entity\ValidationWorkflow();
+        $vw->setEtape($etape);
+        $vw->setPersonne($professionnel);
+        $vw->setCreatedAtValue(new \DateTimeImmutable());
+        $vw->setUpdatedAt(new \DateTimeImmutable());
+        $vw->setCreatedBy($this->getUser());
+        $vw->setUpdatedBy($this->getUser());
+        $this->em->persist($vw);
+        $this->em->flush();
     }
 }

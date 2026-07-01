@@ -35,6 +35,14 @@ class AutreDocumentProfessionnel
     #[Group(["group1"])]
     private ?string $etape = null;
 
+    #[ORM\Column(length: 50, nullable: true)]
+    #[Group(["group1"])]
+    private ?string $statut = null; // null = en_attente, 'valide', 'invalide'
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Group(["group1"])]
+    private ?string $message = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -84,6 +92,30 @@ class AutreDocumentProfessionnel
     public function setEtape(?string $etape): static
     {
         $this->etape = $etape;
+
+        return $this;
+    }
+
+    public function getStatut(): ?string
+    {
+        return $this->statut;
+    }
+
+    public function setStatut(?string $statut): static
+    {
+        $this->statut = $statut;
+
+        return $this;
+    }
+
+    public function getMessage(): ?string
+    {
+        return $this->message;
+    }
+
+    public function setMessage(?string $message): static
+    {
+        $this->message = $message;
 
         return $this;
     }
