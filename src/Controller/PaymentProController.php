@@ -228,22 +228,23 @@ class PaymentProController extends ApiInterface
                 ['createdAt' => 'DESC']
             );
             if ($user->getTypeUser() == "PROFESSIONNEL") {
-                // $profession = $professionRepository->findOneByCode($user->getPersonne());
+                $profession = $user->getPersonne()->getProfession();
+                $isPayante = false;
+                if ($profession) {
+                    $montantNouveau = (int) $profession->getMontantNouvelleDemande();
+                    $montantRenouv = (int) $profession->getMontantRenouvellement();
+                    if ($montantNouveau > 0 || $montantRenouv > 0) {
+                        $isPayante = true;
+                    }
+                }
 
-
-
-                if ($user->getPersonne()->getProfession()->getMontantRenouvellement() == null) {
+                if (!$isPayante) {
                     $expire = false;
                     $joursRestants = 0;
                     $expiration = new \DateTime();
                     $etatPro = false;
                 } else {
                     $today = new \DateTime();
-
-                    // Détermine la date d'expiration depuis le code professionnel
-                    // Cherche la première année (19xx ou 20xx) dans le code,
-                    // quelle que soit la structure du préfixe (MS, MSNI, MSDK, etc.)
-                    // Ex: MS2026APDENT1725.0006 → 2026 (1725 ignoré car ne commence pas par 19 ou 20)
                     $code = $user->getPersonne()->getCode() ?? '';
 
                     if (preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $code, $matches)) {
@@ -261,42 +262,40 @@ class PaymentProController extends ApiInterface
                             $yearDue = 0;
                         }
                     } else {
-                        if ($user->getPersonne()->getDateValidation() !== null) {
-                            $expiration = (clone $user->getPersonne()->getDateValidation());
-                        } elseif ($dernierAbonnement !== null) {
-                            $expiration = (clone $dernierAbonnement->getCreatedAt());
-                        } else {
-                            $expiration = (clone $today)->modify('-1 day');
-                        }
-
-                        // Vérifier l'expiration
-                        $expire = $expiration < $today;
-
-                        // Calculer les jours restants (0 si déjà expiré)
-                        if ($expire) {
-                            $joursRestants = 0;
-                            $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
-                        } else {
-                            $joursRestants = $today->diff($expiration)->days;
-                            $yearDue = 0;
-                        }
+                        // S'il n'a pas encore de code ou que le code ne contient pas d'année
+                        $expire = false;
+                        $expiration = new \DateTime();
+                        $joursRestants = 0;
+                        $yearDue = 0;
                     }
 
                     $etatPro = true;
                 }
             } else {
-                if ($user->getPersonne()->getDateValidation() !== null) {
+                // ETABLISSEMENT
+                $today = new \DateTime();
+                $code = $user->getPersonne()->getCode() ?? '';
 
-                    $expiration = (clone $user->getPersonne()->getDateValidation())->modify('+1 year');
-                    $today = new \DateTime();
-                    $joursRestants = max(0, $today->diff($expiration)->days);
-                    $expire = $expiration >= $today ? false : true;
+                if (preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $code, $matches)) {
+                    $yearInCode = (int)$matches[1];
+                    $currentYear = (int)$today->format('Y');
+                    
+                    $expire = $yearInCode < $currentYear;
+                    $expiration = new \DateTime($yearInCode . '-12-31');
+                    
+                    if ($expire) {
+                        $joursRestants = 0;
+                        $yearDue = $currentYear - $yearInCode;
+                    } else {
+                        $joursRestants = $today->diff($expiration)->days;
+                        $yearDue = 0;
+                    }
                 } else {
-
-                    $expiration = (clone $dernierAbonnement->getCreatedAt())->modify('+1 year');
-                    $today = new \DateTime();
-                    $joursRestants = max(0, $today->diff($expiration)->days);
-                    $expire = $expiration >= $today ? false : true;
+                    // S'il n'a pas de code
+                    $expire = false;
+                    $expiration = new \DateTime();
+                    $joursRestants = 0;
+                    $yearDue = 0;
                 }
 
                 $etatPro = true;

@@ -47,7 +47,7 @@ class SubscriptionChecker
 
             if ($isPayante) {
                 $code = $personne->getCode();
-                if ($code && preg_match('/^[A-Za-z]{2}(\d{4})/', $code, $matches)) {
+                if ($code && preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $code, $matches)) {
                     $yearCode = (int) $matches[1];
                     if ($yearCode < $currentYear) {
                         $isExpired = true;
@@ -56,8 +56,8 @@ class SubscriptionChecker
             }
         } elseif ($personne instanceof Etablissement) {
             $code = $personne->getCode();
-            // On extrait les 4 premiers chiffres qui suivent les éventuelles lettres au début du code
-            if ($code && preg_match('/^[A-Za-z]{2}(\d{4})/', $code, $matches)) {
+            // On extrait la première année (19xx ou 20xx) présente dans le code
+            if ($code && preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $code, $matches)) {
                 $yearCode = (int) $matches[1];
                 if ($yearCode < $currentYear) {
                     $isExpired = true;
