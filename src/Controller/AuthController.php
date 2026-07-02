@@ -59,6 +59,7 @@ class AuthController extends ApiInterface
         JwtService $jwtService,
         UserPasswordHasherInterface $hasher,
         UserRepository $userRepo,
+        SubscriptionChecker $subscriptionChecker
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
         $email = $data['email'] ?? null;
@@ -87,7 +88,7 @@ class AuthController extends ApiInterface
             'email' => $user->getEmail(),
             'roles' => $user->getRoles()
         ]);
-        $expire = true;
+        $expire = $subscriptionChecker->checkExpiration($user->getPersonne());
         $finRenouvelement = "";
 
 
@@ -107,7 +108,7 @@ class AuthController extends ApiInterface
             'data' => [
                 'id' => $user->getId(),
                 'role' => $user->getRoles(),
-                "expire" => $user->getPersonne()->getStatus() == "renouvellement" ? true : false,
+                "expire" => $expire,
                 "finRenouvellement" => $finRenouvelement,
                 'createdAt' => $user->getCreatedAt() ? $user->getCreatedAt()->format('Y-m-d H:i:s') : null,
                 'username' => $user->getTypeUser() == "ADMINISTRATEUR" ? $user->getUsername() : $user->getUserIdentifier(),
