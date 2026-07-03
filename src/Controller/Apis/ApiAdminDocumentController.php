@@ -109,6 +109,8 @@ class ApiAdminDocumentController extends ApiInterface
                     properties: [
 
                         new OA\Property(property: "libelle", type: "string"),
+                        new OA\Property(property: "type", type: "string"),
+                        new OA\Property(property: "sousType", type: "string"),
                         new OA\Property(property: "path", type: "string", format: "binary"),
 
 
@@ -136,6 +138,8 @@ class ApiAdminDocumentController extends ApiInterface
 
         $adminDocument = new AdminDocument();
         $adminDocument->setLibelle($request->get('libelle'));
+        $adminDocument->setType($request->get('type'));
+        $adminDocument->setSousType($request->get('sousType'));
         $adminDocument->setCreatedAtValue();
         $adminDocument->setUpdatedAt();
         $adminDocument->setCreatedBy($this->getUser());
@@ -177,6 +181,8 @@ class ApiAdminDocumentController extends ApiInterface
                     properties: [
 
                         new OA\Property(property: "libelle", type: "string"),
+                        new OA\Property(property: "type", type: "string"),
+                        new OA\Property(property: "sousType", type: "string"),
                         new OA\Property(property: "path", type: "string", format: "binary"),
 
 
@@ -204,6 +210,8 @@ class ApiAdminDocumentController extends ApiInterface
             if ($adminDocument != null) {
 
                 $adminDocument->setLibelle($request->get('libelle'));
+                $adminDocument->setType($request->get('type'));
+                $adminDocument->setSousType($request->get('sousType'));
                 $adminDocument->setUpdatedAt();
                 $adminDocument->setUpdatedBy($this->getUser());
                 $errorResponse = $this->errorResponse($adminDocument);

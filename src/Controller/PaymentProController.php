@@ -297,6 +297,8 @@ class PaymentProController extends ApiInterface
                     $joursRestants = 0;
                     $yearDue = 0;
                 }
+                $joursRestants = max(0, $today->diff($expiration)->days);
+                $expire = $expiration < $today;
 
                 $etatPro = true;
             }
@@ -308,7 +310,7 @@ class PaymentProController extends ApiInterface
             $transactions = [
                 'expire' => $expire,
                 'etatPro' => $etatPro,
-                'montant' => $montantTotal,
+                'montantTotal' => $montantTotal,
                 'montantUnitaire' => (int)$montantUnitaire,
                 'yearDue' => $yearDue,
                 'date_expiration' => $expiration->format('Y-m-d'),
