@@ -19,13 +19,29 @@ final class Version20260701122618 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE autre_document_professionnel ADD statut VARCHAR(50) DEFAULT NULL, ADD message LONGTEXT DEFAULT NULL');
+        if (!$this->columnExists('autre_document_professionnel', 'statut')) {
+            $this->addSql('ALTER TABLE autre_document_professionnel ADD statut VARCHAR(50) DEFAULT NULL');
+        }
+        if (!$this->columnExists('autre_document_professionnel', 'message')) {
+            $this->addSql('ALTER TABLE autre_document_professionnel ADD message LONGTEXT DEFAULT NULL');
+        }
     }
 
     public function down(Schema $schema): void
     {
-        // this down() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE autre_document_professionnel DROP statut, DROP message');
+        if ($this->columnExists('autre_document_professionnel', 'statut')) {
+            $this->addSql('ALTER TABLE autre_document_professionnel DROP statut');
+        }
+        if ($this->columnExists('autre_document_professionnel', 'message')) {
+            $this->addSql('ALTER TABLE autre_document_professionnel DROP message');
+        }
+    }
+
+    private function columnExists(string $table, string $column): bool
+    {
+        return (bool) $this->connection->fetchOne(
+            'SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?',
+            [$table, $column]
+        );
     }
 }
