@@ -24,17 +24,7 @@ class Genre
     #[Group(["group1","group_pro"])]
     private ?string $libelle = null;
 
-    /**
-     * @var Collection<int, Etablissement>
-     */
-    #[ORM\OneToMany(targetEntity: Etablissement::class, mappedBy: 'genre')]
-    private Collection $etablissements;
 
-    /**
-     * @var Collection<int, Professionnel>
-     */
-    #[ORM\OneToMany(targetEntity: Professionnel::class, mappedBy: 'genre')]
-    private Collection $professionnels;
 
     /**
      * @var Collection<int, Entite>
@@ -44,8 +34,7 @@ class Genre
 
     public function __construct()
     {
-        $this->etablissements = new ArrayCollection();
-        $this->professionnels = new ArrayCollection();
+
         $this->entites = new ArrayCollection();
     }
 
@@ -66,65 +55,7 @@ class Genre
         return $this;
     }
 
-    /**
-     * @return Collection<int, Etablissement>
-     */
-    public function getEtablissements(): Collection
-    {
-        return $this->etablissements;
-    }
 
-    public function addEtablissement(Etablissement $etablissement): static
-    {
-        if (!$this->etablissements->contains($etablissement)) {
-            $this->etablissements->add($etablissement);
-            $etablissement->setGenre($this);
-        }
-
-        return $this;
-    }
-
-    public function removeEtablissement(Etablissement $etablissement): static
-    {
-        if ($this->etablissements->removeElement($etablissement)) {
-            // set the owning side to null (unless already changed)
-            if ($etablissement->getGenre() === $this) {
-                $etablissement->setGenre(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Professionnel>
-     */
-    public function getProfessionnels(): Collection
-    {
-        return $this->professionnels;
-    }
-
-    public function addProfessionnel(Professionnel $professionnel): static
-    {
-        if (!$this->professionnels->contains($professionnel)) {
-            $this->professionnels->add($professionnel);
-            $professionnel->setGenre($this);
-        }
-
-        return $this;
-    }
-
-    public function removeProfessionnel(Professionnel $professionnel): static
-    {
-        if ($this->professionnels->removeElement($professionnel)) {
-            // set the owning side to null (unless already changed)
-            if ($professionnel->getGenre() === $this) {
-                $professionnel->setGenre(null);
-            }
-        }
-
-        return $this;
-    }
 
     /**
      * @return Collection<int, Entite>
