@@ -32,7 +32,7 @@ class TempEtablissement
 
 
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $reference = null;
 
 
@@ -43,12 +43,12 @@ class TempEtablissement
 
 
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $status = null;
 
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $typePersonne = null;
 
@@ -61,221 +61,221 @@ class TempEtablissement
     #[ORM\Column(length: 255)]
     private ?string $typeUser = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $nom = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $prenoms = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $telephone = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $emailAutre = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $typeSociete = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $bp = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $denomination = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $adresse = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $nomRepresentant = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $niveauIntervention = null;
 
     // ---- Structure ----
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $typeDemandeEtablissement = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $typeEtablissement = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $natureEtablissement = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $typeOrganisation = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $accordMinistere = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $dateValiditeAccord = null;
 
     // ---- Adresses et Contacts ----
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $region = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $district = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $villeVillage = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $commune = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $quartier = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $zoneSecteur = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $villaImmeubleEtagePorte = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $ilotNumero = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $lotNumero = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $rueAvenue = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $pointDeRepere = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $adresseElectronique = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $telephoneFixe = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $whatsapp = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $telephoneMobile = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $telephoneAutre = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $adressePostale = null;
 
     // ---- Personne physique ----
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $civilite = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $profession = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $cniNumero = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $whatsappPersonnel = null;
 
     // ---- Personne morale / Représentant ----
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $statutJuridique = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $representantCivilite = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $representantQualite = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $representantCni = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $representantTelephone = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $representantWhatsapp = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $representantEmail = null;
 
     // ---- Responsable médicolégal ----
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $responsableCivilite = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $responsableNom = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $responsabiliteMedicolegale = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $responsableProfession = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $responsableDiplome = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $responsableSpecialite = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $responsableNiveauFormation = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $responsableStatutAdministratif = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $responsableEmail = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $responsableTelephone = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $responsableWhatsapp = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $responsableNumeroOrdre = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $responsableCni = null;
 
     // ---- Enregistrement / Certificat / Horaires ----
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $anneeCreation = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $enregistreeDepps = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $numeroEnregistrement = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $organismeEnregistrement = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $anneeAutorisation = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $aCertificatConformite = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $dateValiditeCertificat = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $horaireOuverture = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $autreHoraireOuverture = null;
 
     // ---- Contrôle Qualité et Services ----
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $aAccreditation = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $engagementProcessusAccreditation = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $certificationQualite = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $autresCertification = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]

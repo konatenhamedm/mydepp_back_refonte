@@ -27,39 +27,39 @@ class Etablissement extends Entite
     #[Group(["group_pro"])]
     private Collection $documents;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro","group_user"])]
     private ?string $nom = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro","group_user"])]
     private ?string $prenoms = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $telephone = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $email = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $bp = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $typeSociete = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro","group_user"])]
     private ?string $denomination = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $adresse = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $nomRepresentant = null;
 
@@ -77,7 +77,7 @@ class Etablissement extends Entite
     #[Group(["group_pro"])]
     private ?\DateTimeInterface $dateExamenRapport = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $emailAutre = null;
 
@@ -87,7 +87,7 @@ class Etablissement extends Entite
     #[ORM\ManyToOne(inversedBy: 'etablissements')]
     private ?User $imputation = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $code = null;
 
@@ -132,63 +132,63 @@ class Etablissement extends Entite
     #[Group(["group_pro"])]
     private ?District $district = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $villeVillage = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $commune = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $quartier = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $zoneSecteur = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $villaImmeubleEtagePorte = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $ilotNumero = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $lotNumero = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $rueAvenue = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $pointDeRepere = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $adresseElectronique = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $telephoneFixe = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $whatsapp = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $telephoneMobile = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $telephoneAutre = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $adressePostale = null;
 
@@ -204,11 +204,11 @@ class Etablissement extends Entite
     #[Group(["group_pro"])]
     private ?Profession $profession = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $cniNumero = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $whatsappPersonnel = null;
 
@@ -216,23 +216,23 @@ class Etablissement extends Entite
     #[Group(["group_pro"])]
     private ?Civilite $representantCivilite = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $representantQualite = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $representantCni = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $representantTelephone = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $representantWhatsapp = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $representantEmail = null;
 
@@ -240,7 +240,7 @@ class Etablissement extends Entite
     #[Group(["group_pro"])]
     private ?Civilite $responsableCivilite = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $responsableNom = null;
 
@@ -248,15 +248,15 @@ class Etablissement extends Entite
     #[Group(["group_pro"])]
     private ?ResponsabiliteMedicolegale $responsabiliteMedicolegale = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $responsableProfession = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $responsableDiplome = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $responsableSpecialite = null;
 
@@ -268,27 +268,27 @@ class Etablissement extends Entite
     #[Group(["group_pro"])]
     private ?StatusPro $responsableStatutAdministratif = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $responsableEmail = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $responsableTelephone = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $responsableWhatsapp = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $responsableNumeroOrdre = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $responsableCni = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $anneeCreation = null;
 
@@ -296,7 +296,7 @@ class Etablissement extends Entite
     #[Group(["group_pro"])]
     private ?bool $enregistreeDepps = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $numeroEnregistrement = null;
 
@@ -304,7 +304,7 @@ class Etablissement extends Entite
     #[Group(["group_pro"])]
     private ?OrganismeEnregistrement $organismeEnregistrement = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $anneeAutorisation = null;
 
@@ -316,11 +316,11 @@ class Etablissement extends Entite
     #[Group(["group_pro"])]
     private ?\DateTimeInterface $dateValiditeCertificat = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $horaireOuverture = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $autreHoraireOuverture = null;
 
@@ -336,7 +336,7 @@ class Etablissement extends Entite
     #[Group(["group_pro"])]
     private ?CertificationQualite $certificationQualite = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $autresCertification = null;
 
