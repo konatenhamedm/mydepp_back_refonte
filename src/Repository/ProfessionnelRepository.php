@@ -106,7 +106,7 @@ class ProfessionnelRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('p')
 
             ->andWhere('p.status = :val')
-            ->setParameter('val', 'valide')
+            ->setParameter('val', 'a_jour')
             ->getQuery()
             ->getResult();
     }
