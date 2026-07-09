@@ -628,10 +628,13 @@ class ApiStatistiqueController extends ApiInterface
 
             // 2. Analyse des Transactions (Chiffre d'Affaires)
             $totalSuccessfulAmount = (int)$transactionRepository->montantTotal();
+            $totalFee = (int)$transactionRepository->feeTotal();
             $transactions = [
                 'montant_total' => $totalSuccessfulAmount,
                 'succes' => $transactionRepository->count(['state' => 1]),
                 'echec' => $transactionRepository->count(['state' => 0]),
+                'fee_total' => $totalFee,
+                'solde_retirable' => $totalSuccessfulAmount - $totalFee,
             ];
 
             // 3. Dossiers Professionnels
