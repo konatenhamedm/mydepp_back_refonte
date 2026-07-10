@@ -974,11 +974,12 @@ class PaymentProController extends ApiInterface
 
             foreach ($documents as $index => $doc) {
 
+                $libelleGroupeId = $doc['libelleGroupe'] ?? null;
                 $newDocument = new DocumentOepTemp();
                 $newDocument->setLibelle($doc['libelle'])
                     ->setReference($createTransactionData['reference'])
                     ->setEtablissement($request->get('etablissement'))
-                    ->setLibelleGroupe($this->em->getRepository(LibelleGroupe::class)->find($doc['libelleGroupe'] ?? null));
+                    ->setLibelleGroupe($libelleGroupeId ? $this->em->getRepository(LibelleGroupe::class)->find($libelleGroupeId) : null);
 
                 if (isset($uploadedFiles[$index])) {
 
@@ -1285,9 +1286,10 @@ class PaymentProController extends ApiInterface
         if ($documents) {
             foreach ($documents as $index => $doc) {
 
+                $libelleGroupeId = $doc['libelleGroupe'] ?? null;
                 $newDocument = new DocumentTemporaire();
                 $newDocument->setLibelle($doc['libelle'])
-                    ->setLibelleGroupe($this->em->getRepository(LibelleGroupe::class)->find($doc['libelleGroupe'] ?? null));
+                    ->setLibelleGroupe($libelleGroupeId ? $this->em->getRepository(LibelleGroupe::class)->find($libelleGroupeId) : null);
 
                 if (isset($uploadedFiles[$index]) && !empty($uploadedFiles[$index]['path'])) {
                     $uploadedFile = $uploadedFiles[$index]['path'];
