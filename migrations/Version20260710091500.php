@@ -11,30 +11,30 @@ final class Version20260710091500 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return "Ajoute la table de liaison niveau_intervention_libelle_groupe (ManyToMany) reliant les niveaux d'intervention aux groupes de documents requis";
+        return "Ajoute la table de liaison type_document_niveau_intervention (ManyToMany) : un type de document peut être restreint à un ou plusieurs niveaux d'intervention (vide = tous les niveaux)";
     }
 
     public function up(Schema $schema): void
     {
-        if (!$this->tableExists('niveau_intervention_libelle_groupe')) {
+        if (!$this->tableExists('type_document_niveau_intervention')) {
             $this->addSql(<<<'SQL'
-                CREATE TABLE niveau_intervention_libelle_groupe (
+                CREATE TABLE type_document_niveau_intervention (
+                    type_document_id INT NOT NULL,
                     niveau_intervention_id INT NOT NULL,
-                    libelle_groupe_id INT NOT NULL,
-                    INDEX IDX_NILG_NIVEAU (niveau_intervention_id),
-                    INDEX IDX_NILG_LIBELLE_GROUPE (libelle_groupe_id),
-                    PRIMARY KEY(niveau_intervention_id, libelle_groupe_id)
+                    INDEX IDX_TDNI_TYPE_DOCUMENT (type_document_id),
+                    INDEX IDX_TDNI_NIVEAU (niveau_intervention_id),
+                    PRIMARY KEY(type_document_id, niveau_intervention_id)
                 ) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB
             SQL);
-            $this->addSql('ALTER TABLE niveau_intervention_libelle_groupe ADD CONSTRAINT FK_NILG_NIVEAU FOREIGN KEY (niveau_intervention_id) REFERENCES niveau_intervention (id) ON DELETE CASCADE');
-            $this->addSql('ALTER TABLE niveau_intervention_libelle_groupe ADD CONSTRAINT FK_NILG_LIBELLE_GROUPE FOREIGN KEY (libelle_groupe_id) REFERENCES libelle_groupe (id) ON DELETE CASCADE');
+            $this->addSql('ALTER TABLE type_document_niveau_intervention ADD CONSTRAINT FK_TDNI_TYPE_DOCUMENT FOREIGN KEY (type_document_id) REFERENCES type_document (id) ON DELETE CASCADE');
+            $this->addSql('ALTER TABLE type_document_niveau_intervention ADD CONSTRAINT FK_TDNI_NIVEAU FOREIGN KEY (niveau_intervention_id) REFERENCES niveau_intervention (id) ON DELETE CASCADE');
         }
     }
 
     public function down(Schema $schema): void
     {
-        if ($this->tableExists('niveau_intervention_libelle_groupe')) {
-            $this->addSql('DROP TABLE niveau_intervention_libelle_groupe');
+        if ($this->tableExists('type_document_niveau_intervention')) {
+            $this->addSql('DROP TABLE type_document_niveau_intervention');
         }
     }
 

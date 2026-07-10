@@ -6,8 +6,8 @@ use App\Controller\Apis\Config\ApiInterface;
 use App\DTO\NiveauInterventionDTO;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\NiveauIntervention;
-use App\Repository\LibelleGroupeRepository;
 use App\Repository\NiveauInterventionRepository;
+use App\Repository\TypeDocumentRepository;
 use App\Repository\UserRepository;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -123,7 +123,7 @@ class ApiNiveauInterventionController extends ApiInterface
     )]
     #[OA\Tag(name: 'niveauIntervention')]
 
-    public function create(Request $request, NiveauInterventionRepository $niveauInterventionRepository, LibelleGroupeRepository $libelleGroupeRepository): Response
+    public function create(Request $request, NiveauInterventionRepository $niveauInterventionRepository): Response
     {
 
         $data = json_decode($request->getContent(), true);
@@ -138,7 +138,6 @@ class ApiNiveauInterventionController extends ApiInterface
         $niveauIntervention->setCode($code);
         $niveauIntervention->setCreatedBy($this->getUser());
         $niveauIntervention->setUpdatedBy($this->getUser());
-        $this->syncLibelleGroupes($niveauIntervention, $data['libelleGroupes'] ?? null, $libelleGroupeRepository);
         $errorResponse = $this->errorResponse($niveauIntervention);
         if ($errorResponse !== null) {
             return $errorResponse; // Retourne la réponse d'erreur si des erreurs sont présentes
@@ -148,28 +147,6 @@ class ApiNiveauInterventionController extends ApiInterface
         }
 
         return $this->responseData($niveauIntervention, 'group1', ['Content-Type' => 'application/json']);
-    }
-
-    /**
-     * Remplace les LibelleGroupe liés à un niveau d'intervention par la liste d'ids fournie.
-     * $ids === null => on ne touche pas à la relation (ex: formulaire qui ne gère pas ce champ).
-     */
-    private function syncLibelleGroupes(NiveauIntervention $niveauIntervention, ?array $ids, LibelleGroupeRepository $libelleGroupeRepository): void
-    {
-        if ($ids === null) {
-            return;
-        }
-
-        foreach ($niveauIntervention->getLibelleGroupes()->toArray() as $existing) {
-            $niveauIntervention->removeLibelleGroupe($existing);
-        }
-
-        foreach ($ids as $id) {
-            $libelleGroupe = $libelleGroupeRepository->find($id);
-            if ($libelleGroupe) {
-                $niveauIntervention->addLibelleGroupe($libelleGroupe);
-            }
-        }
     }
 
 
@@ -197,7 +174,7 @@ class ApiNiveauInterventionController extends ApiInterface
     )]
     #[OA\Tag(name: 'niveauIntervention')]
 
-    public function update(Request $request, NiveauIntervention $niveauIntervention, NiveauInterventionRepository $niveauInterventionRepository, LibelleGroupeRepository $libelleGroupeRepository): Response
+    public function update(Request $request, NiveauIntervention $niveauIntervention, NiveauInterventionRepository $niveauInterventionRepository): Response
     {
         try {
             $data = json_decode($request->getContent());
@@ -211,7 +188,6 @@ class ApiNiveauInterventionController extends ApiInterface
                 $niveauIntervention->setCode($code);
                 $niveauIntervention->setMontant($data->montant);
                 $niveauIntervention->setMontantRenouvellement($data->montantRenouvellement);
-                $this->syncLibelleGroupes($niveauIntervention, isset($data->libelleGroupes) ? (array) $data->libelleGroupes : null, $libelleGroupeRepository);
                 $niveauIntervention->setUpdatedBy($this->getUser());
                 $niveauIntervention->setUpdatedAt();
                 $errorResponse = $this->errorResponse($niveauIntervention);
@@ -240,39 +216,49 @@ class ApiNiveauInterventionController extends ApiInterface
 
     #[Route('/{id}/type-documents', methods: ['GET'])]
     /**
-     * Retourne les documents requis pour un niveau d'intervention donné, groupés par LibelleGroupe.
-     * Filtrable par typePersonne (code PHYSIQUE/MORALE) et par phase (ACP par défaut, ou OEP).
+     * Retourne les documents requis pour un niveau d'intervention donné.
+     * Un TypeDocument est retenu si :
+     *  - son LibelleGroupe correspond à la phase demandée (ACP par défaut, ou OEP) ;
+     *  - il n'est restreint à aucun niveau (s'applique à tous) OU il est explicitement lié à ce niveau ;
+     *  - il n'est restreint à aucun type de personne OU le typePersonne fourni correspond.
+     * Autrement dit le document peut être filtré par niveau seul, par type de personne seul, ou les deux à la fois.
      */
     #[OA\Parameter(name: 'typePersonne', in: 'query', schema: new OA\Schema(type: 'string'))]
     #[OA\Parameter(name: 'phase', in: 'query', schema: new OA\Schema(type: 'string'))]
     #[OA\Tag(name: 'niveauIntervention')]
-    public function getTypeDocuments(NiveauIntervention $niveauIntervention, Request $request): Response
+    public function getTypeDocuments(NiveauIntervention $niveauIntervention, Request $request, TypeDocumentRepository $typeDocumentRepository): Response
     {
         try {
             $typePersonneCode = $request->query->get('typePersonne');
             $phase = $request->query->get('phase', 'ACP');
 
+            $qb = $typeDocumentRepository->createQueryBuilder('td')
+                ->leftJoin('td.libelleGroupe', 'lg')->addSelect('lg')
+                ->leftJoin('td.niveauInterventions', 'ni')
+                ->andWhere('lg.type = :phase')
+                ->setParameter('phase', $phase)
+                ->andWhere('ni.id IS NULL OR ni.id = :niveauId')
+                ->setParameter('niveauId', $niveauIntervention->getId());
+
+            $typeDocuments = $qb->getQuery()->getResult();
+
             $result = [];
-            foreach ($niveauIntervention->getLibelleGroupes() as $groupe) {
-                if ($phase && $groupe->getType() !== $phase) {
+            foreach ($typeDocuments as $typeDocument) {
+                if ($typePersonneCode && $typeDocument->getTypePersonne() && $typeDocument->getTypePersonne()->getCode() !== $typePersonneCode) {
                     continue;
                 }
-                foreach ($groupe->getTypeDocuments() as $typeDocument) {
-                    if ($typePersonneCode && $typeDocument->getTypePersonne() && $typeDocument->getTypePersonne()->getCode() !== $typePersonneCode) {
-                        continue;
-                    }
-                    $result[] = [
-                        'id' => $typeDocument->getId(),
-                        'libelle' => $typeDocument->getLibelle(),
-                        'nombre' => $typeDocument->getNombre(),
-                        'obligatoire' => $typeDocument->isObligatoire(),
-                        'libelleGroupe' => [
-                            'id' => $groupe->getId(),
-                            'libelle' => $groupe->getLibelle(),
-                            'type' => $groupe->getType(),
-                        ],
-                    ];
-                }
+                $groupe = $typeDocument->getLibelleGroupe();
+                $result[] = [
+                    'id' => $typeDocument->getId(),
+                    'libelle' => $typeDocument->getLibelle(),
+                    'nombre' => $typeDocument->getNombre(),
+                    'obligatoire' => $typeDocument->isObligatoire(),
+                    'libelleGroupe' => $groupe ? [
+                        'id' => $groupe->getId(),
+                        'libelle' => $groupe->getLibelle(),
+                        'type' => $groupe->getType(),
+                    ] : null,
+                ];
             }
 
             return $this->json([
