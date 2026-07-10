@@ -978,7 +978,7 @@ class PaymentProController extends ApiInterface
                 $newDocument->setLibelle($doc['libelle'])
                     ->setReference($createTransactionData['reference'])
                     ->setEtablissement($request->get('etablissement'))
-                    ->setLibelleGroupe($this->em->getRepository(LibelleGroupe::class)->find($doc['libelleGroupe']));
+                    ->setLibelleGroupe($this->em->getRepository(LibelleGroupe::class)->find($doc['libelleGroupe'] ?? null));
 
                 if (isset($uploadedFiles[$index])) {
 
@@ -1287,7 +1287,7 @@ class PaymentProController extends ApiInterface
 
                 $newDocument = new DocumentTemporaire();
                 $newDocument->setLibelle($doc['libelle'])
-                    ->setLibelleGroupe($this->em->getRepository(LibelleGroupe::class)->find($doc['libelleGroupe']));
+                    ->setLibelleGroupe($this->em->getRepository(LibelleGroupe::class)->find($doc['libelleGroupe'] ?? null));
 
                 if (isset($uploadedFiles[$index]) && !empty($uploadedFiles[$index]['path'])) {
                     $uploadedFile = $uploadedFiles[$index]['path'];
