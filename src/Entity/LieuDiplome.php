@@ -25,7 +25,7 @@ class LieuDiplome
     /**
      * @var Collection<int, Professionnel>
      */
-    #[ORM\OneToMany(targetEntity: Professionnel::class, mappedBy: 'lieuObtentionDiplome')]
+    #[ORM\OneToMany(targetEntity: Professionnel::class, mappedBy: 'origineDiplome')]
     private Collection $professionnels;
 
     public function __construct()

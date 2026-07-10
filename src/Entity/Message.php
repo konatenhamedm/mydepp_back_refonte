@@ -24,7 +24,7 @@ class Message
     #[Group(["group1"])]
     private ?User $sender = null;
 
-    #[ORM\ManyToOne(inversedBy: 'messages')]
+    #[ORM\ManyToOne]
     #[Group(["group1"])]
     private ?User $receiver = null;
 

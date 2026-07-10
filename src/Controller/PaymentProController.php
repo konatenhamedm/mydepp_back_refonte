@@ -297,6 +297,8 @@ class PaymentProController extends ApiInterface
                     $joursRestants = 0;
                     $yearDue = 0;
                 }
+                $joursRestants = max(0, $today->diff($expiration)->days);
+                $expire = $expiration < $today;
 
                 $etatPro = true;
             }
@@ -308,7 +310,7 @@ class PaymentProController extends ApiInterface
             $transactions = [
                 'expire' => $expire,
                 'etatPro' => $etatPro,
-                'montant' => $montantTotal,
+                'montantTotal' => $montantTotal,
                 'montantUnitaire' => (int)$montantUnitaire,
                 'yearDue' => $yearDue,
                 'date_expiration' => $expiration->format('Y-m-d'),
@@ -1197,6 +1199,84 @@ class PaymentProController extends ApiInterface
         $etablissement->setNomRepresentant($request->get('nomRepresentant'));
         $etablissement->setTelephone($request->get('telephone'));
         $etablissement->setTypeSociete($request->get('typeSociete'));
+
+        // Structure
+        $etablissement->setTypeDemandeEtablissement($request->get('typeDemandeEtablissement'));
+        $etablissement->setTypeEtablissement($request->get('typeEtablissement'));
+        $etablissement->setNatureEtablissement($request->get('natureEtablissement'));
+        $etablissement->setTypeOrganisation($request->get('typeOrganisation'));
+        $etablissement->setAccordMinistere($request->get('accordMinistere'));
+        $etablissement->setDateValiditeAccord($request->get('dateValiditeAccord'));
+
+        // Adresses et Contacts
+        $etablissement->setRegion($request->get('region'));
+        $etablissement->setDistrict($request->get('district'));
+        $etablissement->setVilleVillage($request->get('villeVillage'));
+        $etablissement->setCommune($request->get('commune'));
+        $etablissement->setQuartier($request->get('quartier'));
+        $etablissement->setZoneSecteur($request->get('zoneSecteur'));
+        $etablissement->setVillaImmeubleEtagePorte($request->get('villaImmeubleEtagePorte'));
+        $etablissement->setIlotNumero($request->get('ilotNumero'));
+        $etablissement->setLotNumero($request->get('lotNumero'));
+        $etablissement->setRueAvenue($request->get('rueAvenue'));
+        $etablissement->setPointDeRepere($request->get('pointDeRepere'));
+        $etablissement->setAdresseElectronique($request->get('adresseElectronique'));
+        $etablissement->setTelephoneFixe($request->get('telephoneFixe'));
+        $etablissement->setWhatsapp($request->get('whatsapp'));
+        $etablissement->setTelephoneMobile($request->get('telephoneMobile'));
+        $etablissement->setTelephoneAutre($request->get('telephoneAutre'));
+        $etablissement->setAdressePostale($request->get('adressePostale'));
+
+        // Personne physique
+        $etablissement->setCivilite($request->get('civilite'));
+        $etablissement->setProfession($request->get('profession'));
+        $etablissement->setCniNumero($request->get('cniNumero'));
+        $etablissement->setWhatsappPersonnel($request->get('whatsappPersonnel'));
+
+        // Personne morale / Représentant
+        $etablissement->setStatutJuridique($request->get('statutJuridique'));
+        $etablissement->setRepresentantCivilite($request->get('representantCivilite'));
+        $etablissement->setRepresentantQualite($request->get('representantQualite'));
+        $etablissement->setRepresentantCni($request->get('representantCni'));
+        $etablissement->setRepresentantTelephone($request->get('representantTelephone'));
+        $etablissement->setRepresentantWhatsapp($request->get('representantWhatsapp'));
+        $etablissement->setRepresentantEmail($request->get('representantEmail'));
+
+        // Responsable médicolégal
+        $etablissement->setResponsableCivilite($request->get('responsableCivilite'));
+        $etablissement->setResponsableNom($request->get('responsableNom'));
+        $etablissement->setResponsabiliteMedicolegale($request->get('responsabiliteMedicolegale'));
+        $etablissement->setResponsableProfession($request->get('responsableProfession'));
+        $etablissement->setResponsableDiplome($request->get('responsableDiplome'));
+        $etablissement->setResponsableSpecialite($request->get('responsableSpecialite'));
+        $etablissement->setResponsableNiveauFormation($request->get('responsableNiveauFormation'));
+        $etablissement->setResponsableStatutAdministratif($request->get('responsableStatutAdministratif'));
+        $etablissement->setResponsableEmail($request->get('responsableEmail'));
+        $etablissement->setResponsableTelephone($request->get('responsableTelephone'));
+        $etablissement->setResponsableWhatsapp($request->get('responsableWhatsapp'));
+        $etablissement->setResponsableNumeroOrdre($request->get('responsableNumeroOrdre'));
+        $etablissement->setResponsableCni($request->get('responsableCni'));
+
+        // Enregistrement / Certificat / Horaires
+        $etablissement->setAnneeCreation($request->get('anneeCreation'));
+        $etablissement->setEnregistreeDepps($request->get('enregistreeDepps'));
+        $etablissement->setNumeroEnregistrement($request->get('numeroEnregistrement'));
+        $etablissement->setOrganismeEnregistrement($request->get('organismeEnregistrement'));
+        $etablissement->setAnneeAutorisation($request->get('anneeAutorisation'));
+        $etablissement->setACertificatConformite($request->get('aCertificatConformite'));
+        $etablissement->setDateValiditeCertificat($request->get('dateValiditeCertificat'));
+        $etablissement->setHoraireOuverture($request->get('horaireOuverture'));
+        $etablissement->setAutreHoraireOuverture($request->get('autreHoraireOuverture'));
+
+        // Contrôle Qualité et Services
+        $etablissement->setAAccreditation($request->get('aAccreditation'));
+        $etablissement->setEngagementProcessusAccreditation($request->get('engagementProcessusAccreditation'));
+        $etablissement->setCertificationQualite($request->get('certificationQualite'));
+        $etablissement->setAutresCertification($request->get('autresCertification'));
+        $services = $request->get('services');
+        if (is_array($services)) {
+            $etablissement->setServices(json_encode($services));
+        }
 
 
         $documents = $request->get('documents');

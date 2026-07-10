@@ -25,7 +25,7 @@ class Organisation
 
    
 
-    #[ORM\ManyToOne(inversedBy: 'organisations')]
+    #[ORM\ManyToOne]
     private ?Entite $entite = null;
 
     public function getId(): ?int

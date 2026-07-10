@@ -606,6 +606,7 @@ class ApiStatistiqueController extends ApiInterface
     )]
     #[OA\Tag(name: 'statistiques')]
     public function indexAdminGeneral(
+        Request $request,
         UserRepository $userRepository,
         TransactionRepository $transactionRepository,
         ProfessionnelRepository $professionnelRepository,
@@ -618,38 +619,43 @@ class ApiStatistiqueController extends ApiInterface
                 return $this->setStatusCode(403)->setMessage("Cette ressource est réservée aux administrateurs.")->response('[]');
             }
 
+            [$startDate, $endDate] = $this->resolveDateRangeFromQuery($request);
+
             // 1. Analyse des Utilisateurs
             $users = [
-                'total' => $userRepository->count(['deleteAt' => null]),
-                'professionnels' => $userRepository->count(['typeUser' => 'PROFESSIONNEL', 'deleteAt' => null]),
-                'etablissements' => $userRepository->count(['typeUser' => 'ETABLISSEMENT', 'deleteAt' => null]),
-                'administrateurs' => $userRepository->count(['typeUser' => 'ADMINISTRATEUR', 'deleteAt' => null]),
+                'total' => $this->countEntitiesInRange(User::class, ['deleteAt' => null], $startDate, $endDate),
+                'professionnels' => $this->countEntitiesInRange(User::class, ['typeUser' => 'PROFESSIONNEL', 'deleteAt' => null], $startDate, $endDate),
+                'etablissements' => $this->countEntitiesInRange(User::class, ['typeUser' => 'ETABLISSEMENT', 'deleteAt' => null], $startDate, $endDate),
+                'administrateurs' => $this->countEntitiesInRange(User::class, ['typeUser' => 'ADMINISTRATEUR', 'deleteAt' => null], $startDate, $endDate),
             ];
 
             // 2. Analyse des Transactions (Chiffre d'Affaires)
-            $totalSuccessfulAmount = (int)$transactionRepository->montantTotal();
+            $totalSuccessfulAmount = $this->sumTransactionFieldInRange('montant', $startDate, $endDate);
+            $totalFee = $this->sumTransactionFieldInRange('fee', $startDate, $endDate);
             $transactions = [
                 'montant_total' => $totalSuccessfulAmount,
-                'succes' => $transactionRepository->count(['state' => 1]),
-                'echec' => $transactionRepository->count(['state' => 0]),
+                'succes' => $this->countEntitiesInRange(Transaction::class, ['state' => 1], $startDate, $endDate),
+                'echec' => $this->countEntitiesInRange(Transaction::class, ['state' => 0], $startDate, $endDate),
+                'fee_total' => $totalFee,
+                'solde_retirable' => $totalSuccessfulAmount - $totalFee,
             ];
 
             // 3. Dossiers Professionnels
             $professionnels = [
-                'total' => $professionnelRepository->count([]),
-                'ajour' => count($professionnelRepository->allProfAjour()),
-                'attente' => $professionnelRepository->count(['status' => 'attente']),
-                'rejete' => $professionnelRepository->count(['status' => 'rejete']),
-                'accepte' => $professionnelRepository->count(['status' => 'accepte']),
+                'total' => $this->countEntitiesInRange(Professionnel::class, [], $startDate, $endDate),
+                'ajour' => $this->countEntitiesInRange(Professionnel::class, ['status' => 'a_jour'], $startDate, $endDate),
+                'attente' => $this->countEntitiesInRange(Professionnel::class, ['status' => 'attente'], $startDate, $endDate),
+                'rejete' => $this->countEntitiesInRange(Professionnel::class, ['status' => 'rejete'], $startDate, $endDate),
+                'accepte' => $this->countEntitiesInRange(Professionnel::class, ['status' => 'accepte'], $startDate, $endDate),
             ];
 
             // 4. Dossiers Établissements
             $etablissements = [
-                'total' => $etablissementRepository->count([]),
-                'valides' => $etablissementRepository->count(['status' => 'accepte']), // Adapté selon les statuts réels
-                'ajour' => $etablissementRepository->count(['status' => 'accepte']),
-                'en_attente' => $etablissementRepository->count(['status' => 'attente']),
-                'rejete' => $etablissementRepository->count(['status' => 'rejete']),
+                'total' => $this->countEntitiesInRange(Etablissement::class, [], $startDate, $endDate),
+                'valides' => $this->countEntitiesInRange(Etablissement::class, ['status' => 'accepte'], $startDate, $endDate), // Adapté selon les statuts réels
+                'ajour' => $this->countEntitiesInRange(Etablissement::class, ['status' => 'accepte'], $startDate, $endDate),
+                'en_attente' => $this->countEntitiesInRange(Etablissement::class, ['status' => 'attente'], $startDate, $endDate),
+                'rejete' => $this->countEntitiesInRange(Etablissement::class, ['status' => 'rejete'], $startDate, $endDate),
             ];
 
             $tab = [
@@ -669,6 +675,97 @@ class ApiStatistiqueController extends ApiInterface
             $this->setMessage($exception->getMessage());
             return $this->response('[]');
         }
+    }
+
+    /**
+     * Résout la période (année, mois/trimestre/semestre) transmise en query params
+     * en un intervalle de dates. Retourne [null, null] si aucune période n'est fournie.
+     *
+     * @return array{0: ?\DateTimeImmutable, 1: ?\DateTimeImmutable}
+     */
+    private function resolveDateRangeFromQuery(Request $request): array
+    {
+        $annee = $request->query->get('annee');
+        $periode = $request->query->get('periode');
+        $mois = $request->query->get('mois');
+        $tranche = $request->query->get('tranche');
+
+        if (!$annee || $annee === 'null' || !$periode || $periode === 'null') {
+            return [null, null];
+        }
+
+        $annee = (int) $annee;
+        $mois = $mois ? (int) $mois : (int) date('m');
+        $tranche = (int) ($tranche ?: 1);
+
+        switch ($periode) {
+            case 'mois':
+                $start = new \DateTimeImmutable(sprintf('%d-%02d-01 00:00:00', $annee, $mois));
+                $end = $start->modify('last day of this month')->setTime(23, 59, 59);
+                break;
+
+            case 'trimestre':
+                $trimestres = [1 => [1, 3], 2 => [4, 6], 3 => [7, 9], 4 => [10, 12]];
+                [$m1, $m2] = $trimestres[$tranche] ?? $trimestres[1];
+                $start = new \DateTimeImmutable(sprintf('%d-%02d-01 00:00:00', $annee, $m1));
+                $end = (new \DateTimeImmutable(sprintf('%d-%02d-01', $annee, $m2)))->modify('last day of this month')->setTime(23, 59, 59);
+                break;
+
+            case 'semestre':
+                $semestres = [1 => [1, 6], 2 => [7, 12]];
+                [$m1, $m2] = $semestres[$tranche] ?? $semestres[1];
+                $start = new \DateTimeImmutable(sprintf('%d-%02d-01 00:00:00', $annee, $m1));
+                $end = (new \DateTimeImmutable(sprintf('%d-%02d-01', $annee, $m2)))->modify('last day of this month')->setTime(23, 59, 59);
+                break;
+
+            case 'annee':
+            default:
+                $start = new \DateTimeImmutable(sprintf('%d-01-01 00:00:00', $annee));
+                $end = new \DateTimeImmutable(sprintf('%d-12-31 23:59:59', $annee));
+                break;
+        }
+
+        return [$start, $end];
+    }
+
+    private function countEntitiesInRange(string $entityClass, array $criteria, ?\DateTimeImmutable $start, ?\DateTimeImmutable $end): int
+    {
+        $qb = $this->em->createQueryBuilder()
+            ->select('COUNT(e.id)')
+            ->from($entityClass, 'e');
+
+        foreach ($criteria as $field => $value) {
+            if ($value === null) {
+                $qb->andWhere("e.{$field} IS NULL");
+            } else {
+                $qb->andWhere("e.{$field} = :{$field}")->setParameter($field, $value);
+            }
+        }
+
+        if ($start && $end) {
+            $qb->andWhere('e.createdAt BETWEEN :start AND :end')
+                ->setParameter('start', $start)
+                ->setParameter('end', $end);
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    private function sumTransactionFieldInRange(string $field, ?\DateTimeImmutable $start, ?\DateTimeImmutable $end): int
+    {
+        $qb = $this->em->createQueryBuilder()
+            ->select("COALESCE(SUM(t.{$field}), 0)")
+            ->from(Transaction::class, 't')
+            ->andWhere('t.state = :state')
+            ->setParameter('state', 1);
+
+        if ($start && $end) {
+            $qb->andWhere('t.createdAt BETWEEN :start AND :end')
+                ->setParameter('start', $start)
+                ->setParameter('end', $end);
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
     #[Route('/comptable/bilan', methods: ['GET'])]

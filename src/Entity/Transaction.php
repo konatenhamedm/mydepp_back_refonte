@@ -8,9 +8,12 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups as Group;
 
 #[ORM\Entity(repositoryClass: TransactionRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Transaction
 {
-    use TraitEntity; 
+    use TraitEntity;
+
+    public const TAUX_FEE = 0.01;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -59,6 +62,10 @@ class Transaction
     #[ORM\Column(length: 255, nullable: true)]
     #[Group(["group_user_trx"])]
     private ?string $numero = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Group(["group_user_trx"])]
+    private ?string $fee = null;
 
     public function getId(): ?int
     {
@@ -195,5 +202,30 @@ class Transaction
         $this->numero = $numero;
 
         return $this;
+    }
+
+    public function getFee(): ?string
+    {
+        return $this->fee;
+    }
+
+    public function setFee(?string $fee): static
+    {
+        $this->fee = $fee;
+
+        return $this;
+    }
+
+    public static function calculerFee(string|int|float $montant): string
+    {
+        return (string) (int) round(((float) $montant) * self::TAUX_FEE);
+    }
+
+    #[ORM\PrePersist]
+    public function initFee(): void
+    {
+        if ($this->fee === null && $this->montant !== null) {
+            $this->fee = self::calculerFee($this->montant);
+        }
     }
 }

@@ -62,6 +62,16 @@ class TransactionRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    public function feeTotal()
+    {
+        return $this->createQueryBuilder('t')
+            ->select('COALESCE(SUM(t.fee), 0) AS total')
+            ->andWhere('t.state = :state')
+            ->setParameter('state', 1)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     public function transactionsEchoueesDuJour($tate)
     {
         $dateDebut = new \DateTimeImmutable('today'); // aujourd'hui à 00:00:00
