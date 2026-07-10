@@ -866,11 +866,12 @@ class PaiementService
         $this->em->flush();
 
         $transaction->setUser($user);
+        $transaction->setState(1);
         $transaction->setCreatedBy($user);
         $transaction->setUpdatedBy($user);
         $this->transactionRepository->add($transaction, true);
 
-      
+
         foreach ($dataTemp->getDocumentTemporaires() as $doc) {
             $this->em->remove($doc);
         }
