@@ -18,11 +18,11 @@ class TypePersonne
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Group(["group1","group_pro"])]
+    #[Group(["group1","group_pro", "group_user_trx"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Group(["group1","group_pro"])]
+    #[Group(["group1","group_pro", "group_user_trx"])]
     private ?string $libelle = null;
 
     /**

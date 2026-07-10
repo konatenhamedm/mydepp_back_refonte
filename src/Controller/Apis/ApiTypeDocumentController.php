@@ -8,6 +8,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\TypeDocument;
 use App\Entity\TypePersonne;
 use App\Repository\LibelleGroupeRepository;
+use App\Repository\NiveauInterventionRepository;
 use App\Repository\TypeDocumentRepository;
 use App\Repository\TypePersonneRepository;
 use App\Repository\UserRepository;
@@ -208,7 +209,7 @@ class ApiTypeDocumentController extends ApiInterface
                     new OA\Property(property: "nombre", type: "string"),
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "libelleGroupe", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -219,8 +220,8 @@ class ApiTypeDocumentController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'typeDocument')]
-    
-    public function create(Request $request, LibelleGroupeRepository $libelleGroupeRepository, TypeDocumentRepository $typeDocumentRepository, TypePersonneRepository $typePersonneRepository): Response
+
+    public function create(Request $request, LibelleGroupeRepository $libelleGroupeRepository, TypeDocumentRepository $typeDocumentRepository, TypePersonneRepository $typePersonneRepository, NiveauInterventionRepository $niveauInterventionRepository): Response
     {
 
         $data = json_decode($request->getContent(), true);
@@ -228,14 +229,19 @@ class ApiTypeDocumentController extends ApiInterface
 
 
 
+        $libelleGroupeId = $data['libelleGroupe'] ?? null;
+        $typePersonneId = $data['typePersonne'] ?? null;
+
         $typeDocument = new TypeDocument();
 
         $typeDocument->setLibelle($data['libelle']);
-        $typeDocument->setLibelleGroupe($libelleGroupeRepository->find($data['libelleGroupe']));
-        $typeDocument->setNombre($data['nombre']);
-        $typeDocument->setTypePersonne($typePersonneRepository->find($data['typePersonne']));
-        $typeDocument->setCreatedAtValue(new \DateTime());
-        $typeDocument->setUpdatedAt(new \DateTime());
+        $typeDocument->setLibelleGroupe($libelleGroupeId ? $libelleGroupeRepository->find($libelleGroupeId) : null);
+        $typeDocument->setNombre((int) ($data['nombre'] ?? 1));
+        $typeDocument->setTypePersonne($typePersonneId ? $typePersonneRepository->find($typePersonneId) : null);
+        $typeDocument->setObligatoire(filter_var($data['obligatoire'] ?? true, FILTER_VALIDATE_BOOLEAN));
+        $this->syncNiveauInterventions($typeDocument, $data['niveauInterventions'] ?? [], $niveauInterventionRepository);
+        $typeDocument->setCreatedAtValue();
+        $typeDocument->setUpdatedAt();
         $typeDocument->setCreatedBy($this->getUser());
         $typeDocument->setUpdatedBy($this->getUser());
 
@@ -256,6 +262,24 @@ class ApiTypeDocumentController extends ApiInterface
         return $response;
     }
 
+    /**
+     * Remplace les NiveauIntervention liés à un type de document par la liste d'ids fournie.
+     * Liste vide => le document s'applique à tous les niveaux.
+     */
+    private function syncNiveauInterventions(TypeDocument $typeDocument, array $ids, NiveauInterventionRepository $niveauInterventionRepository): void
+    {
+        foreach ($typeDocument->getNiveauInterventions()->toArray() as $existing) {
+            $typeDocument->removeNiveauIntervention($existing);
+        }
+
+        foreach ($ids as $id) {
+            $niveauIntervention = $niveauInterventionRepository->find($id);
+            if ($niveauIntervention) {
+                $typeDocument->addNiveauIntervention($niveauIntervention);
+            }
+        }
+    }
+
 
     #[Route('/update/{id}', methods: ['PUT', 'POST'])]
     #[OA\Post(
@@ -270,7 +294,7 @@ class ApiTypeDocumentController extends ApiInterface
                     new OA\Property(property: "nombre", type: "string"),
                     new OA\Property(property: "libelleGroupe", type: "string"),
                     new OA\Property(property: "typePersonne", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -281,8 +305,8 @@ class ApiTypeDocumentController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'typeDocument')]
-    
-    public function update(Request $request, $id, LibelleGroupeRepository $libelleGroupeRepository, TypeDocumentRepository $typeDocumentRepository, TypePersonneRepository $typePersonneRepository): Response
+
+    public function update(Request $request, $id, LibelleGroupeRepository $libelleGroupeRepository, TypeDocumentRepository $typeDocumentRepository, TypePersonneRepository $typePersonneRepository, NiveauInterventionRepository $niveauInterventionRepository): Response
     {
         try {
             $data = json_decode($request->getContent());
@@ -292,11 +316,16 @@ class ApiTypeDocumentController extends ApiInterface
 
             if ($typeDocument != null) {
 
+                $libelleGroupeId = $data->libelleGroupe ?? null;
+                $typePersonneId = $data->typePersonne ?? null;
+
                 $typeDocument->setLibelle($data->libelle);
-                $typeDocument->setNombre($data->nombre);
-                $typeDocument->setLibelleGroupe($libelleGroupeRepository->find($data->libelleGroupe));
-                $typeDocument->setTypePersonne($typePersonneRepository->find($data->typePersonne));
-                $typeDocument->setUpdatedAt(new \DateTime());
+                $typeDocument->setNombre((int) ($data->nombre ?? 1));
+                $typeDocument->setLibelleGroupe($libelleGroupeId ? $libelleGroupeRepository->find($libelleGroupeId) : null);
+                $typeDocument->setTypePersonne($typePersonneId ? $typePersonneRepository->find($typePersonneId) : null);
+                $typeDocument->setObligatoire(filter_var($data->obligatoire ?? true, FILTER_VALIDATE_BOOLEAN));
+                $this->syncNiveauInterventions($typeDocument, isset($data->niveauInterventions) ? (array) $data->niveauInterventions : [], $niveauInterventionRepository);
+                $typeDocument->setUpdatedAt();
                 $typeDocument->setUpdatedBy($this->getUser());
                 $errorResponse = $this->errorResponse($typeDocument);
 
@@ -333,7 +362,7 @@ class ApiTypeDocumentController extends ApiInterface
 
                     new OA\Property(property: "dataDocument", type: "string"),
                     new OA\Property(property: "dataDelete", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -344,7 +373,7 @@ class ApiTypeDocumentController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'typeDocument')]
-    
+
     public function updateMultiple(Request $request, TypePersonne $typePersonne, LibelleGroupeRepository $libelleGroupeRepository, TypeDocumentRepository $typeDocumentRepository, TypePersonneRepository $typePersonneRepository): Response
     {
         try {
@@ -363,7 +392,7 @@ class ApiTypeDocumentController extends ApiInterface
                         $typeDocument->setLibelle($document['libelle']);
                         $typeDocument->setLibelleGroupe($libelleGroupeRepository->find($data['libelleGroupe']));
                         $typeDocument->setNombre($document['nombre']);
-                        $typeDocument->setUpdatedAt(new \DateTime());
+                        $typeDocument->setUpdatedAt();
                         $typeDocument->setUpdatedBy($this->getUser());
                         $errorResponse = $this->errorResponse($typeDocument);
                         if ($errorResponse !== null) {
@@ -379,8 +408,8 @@ class ApiTypeDocumentController extends ApiInterface
                         $typeDocument->setLibelleGroupe($libelleGroupeRepository->find($data['libelleGroupe']));
                         $typeDocument->setNombre($document['nombre']);
                         $typeDocument->setTypePersonne($typePersonne);
-                        $typeDocument->setCreatedAtValue(new \DateTime());
-                        $typeDocument->setUpdatedAt(new \DateTime());
+                        $typeDocument->setCreatedAtValue();
+                        $typeDocument->setUpdatedAt();
                         $typeDocument->setCreatedBy($this->getUser());
                         $typeDocument->setUpdatedBy($this->getUser());
                         $errorResponse = $this->errorResponse($typeDocument);
@@ -467,7 +496,7 @@ class ApiTypeDocumentController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'typeDocument')]
-    
+
     public function deleteAll(Request $request, TypeDocumentRepository $villeRepository): Response
     {
         try {

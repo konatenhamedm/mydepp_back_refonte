@@ -69,6 +69,11 @@ class Professionnel extends Entite
     private ?\DateTimeInterface $dateNaissance = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Group(["professionnel"])]
+    private ?string $lieuNaissance = null;
+
+
+    #[ORM\Column(length: 255, nullable: true)]
     #[Group(["group_pro", "group_user_trx"])]
     private ?string $number = null;
 
@@ -190,21 +195,38 @@ class Professionnel extends Entite
     #[Group(["group_pro"])]
     private ?StatusPro $statusPro = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Group(["fichier", "group_pro"])]
+    private ?string $lieuObtentionDiplome = null;
+
     #[ORM\ManyToOne(inversedBy: 'professionnels')]
     #[Group(["fichier", "group_pro"])]
-    private ?LieuDiplome $lieuObtentionDiplome = null;
+    private ?LieuDiplome $origineDiplome = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $specialiteAutre = null;
 
     #[ORM\ManyToOne(inversedBy: 'professionnels')]
-    #[Group(["group_pro"])]
+    #[Group(["group_pro", "group_user_trx"])]
     private ?Profession $profession = null;
 
     #[ORM\ManyToOne(inversedBy: 'professionnels')]
     private ?Ordre $ordre = null;
 
-  
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $etatOld = null;
+
+    public function getEtatOld(): ?string
+    {
+        return $this->etatOld;
+    }
+
+    public function setEtatOld(?string $etatOld): static
+    {
+        $this->etatOld = $etatOld;
+
+        return $this;
+    }
 
     public function __construct()
     {
@@ -485,7 +507,7 @@ class Professionnel extends Entite
         return $this->lieuDiplome;
     }
 
-    public function setLieuDiplome(string $lieuDiplome): static
+    public function setLieuDiplome(?string $lieuDiplome): static
     {
         $this->lieuDiplome = $lieuDiplome;
 
@@ -696,14 +718,26 @@ class Professionnel extends Entite
         return $this;
     }
 
-    public function getLieuObtentionDiplome(): ?LieuDiplome
+    public function getLieuObtentionDiplome(): ?string
     {
         return $this->lieuObtentionDiplome;
     }
 
-    public function setLieuObtentionDiplome(?LieuDiplome $lieuObtentionDiplome): static
+    public function setLieuObtentionDiplome(?string $lieuObtentionDiplome): static
     {
         $this->lieuObtentionDiplome = $lieuObtentionDiplome;
+
+        return $this;
+    }
+
+    public function getOrigineDiplome(): ?LieuDiplome
+    {
+        return $this->origineDiplome;
+    }
+
+    public function setOrigineDiplome(?LieuDiplome $origineDiplome): static
+    {
+        $this->origineDiplome = $origineDiplome;
 
         return $this;
     }
@@ -745,4 +779,16 @@ class Professionnel extends Entite
     }
 
    
+
+    public function getLieuNaissance(): ?string
+    {
+        return $this->lieuNaissance;
+    }
+
+    public function setLieuNaissance(?string $lieuNaissance): static
+    {
+        $this->lieuNaissance = $lieuNaissance;
+
+        return $this;
+    }
 }

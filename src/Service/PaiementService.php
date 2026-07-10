@@ -91,7 +91,17 @@ class PaiementService
         private DocumentRepository $documentRepository,
         private DocumentOepRepository $documentOepRepository,
         private EtablissementRepository $etablissementRepository,
-        private OrdreRepository $ordreRepository
+        private OrdreRepository $ordreRepository,
+        private \App\Repository\TypeDemandeEtablissementRepository $typeDemandeEtablissementRepository,
+        private \App\Repository\TypeEtablissementRepository $typeEtablissementRepository,
+        private \App\Repository\NatureEtablissementRepository $natureEtablissementRepository,
+        private \App\Repository\TypeOrganisationRepository $typeOrganisationRepository,
+        private \App\Repository\StatutJuridiqueRepository $statutJuridiqueRepository,
+        private \App\Repository\ResponsabiliteMedicolegaleRepository $responsabiliteMedicolegaleRepository,
+        private \App\Repository\NiveauFormationRepository $niveauFormationRepository,
+        private \App\Repository\OrganismeEnregistrementRepository $organismeEnregistrementRepository,
+        private \App\Repository\CertificationQualiteRepository $certificationQualiteRepository,
+        private \App\Repository\ServiceRepository $serviceRepository,
 
 
     ) {
@@ -277,6 +287,7 @@ class PaiementService
         $transaction->setChannel("");
         $transaction->setReference($this->genererNumero());
         $transaction->setMontant($montant);
+        $transaction->setNumero($request->get('numero') ?? $request->get('telephone'));
         $transaction->setReferenceChannel("");
         $transaction->setType("NOUVELLE DEMANDE");
         $transaction->setTypeUser($request->get('type'));
@@ -349,6 +360,7 @@ class PaiementService
         $transaction->setUser($this->userRepository->find($request->get('user')));
         $transaction->setReference($this->genererNumero());
         $transaction->setMontant($montant);
+        $transaction->setNumero($request->get('numero') ?? $request->get('telephone'));
         $transaction->setReferenceChannel("");
         $transaction->setType("OUVERTURE D'EXPLOITATION");
         $transaction->setTypeUser('etablissement');
@@ -410,14 +422,20 @@ class PaiementService
         $currentExpiration = method_exists($professionnel, 'getDateValidation') ? $professionnel->getDateValidation() : null;
         $expiration = $currentExpiration ? (clone $currentExpiration) : null;
         $today = new \DateTime();
-        // $yearDue = $today->diff($expiration)->y ;
-        $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
+        
+        $code = method_exists($professionnel, 'getCode') ? $professionnel->getCode() : null;
+        if ($code && preg_match('/^MS(\d{4})/', $code, $matches)) {
+            $yearDue = (int)$today->format('Y') - (int)$matches[1];
+        } else {
+            $yearDue = $expiration ? ((int)$today->format('Y') - (int)$expiration->format('Y')) : 1;
+        }
         // dd($yearDue);
 
         $transaction = new Transaction();
         $transaction->setChannel("");
         $transaction->setReference($this->genererNumero());
         $transaction->setMontant($montant * $yearDue);
+        $transaction->setNumero($data['numero'] ?? $data['telephone'] ?? null);
         $transaction->setReferenceChannel("");
         $transaction->setType("RENOUVELLEMENT");
         $transaction->setTypeUser($data['type']);
@@ -514,19 +532,30 @@ class PaiementService
 
 
         $professionnel->setPoleSanitaire($dataTemp->getPoleSanitaire());
-        $professionnel->setLieuObtentionDiplome($this->lieuDiplomeRepository->find($dataTemp->getLieuObtentionDiplome()));
+        $professionnel->setLieuObtentionDiplome($dataTemp->getLieuObtentionDiplome());
         $professionnel->setDateValidation(new DateTime());
-        $professionnel->setLieuDiplome($dataTemp->getLieuDiplome());
+        $professionnel->setLieuDiplome($dataTemp->getLieuDiplome() ?? null);
 
        // $professionnel->setLieuObtentionDiplome();
-        $professionnel->setRegion($this->regionRepository->find($dataTemp->getRegion()));
-        $professionnel->setDistrict($this->districtRepository->find($dataTemp->getDistrict()));
-        $professionnel->setVille($this->villeRepository->find($dataTemp->getVille()));
-        $professionnel->setCommune($this->communeRepository->find($dataTemp->getCommune()));
-        $professionnel->setQuartier($dataTemp->getQuartier());
+       if($dataTemp->getOrigineDiplome())
+            $professionnel->setOrigineDiplome($this->lieuDiplomeRepository->find($dataTemp->getOrigineDiplome()));
+       
+       if($dataTemp->getRegion())
+            $professionnel->setRegion($this->regionRepository->find($dataTemp->getRegion()));
+        if($dataTemp->getDistrict())
+            $professionnel->setDistrict($this->districtRepository->find($dataTemp->getDistrict()));
+        if($dataTemp->getVille())
+            $professionnel->setVille($this->villeRepository->find($dataTemp->getVille()));
+        if($dataTemp->getCommune())
+            $professionnel->setCommune($this->communeRepository->find($dataTemp->getCommune()));
+        
+        if($dataTemp->getQuartier())
+            $professionnel->setQuartier($dataTemp->getQuartier());
 
-        $professionnel->setStatusPro($this->statusProRepository->find($dataTemp->getStatusPro()));
-        $professionnel->setTypeDiplome($this->typeDiplomeRepository->find($dataTemp->getTypeDiplome()));
+        if($dataTemp->getStatusPro())
+            $professionnel->setStatusPro($this->statusProRepository->find($dataTemp->getStatusPro()));
+        if($dataTemp->getTypeDiplome())
+            $professionnel->setTypeDiplome($this->typeDiplomeRepository->find($dataTemp->getTypeDiplome()));
 
         $professionnel->setNom($dataTemp->getNom());
         $professionnel->setPrenoms($dataTemp->getPrenoms());
@@ -551,7 +580,7 @@ class PaiementService
         //$professionnel->setSpecialite($this->professionRepository->findOneBy(['code' => $dataTemp->getProfession()]));
         $professionnel->setAppartenirOrganisation($dataTemp->getAppartenirOrganisation());
         $professionnel->setAppartenirOrdre($dataTemp->getAppartenirOrdre());
-        $professionnel->setLieuDiplome($dataTemp->getLieuDiplome());
+       // $professionnel->setLieuDiplome($dataTemp->getLieuDiplome());
         if ($dataTemp->getCivilite())
             $professionnel->setCivilite($this->civiliteRepository->find($dataTemp->getCivilite()));
 
@@ -684,6 +713,135 @@ class PaiementService
         $etablissement->setAdresse($dataTemp->getAdresse());
         $etablissement->setNomRepresentant($dataTemp->getNomRepresentant());
 
+        // Structure
+        if ($dataTemp->getTypeDemandeEtablissement()) {
+            $etablissement->setTypeDemandeEtablissement($this->typeDemandeEtablissementRepository->find($dataTemp->getTypeDemandeEtablissement()));
+        }
+        if ($dataTemp->getTypeEtablissement()) {
+            $etablissement->setTypeEtablissement($this->typeEtablissementRepository->find($dataTemp->getTypeEtablissement()));
+        }
+        if ($dataTemp->getNatureEtablissement()) {
+            $etablissement->setNatureEtablissement($this->natureEtablissementRepository->find($dataTemp->getNatureEtablissement()));
+        }
+        if ($dataTemp->getTypeOrganisation()) {
+            $etablissement->setTypeOrganisation($this->typeOrganisationRepository->find($dataTemp->getTypeOrganisation()));
+        }
+        if ($dataTemp->getAccordMinistere() !== null && $dataTemp->getAccordMinistere() !== '') {
+            $etablissement->setAccordMinistere(filter_var($dataTemp->getAccordMinistere(), FILTER_VALIDATE_BOOLEAN));
+        }
+        if ($dataTemp->getDateValiditeAccord()) {
+            $etablissement->setDateValiditeAccord(new DateTime($dataTemp->getDateValiditeAccord()));
+        }
+
+        // Adresses et Contacts
+        if ($dataTemp->getRegion()) {
+            $etablissement->setRegion($this->regionRepository->find($dataTemp->getRegion()));
+        }
+        if ($dataTemp->getDistrict()) {
+            $etablissement->setDistrict($this->districtRepository->find($dataTemp->getDistrict()));
+        }
+        $etablissement->setVilleVillage($dataTemp->getVilleVillage());
+        $etablissement->setCommune($dataTemp->getCommune());
+        $etablissement->setQuartier($dataTemp->getQuartier());
+        $etablissement->setZoneSecteur($dataTemp->getZoneSecteur());
+        $etablissement->setVillaImmeubleEtagePorte($dataTemp->getVillaImmeubleEtagePorte());
+        $etablissement->setIlotNumero($dataTemp->getIlotNumero());
+        $etablissement->setLotNumero($dataTemp->getLotNumero());
+        $etablissement->setRueAvenue($dataTemp->getRueAvenue());
+        $etablissement->setPointDeRepere($dataTemp->getPointDeRepere());
+        $etablissement->setAdresseElectronique($dataTemp->getAdresseElectronique());
+        $etablissement->setTelephoneFixe($dataTemp->getTelephoneFixe());
+        $etablissement->setWhatsapp($dataTemp->getWhatsapp());
+        $etablissement->setTelephoneMobile($dataTemp->getTelephoneMobile());
+        $etablissement->setTelephoneAutre($dataTemp->getTelephoneAutre());
+        $etablissement->setAdressePostale($dataTemp->getAdressePostale());
+
+        // Personne physique
+        if ($dataTemp->getCivilite()) {
+            $etablissement->setCivilite($this->civiliteRepository->find($dataTemp->getCivilite()));
+        }
+        if ($dataTemp->getProfession()) {
+            $etablissement->setProfession($this->professionRepository->find($dataTemp->getProfession()));
+        }
+        $etablissement->setCniNumero($dataTemp->getCniNumero());
+        $etablissement->setWhatsappPersonnel($dataTemp->getWhatsappPersonnel());
+
+        // Personne morale / Représentant
+        if ($dataTemp->getStatutJuridique()) {
+            $etablissement->setStatutJuridique($this->statutJuridiqueRepository->find($dataTemp->getStatutJuridique()));
+        }
+        if ($dataTemp->getRepresentantCivilite()) {
+            $etablissement->setRepresentantCivilite($this->civiliteRepository->find($dataTemp->getRepresentantCivilite()));
+        }
+        $etablissement->setRepresentantQualite($dataTemp->getRepresentantQualite());
+        $etablissement->setRepresentantCni($dataTemp->getRepresentantCni());
+        $etablissement->setRepresentantTelephone($dataTemp->getRepresentantTelephone());
+        $etablissement->setRepresentantWhatsapp($dataTemp->getRepresentantWhatsapp());
+        $etablissement->setRepresentantEmail($dataTemp->getRepresentantEmail());
+
+        // Responsable médicolégal
+        if ($dataTemp->getResponsableCivilite()) {
+            $etablissement->setResponsableCivilite($this->civiliteRepository->find($dataTemp->getResponsableCivilite()));
+        }
+        $etablissement->setResponsableNom($dataTemp->getResponsableNom());
+        if ($dataTemp->getResponsabiliteMedicolegale()) {
+            $etablissement->setResponsabiliteMedicolegale($this->responsabiliteMedicolegaleRepository->find($dataTemp->getResponsabiliteMedicolegale()));
+        }
+        $etablissement->setResponsableProfession($dataTemp->getResponsableProfession());
+        $etablissement->setResponsableDiplome($dataTemp->getResponsableDiplome());
+        $etablissement->setResponsableSpecialite($dataTemp->getResponsableSpecialite());
+        if ($dataTemp->getResponsableNiveauFormation()) {
+            $etablissement->setResponsableNiveauFormation($this->niveauFormationRepository->find($dataTemp->getResponsableNiveauFormation()));
+        }
+        if ($dataTemp->getResponsableStatutAdministratif()) {
+            $etablissement->setResponsableStatutAdministratif($this->statusProRepository->find($dataTemp->getResponsableStatutAdministratif()));
+        }
+        $etablissement->setResponsableEmail($dataTemp->getResponsableEmail());
+        $etablissement->setResponsableTelephone($dataTemp->getResponsableTelephone());
+        $etablissement->setResponsableWhatsapp($dataTemp->getResponsableWhatsapp());
+        $etablissement->setResponsableNumeroOrdre($dataTemp->getResponsableNumeroOrdre());
+        $etablissement->setResponsableCni($dataTemp->getResponsableCni());
+
+        // Enregistrement / Certificat / Horaires
+        $etablissement->setAnneeCreation($dataTemp->getAnneeCreation());
+        if ($dataTemp->getEnregistreeDepps() !== null && $dataTemp->getEnregistreeDepps() !== '') {
+            $etablissement->setEnregistreeDepps(filter_var($dataTemp->getEnregistreeDepps(), FILTER_VALIDATE_BOOLEAN));
+        }
+        $etablissement->setNumeroEnregistrement($dataTemp->getNumeroEnregistrement());
+        if ($dataTemp->getOrganismeEnregistrement()) {
+            $etablissement->setOrganismeEnregistrement($this->organismeEnregistrementRepository->find($dataTemp->getOrganismeEnregistrement()));
+        }
+        $etablissement->setAnneeAutorisation($dataTemp->getAnneeAutorisation());
+        if ($dataTemp->getACertificatConformite() !== null && $dataTemp->getACertificatConformite() !== '') {
+            $etablissement->setACertificatConformite(filter_var($dataTemp->getACertificatConformite(), FILTER_VALIDATE_BOOLEAN));
+        }
+        if ($dataTemp->getDateValiditeCertificat()) {
+            $etablissement->setDateValiditeCertificat(new DateTime($dataTemp->getDateValiditeCertificat()));
+        }
+        $etablissement->setHoraireOuverture($dataTemp->getHoraireOuverture());
+        $etablissement->setAutreHoraireOuverture($dataTemp->getAutreHoraireOuverture());
+
+        // Contrôle Qualité et Services
+        if ($dataTemp->getAAccreditation() !== null && $dataTemp->getAAccreditation() !== '') {
+            $etablissement->setAAccreditation(filter_var($dataTemp->getAAccreditation(), FILTER_VALIDATE_BOOLEAN));
+        }
+        if ($dataTemp->getEngagementProcessusAccreditation() !== null && $dataTemp->getEngagementProcessusAccreditation() !== '') {
+            $etablissement->setEngagementProcessusAccreditation(filter_var($dataTemp->getEngagementProcessusAccreditation(), FILTER_VALIDATE_BOOLEAN));
+        }
+        if ($dataTemp->getCertificationQualite()) {
+            $etablissement->setCertificationQualite($this->certificationQualiteRepository->find($dataTemp->getCertificationQualite()));
+        }
+        $etablissement->setAutresCertification($dataTemp->getAutresCertification());
+        $servicesIds = json_decode($dataTemp->getServices() ?? '[]', true);
+        if (is_array($servicesIds)) {
+            foreach ($servicesIds as $serviceId) {
+                $service = $this->serviceRepository->find($serviceId);
+                if ($service) {
+                    $etablissement->addService($service);
+                }
+            }
+        }
+
         $this->em->persist($etablissement);
         $this->em->flush();
 
@@ -708,11 +866,12 @@ class PaiementService
         $this->em->flush();
 
         $transaction->setUser($user);
+        $transaction->setState(1);
         $transaction->setCreatedBy($user);
         $transaction->setUpdatedBy($user);
         $this->transactionRepository->add($transaction, true);
 
-      
+
         foreach ($dataTemp->getDocumentTemporaires() as $doc) {
             $this->em->remove($doc);
         }

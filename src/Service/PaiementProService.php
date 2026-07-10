@@ -14,6 +14,7 @@ use App\Repository\TransactionRepository;
 use App\Repository\UserRepository;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -31,7 +32,8 @@ class PaiementProService
         private EntityManagerInterface $em,
         private TempProfessionnelRepository $tempProfessionnelRepository,
         private TempEtablissementRepository $tempEtablissementRepository,
-        private PaiementService $paiementService
+        private PaiementService $paiementService,
+        private LoggerInterface $logger
     ) {}
 
     /**
@@ -63,11 +65,16 @@ class PaiementProService
         $professionInfo = $data['profession'] ?? $request->get('profession');
         $niveauInterventionInfo = $data['niveauIntervention'] ?? $request->get('niveauIntervention');
 
+        $email = $data['email'] ?? $request->get('email');
+        if ($email && $this->userRepository->findOneBy(['email' => $email])) {
+            return ['code' => 409, 'error' => 'Cet email est déjà utilisé par un autre compte.'];
+        }
+
         $montant = $type == "professionnel"
             ? $this->em->getRepository(\App\Entity\Profession::class)->find($professionInfo)->getMontantNouvelleDemande()
             : $this->em->getRepository(\App\Entity\NiveauIntervention::class)->find($niveauInterventionInfo)->getMontant();
 
-        $phoneNumber = $data['numero'] ?? $data['phoneNumber'] ?? $request->get('numero') ?? $request->get('phoneNumber');
+        $phoneNumber = $data['phoneNumber'] ?? $data['numero']  ?? $request->get('phoneNumber') ?? $request->get('numero');
 
         $username = $_ENV['MOMO_USERNAME'];
         $password = $_ENV['MOMO_PASSWORD'];
@@ -135,6 +142,7 @@ class PaiementProService
         $transaction->setChannel('momo');
         $transaction->setReference($myUuid);
         $transaction->setMontant($montant);
+        $transaction->setNumero($phoneNumber);
         $transaction->setReferenceChannel($myUuid);
         $transaction->setType('NOUVELLE DEMANDE');
         $transaction->setTypeUser($type);
@@ -161,6 +169,13 @@ class PaiementProService
         $response = null;
         $basicToken = base64_encode("$username:$password");
         $momoPrimaryKey = $_ENV['MOMO_PRIMARY_KEY'] ?? '';
+
+        $this->logger->info('[MOMO][CHECK] Début vérification statut', [
+            'referenceId'      => $referenceId,
+            'momo_username'    => $username,
+            'primary_key_set'  => $momoPrimaryKey !== '',
+        ]);
+
         // Obtenir le token
         $tokenResponse = $this->httpClient->request('POST', 'https://proxy.momoapi.mtn.com/collection/token/', [
             'headers' => [
@@ -169,10 +184,21 @@ class PaiementProService
                 'Ocp-Apim-Subscription-Key' => $momoPrimaryKey,
             ],
         ]);
-        if ($tokenResponse->getStatusCode() !== 200) {
-            return ['error' => 'Erreur lors de la récupération du token'];
+        // getContent(false) => ne lève PAS d'exception sur 4xx/5xx, on récupère le corps brut
+        $tokenStatusCode = $tokenResponse->getStatusCode();
+        $tokenRawBody    = $tokenResponse->getContent(false);
+        $this->logger->info('[MOMO][CHECK] Réponse token', [
+            'http_code' => $tokenStatusCode,
+            'body'      => $tokenRawBody,
+        ]);
+        if ($tokenStatusCode !== 200) {
+            return [
+                'error'       => 'Erreur lors de la récupération du token',
+                'debug_token' => ['http_code' => $tokenStatusCode, 'body' => $tokenRawBody],
+            ];
         }
-        $token = $tokenResponse->toArray()['access_token'];
+        $token = json_decode($tokenRawBody, true)['access_token'] ?? null;
+
         // Vérifier le statut
         $statusResponse = $this->httpClient->request(
             'GET',
@@ -186,14 +212,34 @@ class PaiementProService
                 ],
             ]
         );
-        if ($statusResponse->getStatusCode() !== 200) {
-            return ['error' => 'Erreur lors de la vérification du statut'];
+        // On lit le corps brut AVANT de tester le code => visible même sur 4xx/5xx
+        $statusCode = $statusResponse->getStatusCode();
+        $rawBody    = $statusResponse->getContent(false);
+        $this->logger->info('[MOMO][CHECK] Réponse statut requesttopay', [
+            'referenceId' => $referenceId,
+            'http_code'   => $statusCode,
+            'raw_body'    => $rawBody,
+        ]);
+
+        if ($statusCode !== 200) {
+            return [
+                'error'        => 'Erreur lors de la vérification du statut',
+                'debug_status' => ['http_code' => $statusCode, 'body' => $rawBody],
+            ];
         }
-        $statusData = $statusResponse->toArray();
+        $statusData = json_decode($rawBody, true) ?? [];
+        $this->logger->info('[MOMO][CHECK] Statut MTN décodé', [
+            'referenceId' => $referenceId,
+            'status'      => $statusData['status'] ?? null,
+            'reason'      => $statusData['reason'] ?? null,
+            'full'        => $statusData,
+        ]);
         $transaction = $this->transactionRepository->findOneBy(['reference' => $referenceId]);
         // dd($transaction->getTypeUser());
         if ($transaction) {
-            if (($statusData['status'] ?? null) === 'SUCCESSFUL') {
+            $momoStatus = $statusData['status'] ?? null;
+
+            if (in_array($momoStatus, ['SUCCESSFUL', 'COMPLETED'])) {
                 if ($transaction->getType() === 'NOUVELLE DEMANDE') {
                     $response = (in_array($transaction->getTypeUser(), ["professionnel", "PROFESSIONNEL"]))
                         ? $this->paiementService->updateProfessionnel($referenceId)
@@ -201,6 +247,13 @@ class PaiementProService
                 } elseif ($transaction->getType() === 'RENOUVELLEMENT') {
                     $response = $this->finaliserRenouvellement($transaction);
                 }
+            } elseif (in_array($momoStatus, ['FAILED', 'REJECTED', 'TIMEOUT', 'CANCELLED'])) {
+                $transaction->setState(-1);
+                $existingData = json_decode($transaction->getData() ?? '{}', true) ?? [];
+                $existingData['reason'] = $statusData['reason'] ?? $momoStatus;
+                $transaction->setData(json_encode($existingData, JSON_UNESCAPED_UNICODE));
+                $this->em->persist($transaction);
+                $this->em->flush();
             }
 
             if (isset($response['code']) && $response['code'] === 200) {
@@ -305,6 +358,7 @@ class PaiementProService
         $transaction->setChannel('momo');
         $transaction->setReference($referenceId);
         $transaction->setMontant($montant);
+        $transaction->setNumero($request->get('numero') ?? $request->get('phoneNumber'));
         $transaction->setReferenceChannel($referenceId);
         $transaction->setType('PAIEMENT MOMO PRO');
         $transaction->setTypeUser($request->get('type'));
@@ -366,6 +420,7 @@ class PaiementProService
         $professionnel->setDateNaissance($request->get('dateNaissance'));
         $professionnel->setNumber($request->get('numero'));
         $professionnel->setLieuDiplome($request->get('lieuDiplome'));
+        $professionnel->setOrigineDiplome($request->get('origineDiplome'));
         $professionnel->setLieuObtentionDiplome($request->get('lieuObtentionDiplome'));
         $professionnel->setNationate($request->get('nationalite'));
         $professionnel->setSituation($request->get('situation'));
@@ -551,7 +606,7 @@ class PaiementProService
                 if ($status === 'SUCCESSFUL') {
                     $transaction->setState(1);
                 } elseif ($status === 'FAILED') {
-                    $transaction->setState(0); // FAILED
+                    $transaction->setState(-1);
                 } else {
                     $transaction->setState(0); // PENDING
                 }
@@ -592,7 +647,13 @@ class PaiementProService
         $today = new \DateTime();
 
         if ($expiration) {
-            $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
+            $code = method_exists($personne, 'getCode') ? ($personne->getCode() ?? '') : '';
+            if ($code && preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $code, $matches)) {
+                // Utilise l'année inscrite dans le code (MS2024..., MSNI2024..., etc.)
+                $yearDue = (int)$today->format('Y') - (int)$matches[1];
+            } else {
+                $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
+            }
         } else {
             $yearDue = 1;
         }
@@ -631,11 +692,13 @@ class PaiementProService
         $transaction->setChannel('momo');
         $transaction->setReference($myUuid);
         $transaction->setMontant($montantTotal);
+        $transaction->setNumero($phoneNumber);
         $transaction->setReferenceChannel($myUuid);
         $transaction->setType('RENOUVELLEMENT');
         $transaction->setTypeUser($data['type'] ?? 'professionnel');
+        $transaction->setNbreAnnee($yearsToPay);  // ← champ dédié, plus lisible que getData()
         $transaction->setState(0);
-        $transaction->setData(json_encode(['yearsToPay' => $yearsToPay, 'yearDue' => $yearDue]));
+        $transaction->setData(json_encode(['yearsToPay' => $yearsToPay, 'yearDue' => $yearDue])); // conservé pour compatibilité
         $transaction->setCreatedAtValue();
         $transaction->setUpdatedAt();
         $this->transactionRepository->add($transaction, true);
@@ -686,6 +749,7 @@ class PaiementProService
 
         $transaction = new Transaction();
         $transaction->setChannel("momo");
+        $transaction->setNumero($phoneNumber);
 
         if ($request->get('user')) {
             $transaction->setUser($this->userRepository->find($request->get('user')));
@@ -774,8 +838,9 @@ class PaiementProService
         $personne = $user->getPersonne();
         if (!$personne) return ['code' => 400, 'message' => 'Personne not found'];
 
-        $transactionData = json_decode($transaction->getData() ?? "[]", true);
-        $yearsPaid = $transactionData['yearsToPay'] ?? 1;
+        // Nombre d'années payées : lire depuis le champ dédié en priorité, fallback sur data JSON
+        $yearsPaid = $transaction->getNbreAnnee() ?? (json_decode($transaction->getData() ?? '{}', true)['yearsToPay'] ?? 1);
+        $transactionData = json_decode($transaction->getData() ?? '{}', true);
         $yearsDue = $transactionData['yearDue'] ?? 1;
 
         $now = new \DateTime();

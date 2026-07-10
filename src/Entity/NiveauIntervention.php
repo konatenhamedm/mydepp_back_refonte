@@ -39,9 +39,17 @@ class NiveauIntervention
     #[Groups(["group1"])]
     private ?string $montantRenouvellement = null;
 
+    /**
+     * @var Collection<int, TypeDocument>
+     */
+    #[ORM\ManyToMany(targetEntity: TypeDocument::class, mappedBy: 'niveauInterventions')]
+    #[Groups(["group1"])]
+    private Collection $typeDocuments;
+
     public function __construct()
     {
         $this->etablissements = new ArrayCollection();
+        $this->typeDocuments = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -123,6 +131,33 @@ class NiveauIntervention
     public function setMontantRenouvellement(?string $montantRenouvellement): static
     {
         $this->montantRenouvellement = $montantRenouvellement;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, TypeDocument>
+     */
+    public function getTypeDocuments(): Collection
+    {
+        return $this->typeDocuments;
+    }
+
+    public function addTypeDocument(TypeDocument $typeDocument): static
+    {
+        if (!$this->typeDocuments->contains($typeDocument)) {
+            $this->typeDocuments->add($typeDocument);
+            $typeDocument->addNiveauIntervention($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTypeDocument(TypeDocument $typeDocument): static
+    {
+        if ($this->typeDocuments->removeElement($typeDocument)) {
+            $typeDocument->removeNiveauIntervention($this);
+        }
 
         return $this;
     }

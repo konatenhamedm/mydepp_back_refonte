@@ -7,6 +7,7 @@ use App\DTO\NiveauInterventionDTO;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\NiveauIntervention;
 use App\Repository\NiveauInterventionRepository;
+use App\Repository\TypeDocumentRepository;
 use App\Repository\UserRepository;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -110,7 +111,7 @@ class ApiNiveauInterventionController extends ApiInterface
                     new OA\Property(property: "code", type: "string"),
                     new OA\Property(property: "montant", type: "string"),
                     new OA\Property(property: "montantRenouvellement", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -121,16 +122,20 @@ class ApiNiveauInterventionController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'niveauIntervention')]
-    
+
     public function create(Request $request, NiveauInterventionRepository $niveauInterventionRepository): Response
     {
 
         $data = json_decode($request->getContent(), true);
+        $code = trim($data['code'] ?? '');
+        if ($code === '') {
+            $code = $this->utils->generateShortCodeFromLibelle($data['libelle'], $niveauInterventionRepository);
+        }
         $niveauIntervention = new NiveauIntervention();
         $niveauIntervention->setLibelle($data['libelle']);
         $niveauIntervention->setMontant($data['montant']);
         $niveauIntervention->setMontantRenouvellement($data['montantRenouvellement']);
-        $niveauIntervention->setCode($data['code']);
+        $niveauIntervention->setCode($code);
         $niveauIntervention->setCreatedBy($this->getUser());
         $niveauIntervention->setUpdatedBy($this->getUser());
         $errorResponse = $this->errorResponse($niveauIntervention);
@@ -157,7 +162,7 @@ class ApiNiveauInterventionController extends ApiInterface
                     new OA\Property(property: "code", type: "string"),
                     new OA\Property(property: "montant", type: "string"),
                     new OA\Property(property: "montantRenouvellement", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -168,19 +173,23 @@ class ApiNiveauInterventionController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'niveauIntervention')]
-    
+
     public function update(Request $request, NiveauIntervention $niveauIntervention, NiveauInterventionRepository $niveauInterventionRepository): Response
     {
         try {
             $data = json_decode($request->getContent());
             if ($niveauIntervention != null) {
 
+                $code = trim($data->code ?? '');
+                if ($code === '') {
+                    $code = $niveauIntervention->getCode() ?: $this->utils->generateShortCodeFromLibelle($data->libelle, $niveauInterventionRepository);
+                }
                 $niveauIntervention->setLibelle($data->libelle);
-                $niveauIntervention->setCode($data->code);
+                $niveauIntervention->setCode($code);
                 $niveauIntervention->setMontant($data->montant);
                 $niveauIntervention->setMontantRenouvellement($data->montantRenouvellement);
                 $niveauIntervention->setUpdatedBy($this->getUser());
-                $niveauIntervention->setUpdatedAt(new \DateTime());
+                $niveauIntervention->setUpdatedAt();
                 $errorResponse = $this->errorResponse($niveauIntervention);
 
                 if ($errorResponse !== null) {
@@ -203,6 +212,69 @@ class ApiNiveauInterventionController extends ApiInterface
             $response = $this->response('[]');
         }
         return $response;
+    }
+
+    #[Route('/{id}/type-documents', methods: ['GET'])]
+    /**
+     * Retourne les documents requis pour un niveau d'intervention donné.
+     * Un TypeDocument est retenu si :
+     *  - son LibelleGroupe correspond à la phase demandée (ACP par défaut, ou OEP) ;
+     *  - il n'est restreint à aucun niveau (s'applique à tous) OU il est explicitement lié à ce niveau ;
+     *  - il n'est restreint à aucun type de personne OU le typePersonne fourni correspond.
+     * Autrement dit le document peut être filtré par niveau seul, par type de personne seul, ou les deux à la fois.
+     */
+    #[OA\Parameter(name: 'typePersonne', in: 'query', schema: new OA\Schema(type: 'string'))]
+    #[OA\Parameter(name: 'phase', in: 'query', schema: new OA\Schema(type: 'string'))]
+    #[OA\Tag(name: 'niveauIntervention')]
+    public function getTypeDocuments(NiveauIntervention $niveauIntervention, Request $request, TypeDocumentRepository $typeDocumentRepository): Response
+    {
+        try {
+            $typePersonneCode = $request->query->get('typePersonne');
+            $phase = $request->query->get('phase', 'ACP');
+
+            $qb = $typeDocumentRepository->createQueryBuilder('td')
+                ->leftJoin('td.libelleGroupe', 'lg')->addSelect('lg')
+                ->leftJoin('td.niveauInterventions', 'ni')
+                ->andWhere('lg.type = :phase')
+                ->setParameter('phase', $phase)
+                ->andWhere('ni.id IS NULL OR ni.id = :niveauId')
+                ->setParameter('niveauId', $niveauIntervention->getId());
+
+            $typeDocuments = $qb->getQuery()->getResult();
+
+            $result = [];
+            foreach ($typeDocuments as $typeDocument) {
+                if ($typePersonneCode && $typeDocument->getTypePersonne() && $typeDocument->getTypePersonne()->getCode() !== $typePersonneCode) {
+                    continue;
+                }
+                $groupe = $typeDocument->getLibelleGroupe();
+                $result[] = [
+                    'id' => $typeDocument->getId(),
+                    'libelle' => $typeDocument->getLibelle(),
+                    'nombre' => $typeDocument->getNombre(),
+                    'obligatoire' => $typeDocument->isObligatoire(),
+                    'libelleGroupe' => $groupe ? [
+                        'id' => $groupe->getId(),
+                        'libelle' => $groupe->getLibelle(),
+                        'type' => $groupe->getType(),
+                    ] : null,
+                ];
+            }
+
+            return $this->json([
+                'code' => 200,
+                'message' => 'Operation effectuée avec succes',
+                'data' => $result,
+                'errors' => [],
+            ]);
+        } catch (\Exception $exception) {
+            return $this->json([
+                'code' => 500,
+                'message' => $exception->getMessage(),
+                'data' => [],
+                'errors' => [$exception->getMessage()],
+            ], 500);
+        }
     }
 
     //const TAB_ID = 'parametre-tabs';
@@ -257,7 +329,7 @@ class ApiNiveauInterventionController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'niveauIntervention')]
-    
+
     public function deleteAll(Request $request, NiveauInterventionRepository $villeRepository): Response
     {
         try {

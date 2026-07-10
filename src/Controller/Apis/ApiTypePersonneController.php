@@ -40,20 +40,11 @@ class ApiTypePersonneController extends ApiInterface
     public function index(TypePersonneRepository $typePersonneRepository): Response
     {
         try {
-
             $typePersonnes = $typePersonneRepository->findAll();
-
-            $context = [AbstractNormalizer::GROUPS => 'group1'];
-            $json = $this->serializer->serialize($typePersonnes, 'json', $context);
-
-            return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
+            return $this->responseData($typePersonnes, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
-            $response = $this->response('[]');
+            return $this->responseData([], 'group1', ['Content-Type' => 'application/json']);
         }
-
-        // On envoie la réponse
-        return $response;
     }
 
 
@@ -109,7 +100,7 @@ class ApiTypePersonneController extends ApiInterface
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -120,14 +111,18 @@ class ApiTypePersonneController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'typePersonne')]
-    
+
     public function create(Request $request, TypePersonneRepository $typePersonneRepository): Response
     {
 
         $data = json_decode($request->getContent(), true);
+        $code = trim($data['code'] ?? '');
+        if ($code === '') {
+            $code = $this->utils->generateShortCodeFromLibelle($data['libelle'], $typePersonneRepository);
+        }
         $typePersonne = new TypePersonne();
         $typePersonne->setLibelle($data['libelle']);
-        $typePersonne->setCode($data['code']);
+        $typePersonne->setCode($code);
         $typePersonne->setCreatedBy($this->getUser());
         $typePersonne->setUpdatedBy($this->getUser());
         $errorResponse = $this->errorResponse($typePersonne);
@@ -152,7 +147,7 @@ class ApiTypePersonneController extends ApiInterface
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -163,17 +158,21 @@ class ApiTypePersonneController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'typePersonne')]
-    
+
     public function update(Request $request, TypePersonne $typePersonne, TypePersonneRepository $typePersonneRepository): Response
     {
         try {
             $data = json_decode($request->getContent());
             if ($typePersonne != null) {
 
+                $code = trim($data->code ?? '');
+                if ($code === '') {
+                    $code = $typePersonne->getCode() ?: $this->utils->generateShortCodeFromLibelle($data->libelle, $typePersonneRepository);
+                }
                 $typePersonne->setLibelle($data->libelle);
-                $typePersonne->setCode($data->code);
+                $typePersonne->setCode($code);
                 $typePersonne->setUpdatedBy($this->getUser());
-                $typePersonne->setUpdatedAt(new \DateTime());
+                $typePersonne->setUpdatedAt();
 
                 $errorResponse = $this->errorResponse($typePersonne);
 
@@ -251,7 +250,7 @@ class ApiTypePersonneController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'typePersonne')]
-    
+
     public function deleteAll(Request $request, TypePersonneRepository $villeRepository): Response
     {
         try {

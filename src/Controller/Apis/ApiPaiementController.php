@@ -52,43 +52,21 @@ class ApiPaiementController extends ApiInterface
     )]
     #[OA\Tag(name: 'paiements')]
     // 
-    public function index(TransactionRepository $transactionRepository, ProfessionRepository $professionRepository, $type): Response
+    public function index(Request $request, TransactionRepository $transactionRepository, ProfessionRepository $professionRepository, $type): Response
     {
         try {
+            $search = $request->query->get('search');
+            $montant = $request->query->get('montant');
+            $startDate = $request->query->get('startDate');
+            $endDate = $request->query->get('endDate');
+            $professionId = $request->query->get('profession');
 
-            /* {
-                "user": {
-                    "id": 112,
-                    "username": "Doudou DEPPS25059008",
-                    "email": "adoudanidani@live.fr",
-                    "typeUser": "PROFESSIONNEL",
-                    "personne": {
-                        "code": "MS10250299.0001",
-                        "poleSanitaire": "",
-                        "nom": "Doudou",
-                        "prenoms": "DANI",
-                        "lieuExercicePro": "Adzopé",
-                        "email": "adoudanidani@gmail.com",
-                        "profession": "rd_kinesithérapie",
-                        "number": "0707937156",
-                        "quartier": "KOKO",
-                        "id": 76,
-                        "createdAt": "2025-05-09T13:10:32+02:00"
-                    },
-                    "createdAt": "2025-05-09T13:10:33+02:00"
-                },
-                "montant": "15000",
-                "reference": "DEPPS250509130852007",
-                "reference_channel": "LJV250509P1109412191",
-                "channel": "Wave",
-                "type": "NOUVELLE DEMANDE",
-                "state": 1,
-                "typeUser": "professionnel",
-                "createdAt": "2025-05-09T13:08:52+02:00"
-            }, */
+            if ($startDate === 'null' || $startDate === '') $startDate = null;
+            if ($endDate === 'null' || $endDate === '') $endDate = null;
+            if ($professionId === 'null' || $professionId === '') $professionId = null;
+            if ($montant === 'null' || $montant === '') $montant = null;
 
-            $transactions = $transactionRepository->getAllTransaction($type);
-
+            $transactions = $transactionRepository->getFilteredTransactions($type, $search, $montant, $startDate, $endDate, $professionId);
 
             $formattedTransactions = array_map(function (Transaction $transaction) use ($professionRepository, $type) {
                 $personne = $transaction->getUser()->getPersonne();
@@ -177,6 +155,10 @@ class ApiPaiementController extends ApiInterface
                 ];
             }, $transactions);
 
+            $request->query->remove('startDate');
+            $request->query->remove('endDate');
+            $request->query->remove('profession');
+            $request->query->remove('montant');
 
             $response = $this->responseData($formattedTransactions, 'group_user_trx', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -187,6 +169,46 @@ class ApiPaiementController extends ApiInterface
         // On envoie la réponse
         return $response;
     }
+
+    #[Route('/historique-kpis/{type}', methods: ['GET'])]
+    #[OA\Response(
+        response: 200,
+        description: 'KPIs pour l\'historique des paiements',
+        content: new OA\JsonContent(type: 'object')
+    )]
+    #[OA\Tag(name: 'paiements')]
+    public function getHistoriqueKpis(Request $request, TransactionRepository $transactionRepository, $type): Response
+    {
+        try {
+            $search = $request->query->get('search');
+            $montant = $request->query->get('montant');
+            $startDate = $request->query->get('startDate');
+            $endDate = $request->query->get('endDate');
+            $professionId = $request->query->get('profession');
+
+            if ($startDate === 'null' || $startDate === '') $startDate = null;
+            if ($endDate === 'null' || $endDate === '') $endDate = null;
+            if ($professionId === 'null' || $professionId === '') $professionId = null;
+            if ($montant === 'null' || $montant === '') $montant = null;
+
+            $kpis = $transactionRepository->getFilteredTransactionsKpis($type, $search, $montant, $startDate, $endDate, $professionId);
+
+            return $this->json([
+                'code' => 200,
+                'message' => 'KPIs récupérés avec succès',
+                'data' => $kpis,
+                'errors' => []
+            ]);
+        } catch (\Exception $exception) {
+            return $this->json([
+                'code' => 500,
+                'message' => $exception->getMessage(),
+                'data' => null,
+                'errors' => [$exception->getMessage()]
+            ], 500);
+        }
+    }
+
 
 
     private function formatEntityProfession($entity): ?array
@@ -240,25 +262,46 @@ class ApiPaiementController extends ApiInterface
                 } else {
                     $today = new \DateTime();
 
-                    // Déterminer la date d'expiration
-                    if ($user->getPersonne()->getDateValidation() !== null) {
-                        // $expiration = (clone $user->getPersonne()->getDateValidation())->modify('+1 year');
-                        $expiration = (clone $user->getPersonne()->getDateValidation());
-                    } else {
-                        // $expiration = (clone $dernierAbonnement->getCreatedAt())->modify('+1 year');
-                        $expiration = (clone $dernierAbonnement->getCreatedAt());
-                    }
+                    // Détermine la date d'expiration depuis le code professionnel
+                    // Cherche la première année (19xx ou 20xx) dans le code,
+                    // quelle que soit la structure du préfixe (MS, MSNI, MSDK, etc.)
+                    // Ex: MS2026APDENT1725.0006 → 2026 (1725 ignoré car ne commence pas par 19 ou 20)
+                    $code = $user->getPersonne()->getCode() ?? '';
 
-                    // Vérifier l'expiration
-                    $expire = $expiration < $today;
-
-                    // Calculer les jours restants (0 si déjà expiré)
-                    if ($expire) {
-                        $joursRestants = 0;
-                        $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
-                        // dd($yearDue);
+                    if (preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $code, $matches)) {
+                        $yearInCode = (int)$matches[1];
+                        $currentYear = (int)$today->format('Y');
+                        
+                        $expire = $yearInCode < $currentYear;
+                        $expiration = new \DateTime($yearInCode . '-12-31');
+                        
+                        if ($expire) {
+                            $joursRestants = 0;
+                            $yearDue = $currentYear - $yearInCode;
+                        } else {
+                            $joursRestants = $today->diff($expiration)->days;
+                            $yearDue = 0;
+                        }
                     } else {
-                        $joursRestants = $today->diff($expiration)->days;
+                        if ($user->getPersonne()->getDateValidation() !== null) {
+                            $expiration = (clone $user->getPersonne()->getDateValidation());
+                        } elseif ($dernierAbonnement !== null) {
+                            $expiration = (clone $dernierAbonnement->getCreatedAt());
+                        } else {
+                            $expiration = (clone $today)->modify('-1 day');
+                        }
+
+                        // Vérifier l'expiration
+                        $expire = $expiration < $today;
+
+                        // Calculer les jours restants (0 si déjà expiré)
+                        if ($expire) {
+                            $joursRestants = 0;
+                            $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
+                        } else {
+                            $joursRestants = $today->diff($expiration)->days;
+                            $yearDue = 0;
+                        }
                     }
 
                     $etatPro = true;
@@ -489,6 +532,7 @@ class ApiPaiementController extends ApiInterface
                 "typeUser" => $transactions->getUser()->getTypeUser(),
                 "createdAt" => $transactions->getCreatedAt() ? $transactions->getCreatedAt()->format('Y-m-d H:i:s') : null,
                 "email" => $transactions->getUser()->getEmail(),
+                "numero" => $transactions->getNumero(),
             ];
 
 
@@ -522,9 +566,26 @@ class ApiPaiementController extends ApiInterface
 
             $transactions = $transactionRepository->getAllTransactionByUser($userId);
 
-            $response = $this->responseData($transactions, 'group_user_trx', ['Content-Type' => 'application/json']);
+            $formattedTransactions = array_map(function (Transaction $transaction) {
+                $personne = $transaction->getUser()->getPersonne();
+                return [
+                    "montant"           => $transaction->getMontant(),
+                    "reference"         => $transaction->getReference(),
+                    "reference_channel" => $transaction->getReferenceChannel(),
+                    "channel"           => $transaction->getChannel(),
+                    "type"              => $transaction->getType(),
+                    "state"             => $transaction->getState(),
+                    "typeUser"          => $transaction->getTypeUser(),
+                    "createdAt"         => $transaction->getCreatedAt()?->format('Y-m-d H:i:s'),
+                    "nom"               => $personne ? $personne->getNom() : null,
+                    "prenoms"           => $personne ? $personne->getPrenoms() : null,
+                    "email"             => $transaction->getUser()->getEmail(),
+                ];
+            }, $transactions);
+
+            $response = $this->responseData($formattedTransactions, 'group_user_trx', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage($exception->getMessage());
             $response = $this->response('[]');
         }
 
@@ -545,16 +606,29 @@ class ApiPaiementController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'paiements')]
-    // 
-    public function getTransaction(TransactionRepository $transactionRepository, $trxReference): Response
+    public function getTransaction(TransactionRepository $transactionRepository, \App\Service\PaiementProService $paiementProService, $trxReference): Response
     {
         $transaction = $transactionRepository->findOneBy(['reference' => $trxReference]);
 
-        return $this->json(
-            [
-                "data" => $transaction->getState() == 1 ? true : false
-            ]
-        );
+        if ($transaction && $transaction->getState() == 0) {
+            // Polling MTN Momo activement si le webhook n'a pas été reçu
+            $paiementProService->verifierStatutPaiementPro($trxReference);
+            // Re-fetch transaction state after checking
+            $transaction = $transactionRepository->findOneBy(['reference' => $trxReference]);
+        }
+
+        $failed = $transaction && $transaction->getState() == -1;
+        $reason = null;
+        if ($failed) {
+            $txData = json_decode($transaction->getData() ?? '{}', true);
+            $reason = $txData['reason'] ?? null;
+        }
+
+        return $this->json([
+            "data"   => $transaction && $transaction->getState() == 1 ? true : false,
+            "failed" => $failed,
+            "reason" => $reason,
+        ]);
     }
 
 
@@ -714,6 +788,7 @@ class ApiPaiementController extends ApiInterface
         $transaction->setChannel("");
         $transaction->setReference($this->numero());
         $transaction->setMontant($data['montant']);
+        $transaction->setNumero($data['numero'] ?? null);
         $transaction->setReferenceChannel("");
         $transaction->setUser($userRepository->find($data['user']));
         $transaction->setType("Renouvellement");
@@ -943,6 +1018,7 @@ class ApiPaiementController extends ApiInterface
         $professionnel->setNumber($request->get('numero'));
         $professionnel->setLieuDiplome($request->get('lieuDiplome'));
         $professionnel->setLieuObtentionDiplome($request->get('lieuObtentionDiplome'));
+        $professionnel->setOrigineDiplome($request->get('origineDiplome'));
         $professionnel->setNationate($request->get('nationalite'));
         $professionnel->setSituation($request->get('situation'));
         $professionnel->setDatePremierDiplome(new DateTimeImmutable($request->get('datePremierDiplome')));

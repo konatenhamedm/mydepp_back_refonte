@@ -37,13 +37,13 @@ class RenouvellementService
     public function updateData(): string
     {
         $now = new \DateTime();
+        $currentYear = (int) $now->format('Y');
         $compteur = 0;
 
         $professionnels = $this->repoProfessionnel->createQueryBuilder('p')
-            ->where('p.status != :statut')
-            ->andWhere('p.dateValidation != :now')
-            ->setParameter('statut', 'renouvellement')
-            ->setParameter('now', null)
+            ->where('p.status NOT IN (:statuts)')
+            ->andWhere('p.code IS NOT NULL') 
+            ->setParameter('statuts', ['attente', 'rejete',  'refuse', 'renouvellement'])
             ->getQuery()
             ->getResult();
 
@@ -55,30 +55,19 @@ class RenouvellementService
                 continue;
             }
 
-            /*// Étape 3 : récupérer la dernière transaction réussie
-            $lastTransaction = $this->repoTransaction->createQueryBuilder('t')
-                ->where('t.user = :user')
-                ->andWhere('t.state = :state')
-                ->setParameter('user', $user)
-                ->setParameter('state', 1)
-                ->orderBy('t.createdAt', 'DESC')
-                ->setMaxResults(1)
-                ->getQuery()
-                ->getOneOrNullResult(); */
-
-            /*  if ($lastTransaction) { */
-            $dateTransaction = $pro->getDateValidation();
-            $diff = $dateTransaction->diff($now);
-
-          /*   if ($pro->getDateValidation() != null) { */
-                // Étape 4 : si la dernière transaction date de plus d'un an
-                if ($diff->y >= 1) {
+            $code = $pro->getCode();
+            // On cherche "MS" suivi de 4 chiffres dans le code (ex: MS2025OPTLO1992.0493)
+            if ($code && preg_match('/MS(\d{4})/', $code, $matches)) {
+                $yearCode = (int) $matches[1];
+                
+                // Si l'année extraite est inférieure à l'année en cours, l'abonnement a expiré
+                if ($yearCode < $currentYear) {
                     $pro->setStatus('renouvellement');
                     $this->entityManager->persist($pro);
 
                     // Envoi de mail
                     $user_message = [
-                        'message' => "Bonjour " . $user->getEmail() . ", votre abonnement a expiré. Veuillez vous connecter à votre dashboard pour le renouveler.",
+                        'message' => "Bonjour " . $user->getEmail() . ",\n\nNous vous informons que votre abonnement est arrivé à expiration.\n\nAfin de régulariser votre situation, nous vous invitons à procéder à son renouvellement. Vous pouvez effectuer cette démarche directement depuis votre tableau de bord en ligne, ou en vous rendant dans nos locaux.\n\nCordialement,",
                     ];
 
                     $context = compact('user_message');
@@ -93,7 +82,7 @@ class RenouvellementService
 
                     $compteur++;
                 }
-         
+            }
         }
 
         // Persiste les modifications
@@ -132,7 +121,7 @@ class RenouvellementService
                     $this->entityManager->persist($etab);
 
                     $user_message = [
-                        'message' => "Bonjour " . $user->getEmail() . ", votre abonnement a expiré. Veuillez vous connecter à votre dashboard pour le renouveler.",
+                        'message' => "Bonjour " . $user->getEmail() . ",\n\nNous vous informons que votre abonnement est arrivé à expiration.\n\nAfin de régulariser votre situation, nous vous invitons à procéder à son renouvellement. Vous pouvez effectuer cette démarche directement depuis votre tableau de bord en ligne, ou en vous rendant dans nos locaux.\n\nCordialement,",
                     ];
 
                     $context = compact('user_message');

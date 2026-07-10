@@ -37,9 +37,9 @@ class ApiTypeProfessionController extends ApiInterface
     public function index(TypeProfessionRepository $typeProfessionRepository): Response
     {
         try {
-            
+
             $typeProfessions = $typeProfessionRepository->findAll();
-            
+
             $response =  $this->responseData($typeProfessions, 'group2', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("");
@@ -102,9 +102,6 @@ class ApiTypeProfessionController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    new OA\Property(property: "code", type: "string"),
-                    
-
                 ],
                 type: "object"
             )
@@ -114,23 +111,33 @@ class ApiTypeProfessionController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'typeProfession')]
-    
+
     public function create(Request $request, TypeProfessionRepository $typeProfessionRepository): Response
     {
-
         $data = json_decode($request->getContent(), true);
+
+        // Génération automatique du code à partir du libellé
+        // Ex: "Ordre des Médecins" => "ORDRE_DES_MEDECINS"
+        $generatedCode = strtoupper(
+            preg_replace(
+                '/\s+/', '_',
+                trim(
+                    iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $data['libelle'])
+                )
+            )
+        );
+
         $typeProfession = new TypeProfession();
         $typeProfession->setLibelle($data['libelle']);
-        $typeProfession->setCode($data['code']);
-        $typeProfession->setCreatedAtValue(new \DateTime());
-        $typeProfession->setUpdatedAt(new \DateTime());
+        $typeProfession->setCode($generatedCode);
+        $typeProfession->setCreatedAtValue();
+        $typeProfession->setUpdatedAt();
         $typeProfession->setCreatedBy($this->getUser());
         $typeProfession->setUpdatedBy($this->getUser());
         $errorResponse = $this->errorResponse($typeProfession);
         if ($errorResponse !== null) {
             return $errorResponse; // Retourne la réponse d'erreur si des erreurs sont présentes
         } else {
-
             $typeProfessionRepository->add($typeProfession, true);
         }
 
@@ -148,7 +155,7 @@ class ApiTypeProfessionController extends ApiInterface
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -159,7 +166,7 @@ class ApiTypeProfessionController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'typeProfession')]
-    
+
     public function update(Request $request, TypeProfession $typeProfession, TypeProfessionRepository $typeProfessionRepository): Response
     {
         try {
@@ -169,7 +176,7 @@ class ApiTypeProfessionController extends ApiInterface
                 $typeProfession->setLibelle($data->libelle);
                 $typeProfession->setCode($data->code);
                 $typeProfession->setUpdatedBy($this->getUser());
-                $typeProfession->setUpdatedAt(new \DateTime());
+                $typeProfession->setUpdatedAt();
                 $errorResponse = $this->errorResponse($typeProfession);
 
                 if ($errorResponse !== null) {
@@ -246,7 +253,7 @@ class ApiTypeProfessionController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'typeProfession')]
-    
+
     public function deleteAll(Request $request, TypeProfessionRepository $villeRepository): Response
     {
         try {

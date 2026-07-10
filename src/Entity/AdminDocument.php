@@ -30,6 +30,14 @@ class AdminDocument
     #[Group(["group_pro","group1"])]
     private ?string $libelle = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Group(["group_pro","group1"])]
+    private ?string $type = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Group(["group_pro","group1"])]
+    private ?string $sousType = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -55,6 +63,30 @@ class AdminDocument
     public function setLibelle(string $libelle): static
     {
         $this->libelle = $libelle;
+
+        return $this;
+    }
+
+    public function getType(): ?string
+    {
+        return $this->type;
+    }
+
+    public function setType(?string $type): static
+    {
+        $this->type = $type;
+
+        return $this;
+    }
+
+    public function getSousType(): ?string
+    {
+        return $this->sousType;
+    }
+
+    public function setSousType(?string $sousType): static
+    {
+        $this->sousType = $sousType;
 
         return $this;
     }

@@ -6,6 +6,9 @@ use App\Attribute\Source;
 use App\Controller\FileTrait;
 use App\Entity\CodeGenerateur;
 use App\Entity\Fichier;
+use App\Entity\Pays;
+use App\Entity\Profession;
+use App\Entity\Professionnel;
 use COM;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
@@ -71,29 +74,43 @@ class Utils
      *
      * @return Fichier|null
      */
-    public function sauvegardeFichier($filePath, $filePrefix, $uploadedFile, string $basePath = self::BASE_PATH): ?Fichier
+    public function sauvegardeFichier($filePath, $filePrefix, $uploadedFile, string $basePath = self::BASE_PATH, ?Fichier $oldFichier = null): ?Fichier
     {
-
-        if (!$filePrefix) {
-            return false;
+        if (!$filePrefix || !$uploadedFile) {
+            return null;
         }
 
+        // Créer le répertoire s'il n'existe pas
+        if (!is_dir($filePath)) {
+            mkdir($filePath, 0777, true);
+        }
+
+        // Si un ancien fichier existe, on le supprime physiquement mais on réutilise l'entité
+        // pour éviter les erreurs de contrainte de clé étrangère lors du flush()
+        if ($oldFichier) {
+            if ($oldFichier->getAlt()) {
+                $oldPhysicalPath = rtrim($filePath, '/') . '/' . $oldFichier->getAlt();
+                if (file_exists($oldPhysicalPath) && is_file($oldPhysicalPath)) {
+                    @unlink($oldPhysicalPath);
+                }
+            }
+        }
+
+        // $path est passé par référence : après l'appel il contiendra le chemin complet du fichier
         $path = $filePath;
-        //dd($uploadedFile, $path, $filePrefix);
         $this->fileUploader->upload($uploadedFile, null, $path, $filePrefix, true);
 
+        // $path est maintenant "$filePath/nomFichier.ext" grâce au passage par référence
         $fileExtension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 
-        $fichier = new Fichier();
+        $fichier = $oldFichier ?: new Fichier();
         $fichier->setAlt(basename($path));
         $fichier->setPath($basePath);
-        $fichier->setSize(filesize($path));
+        $fichier->setSize(file_exists($path) ? filesize($path) : 0);
         $fichier->setUrl($fileExtension);
 
         $this->em->persist($fichier);
         $this->em->flush();
-        //dd('');
-
 
         return $fichier;
     }
@@ -161,6 +178,27 @@ class Utils
         return $path;
     }
 
+    /**
+     * Génère un numéro d'identification unique pour un professionnel.
+     *
+     * Format CI  :  {racine}{civilite}{YY_inscription}{profCode}{JJ_naiss}{YY_naiss}.{XXXX}
+     * Format NI  :  {racine}NI{civilite}{YY_inscription}{profCode}{JJ_naiss}{YY_naiss}.{XXXX}
+     *
+     * Le compteur XXXX repart de Profession::chronoMax et s'incrémente jusqu'à trouver
+     * un code non encore attribué dans membre_professionnel.
+     * Profession::chronoMax est mis à jour après génération (flush à la charge de l'appelant).
+     *
+     * @param string|null              $codeCilite
+     * @param \DateTime|null           $dataNaissance
+     * @param \DateTime|null           $dataCreate
+     * @param string|null              $racine            ex: 'MS'
+     * @param mixed                    $dernierChronoAvantReset  (legacy, ignoré)
+     * @param string                   $type              'new' | 'old'
+     * @param string|null              $professionCode    ex: 'OPTLO'
+     * @param string|null              $profession        code interne profession (legacy count)
+     * @param \App\Entity\Pays|null    $nationate         Nationalité du professionnel
+     * @param \App\Entity\Profession|null $professionObj  Pour lire/écrire chronoMax
+     */
     public function numeroGeneration(
         ?string $codeCilite,
         ?\DateTime $dataNaissance,
@@ -169,55 +207,121 @@ class Utils
         $dernierChronoAvantReset,
         string $type = 'new',
         ?string $professionCode = '00',
-        ?string $profession = null
+        ?string $profession = null,
+        ?Pays $nationate = null,
+        ?Profession $professionObj = null
     ): string {
-        // Valeurs par défaut pour éviter les crashs
-        $civilite = $codeCilite ?? 'XX';
-        $dataNaissance = $dataNaissance ?? new \DateTime();
-        $dataCreate = $dataCreate ?? new \DateTime();
-        $racine = $racine ?? 'DEF';
+        // ── Valeurs par défaut ────────────────────────────────────────
+        $civilite       = $codeCilite ?? 'XX';
+        $dataNaissance  = $dataNaissance ?? new \DateTime();
+        $dataCreate     = $dataCreate   ?? new \DateTime();
+        $racine         = $racine       ?? 'DEF';
         $professionCode = $professionCode ?? '00';
-        $profession = $profession ?? 'DEFAULT';
+        $profession     = $profession   ?? 'DEFAULT';
 
-        $anneeInscription = $dataCreate->format('y');
-        $jour = $dataNaissance->format('d');
-        $annee = $dataNaissance->format('y');
-
-        try {
-            $query = $this->em->createQueryBuilder();
-            $query
-                ->select("count(a.id)")
-                ->from(CodeGenerateur::class, 'a')
-                ->innerJoin('a.profession', 'r')
-                ->andWhere('r.code = :valeur')
-                ->setParameter('valeur', $profession);
-
-            $dernierChrono = $query->getQuery()->getSingleScalarResult();
-        } catch (\Exception $e) {
-            // En cas d'erreur de requête, on utilise 0
-            $dernierChrono = 0;
+        // ── Préfixe NI pour professionnel étranger ───────────────────
+        $isEtranger = false;
+        if ($nationate !== null) {
+            $paysLibelle = mb_strtolower(trim($nationate->getLibelle() ?? ''), 'UTF-8');
+            $ciVariants  = [
+                "côte d'ivoire", "cote d'ivoire", "côte-d'ivoire",
+                "cote-d'ivoire", "ci", "ivory coast",
+            ];
+            $isEtranger = !in_array($paysLibelle, $ciVariants, true);
         }
+        $prefixe = $isEtranger ? ($racine . 'NI') : $racine;
 
-        if ($type === 'new') {
-            $maxChrono = intval($dernierChronoAvantReset ?? 0);
+        // ── Parties de date ──────────────────────────────────────────
+        $anneeInscription = $dataCreate->format('Y');    // 4 chiffres : 2026
+        $jour             = $dataNaissance->format('d'); // JJ
+        $annee            = $dataNaissance->format('y'); // 2 chiffres : 79
+
+        // ── Compteur de départ basé sur chronoMax de la profession ───
+        $startChrono = 0;
+        if ($professionObj !== null && $professionObj->getChronoMax() !== null) {
+            $startChrono = intval($professionObj->getChronoMax());
+        } elseif ($type !== 'new') {
+            // Fallback legacy : CodeGenerateur count
+            try {
+                $qb = $this->em->createQueryBuilder()
+                    ->select('COUNT(a.id)')
+                    ->from(CodeGenerateur::class, 'a')
+                    ->innerJoin('a.profession', 'r')
+                    ->andWhere('r.code = :valeur')
+                    ->setParameter('valeur', $profession);
+                $startChrono = intval($qb->getQuery()->getSingleScalarResult());
+            } catch (\Exception $e) {
+                $startChrono = 0;
+            }
         } else {
-            $maxChrono = intval($dernierChrono);
+            // type = 'new' legacy : utiliser le paramètre passé
+            $startChrono = intval($dernierChronoAvantReset ?? 0);
         }
 
-        $maxChrono = ($maxChrono + 1) % 10000;
-        if ($maxChrono == 0) {
-            $maxChrono = 1;
+        // ── Génération avec garantie d'unicité ───────────────────────
+        $repo = $this->em->getRepository(Professionnel::class);
+        $chrono = $startChrono;
+
+        for ($attempt = 0; $attempt < 9999; $attempt++) {
+            $chrono = ($chrono % 9999) + 1; // 1..9999, jamais 0
+
+            $candidate = sprintf(
+                "%s%s%s%s%s%s.%04d",
+                $prefixe,
+                //$civilite,
+                $anneeInscription,
+                $professionCode,
+                $jour,
+                $annee,
+                $chrono
+            );
+
+            // Unicité garantie : aucun Professionnel ne doit déjà porter ce code
+            if ($repo->findOneBy(['code' => $candidate]) === null) {
+                // Mettre à jour chronoMax sur la profession
+                if ($professionObj !== null) {
+                    $professionObj->setChronoMax((string) $chrono);
+                    $this->em->persist($professionObj);
+                    // L'appelant est responsable du flush()
+                }
+                return $candidate;
+            }
         }
 
-        return sprintf(
-            "%s%s0%s%s%s%s.%04d",
-            $racine,
-            $civilite,
-            $anneeInscription,
-            $professionCode,
-            $jour,
-            $annee,
-            $maxChrono
+        throw new \RuntimeException(
+            sprintf('Impossible de générer un code unique pour la profession "%s" après 9999 tentatives.', $profession)
         );
     }
+
+    /**
+     * Génère un code court (3 à 4 lettres majuscules) à partir d'un libellé,
+     * à utiliser quand l'utilisateur ne renseigne pas de code lui-même.
+     * Le code est garanti unique dans le repository donné (un suffixe numérique
+     * est ajouté en cas de collision).
+     *
+     * @param object $repository Repository disposant d'une méthode findOneBy(['code' => ...])
+     */
+    public function generateShortCodeFromLibelle(string $libelle, $repository, int $length = 4): string
+    {
+        $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $libelle) ?: $libelle;
+        $letters = strtoupper(preg_replace('/[^A-Za-z]/', '', $ascii));
+
+        if ($letters === '') {
+            $letters = 'GEN';
+        }
+
+        $base = substr($letters, 0, $length);
+        if (strlen($base) < 3) {
+            $base = str_pad($base, 3, 'X');
+        }
+
+        $code = $base;
+        for ($suffix = 1; $repository->findOneBy(['code' => $code]) !== null && $suffix < 1000; $suffix++) {
+            $suffixStr = (string) $suffix;
+            $code = substr($base, 0, max(1, $length - strlen($suffixStr))) . $suffixStr;
+        }
+
+        return $code;
+    }
 }
+

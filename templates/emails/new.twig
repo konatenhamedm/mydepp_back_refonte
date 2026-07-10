@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,7 +18,7 @@
       margin: auto;
       background: #ffffff;
       border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       overflow: hidden;
       border: 1px solid #e6e9ec;
       animation: fadeIn 0.7s ease-out;
@@ -110,16 +111,27 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(15px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(15px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <!-- HEADER -->
     <div class="header">
-      <img src="https://mydepps.net/_files/logo-depps.png" alt="Logo DEPPS">
+      <img src="https://backend.leadagro.net/logo.png" alt="Logo DEPPS"
+        style="height: 60px; width: auto; margin-right: 15px; display: inline-block; vertical-align: middle;">
+      <img src="https://backend.leadagro.net/depps.jpeg" alt="Logo DEPPS"
+        style="height: 60px; width: auto; display: inline-block; vertical-align: middle;">
       <h1>👋 Bienvenue sur DEPPS</h1>
     </div>
 
@@ -128,7 +140,7 @@
       <h2>Votre compte vient d’être créé par un administrateur</h2>
       <p>Bonjour <b>{{ user.prenom }} {{ user.nom }}</b>,</p>
       <p>
-        Un compte vient d’être créé pour vous sur la plateforme <b>MyDEPPS</b>.  
+        Un compte vient d’être créé pour vous sur la plateforme <b>E-DEPPS</b>.
         Vous pouvez dès maintenant vous connecter en utilisant les informations ci-dessous :
       </p>
 
@@ -142,7 +154,8 @@
       </p>
 
       <p style="margin-top: 25px; font-size: 14px; color: #555;">
-        Pour des raisons de sécurité, nous vous recommandons de modifier votre mot de passe après votre première connexion.
+        Pour des raisons de sécurité, nous vous recommandons de modifier votre mot de passe après votre première
+        connexion.
       </p>
     </div>
 
@@ -152,4 +165,5 @@
     </div>
   </div>
 </body>
+
 </html>

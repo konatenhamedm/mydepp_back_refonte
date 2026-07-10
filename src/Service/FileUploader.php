@@ -29,17 +29,23 @@ class FileUploader
         }
 
         $this->setTargetDirectory($path);
-        $extension = $file->guessExtension();
+
+        // On privilégie l'extension du fichier original envoyé par le client :
+        // guessExtension() déduit l'extension à partir du type MIME détecté sur le
+        // contenu, ce qui casse les documents Office (.docx, .xlsx, .pptx sont des
+        // archives ZIP en interne et sont souvent mal détectés comme .zip), rendant
+        // le fichier illisible une fois téléchargé sous la mauvaise extension.
+        $extension = $file->getClientOriginalExtension();
 
         if (!$extension) {
-            $extension = $file->getClientOriginalExtension();
+            $extension = $file->guessExtension();
         }
 
         $realFileName = str_slug(basename($file->getClientOriginalName(), ".{$extension}"), '_');
 
 
 
-        $fileName = $newFileName === false ? md5(uniqid()) : (substr($newFileName . $realFileName, 0, 200));
+        $fileName = $newFileName === false ? md5(uniqid()) : (substr($newFileName . '_' . uniqid() . '_' . $realFileName, 0, 200));
         $fileName .= '.' . $extension;
 
 

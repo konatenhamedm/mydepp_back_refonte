@@ -1,8 +1,6 @@
-
-
-
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -41,37 +39,48 @@
         }
 
         @media only screen and (max-width: 620px) {
+
             /* For mobile phones: */
-            .menu, .main, .right {
+            .menu,
+            .main,
+            .right {
                 width: 100%;
             }
         }
     </style>
 </head>
-<body >
 
-<div style="background-color:#ffff;padding:15px;text-align:center;">
-        <img src="https://mydepps.net/_files/logo-depps.png" width="200" height="200">
+<body>
 
-</div>
-<hr size="10" style="background-color:#2AD10F;">
-<div style="overflow:auto">
-
-
-    <div class="main">
-        <p> Voici les informations concernant votre compte utilisateur .</p>
-
-        <p>Login {{ info_user.login }} </p>
-        {# <p>Password {{ info_user.password }}</p> #}
-        <p>Votre création de compte à été effectué avec success, veuillez cliquer sur le lien suivant pour vous connectez : <a href="https://mydepps.pages.dev/site/connexion">Login</a></p>
-        <p>Merci</p>
+    <div style="background-color:#ffff;padding:15px;text-align:center;">
+        <img src="https://backend.leadagro.net/logo.png" alt="Logo DEPPS"
+            style="height: 60px; width: auto; margin-right: 15px; display: inline-block; vertical-align: middle;">
+        <img src="https://backend.leadagro.net/depps.jpeg" alt="Logo DEPPS"
+            style="height: 60px; width: auto; display: inline-block; vertical-align: middle;">
 
     </div>
+    <hr size="10" style="background-color:#2AD10F;">
+    <div style="overflow:auto">
 
 
-</div>
-<br>
-<div style="background-color:#2AD10F;text-align:center;padding:10px;margin-top:7px;"><h3 style="color: white;">© copyright DEPPS</h3></div>
+        <div class="main">
+            <p> Voici les informations concernant votre compte utilisateur .</p>
+
+            <p>Login {{ info_user.login }} </p>
+            {# <p>Password {{ info_user.password }}</p> #}
+            <p>Votre création de compte à été effectué avec success, veuillez cliquer sur le lien suivant pour vous
+                connectez : <a href="https://mydepps.pages.dev/site/connexion">Login</a></p>
+            <p>Merci</p>
+
+        </div>
+
+
+    </div>
+    <br>
+    <div style="background-color:#2AD10F;text-align:center;padding:10px;margin-top:7px;">
+        <h3 style="color: white;">© copyright DEPPS</h3>
+    </div>
 
 </body>
+
 </html>

@@ -12,6 +12,7 @@ use App\Repository\GenreRepository;
 use App\Repository\PaysRepository;
 use App\Repository\ProfessionnelRepository;
 use App\Repository\ProfessionRepository;
+use DateTimeImmutable;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -43,8 +44,16 @@ class ApiUploadControler extends ApiInterface
         try {
             // Validation du fichier
             $file = $request->files->get('path');
+
+            if ($file === null) {
+                return $this->json([
+                    'statut' => 0,
+                    'message' => 'Aucun fichier reçu. Vérifiez que le champ s\'appelle bien "path".',
+                    'data' => null
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
             $professionSelected = $request->request->get('professionSelected');
-            (dump($professionSelected));
             // Upload du fichier
             $fileFolder = $this->getParameter('kernel.project_dir') . '/public/uploads/excel_files/';
             $filePathName = md5(uniqid()) . '_' . $file->getClientOriginalName();
@@ -80,21 +89,28 @@ class ApiUploadControler extends ApiInterface
 
                 foreach ($sheetData as $index => $row) {
                     try {
-                        // Vérification des dates avec DateTime::createFromFormat
-                        $dateAnniv = \DateTime::createFromFormat('d/m/Y', $row['E']);
-                        if (!$dateAnniv || \DateTime::getLastErrors()['error_count'] > 0) {
-                            $dateAnniv = new \DateTime("01-01-1970");
-                        }
+                        // Closure robuste : supporte années 2 et 4 chiffres
+                        // Exemples: "3/7/53", "19/6/19", "01/04/2021", "2021-04-01"
+                        $parseDate = function (?string $value): \DateTimeImmutable {
+                            if ($value === null || trim($value) === '') {
+                                return new \DateTimeImmutable('1970-01-01');
+                            }
+                            // Ordre important : 4 chiffres d'abord, puis 2 chiffres
+                            foreach (['d/m/Y', 'j/n/Y', 'd-m-Y', 'j-n-Y', 'Y-m-d', 'd/m/y', 'j/n/y'] as $fmt) {
+                                $date = \DateTimeImmutable::createFromFormat($fmt, trim($value));
+                                // PHP 8.1+ : getLastErrors() retourne false si aucune erreur
+                                $errors = \DateTimeImmutable::getLastErrors();
+                                $hasErrors = $errors !== false && ($errors['error_count'] > 0 || $errors['warning_count'] > 0);
+                                if ($date !== false && !$hasErrors) {
+                                    return $date->setTime(0, 0, 0);
+                                }
+                            }
+                            return new \DateTimeImmutable('1970-01-01');
+                        };
 
-                        $dateEnreg = \DateTime::createFromFormat('d/m/Y', $row['B']);
-                        if (!$dateEnreg || \DateTime::getLastErrors()['error_count'] > 0) {
-                            $dateEnreg = new \DateTime("01-01-1970");
-                        }
-
-                        $dateCommission = \DateTime::createFromFormat('d/m/Y', $row['J']);
-                        if (!$dateCommission || \DateTime::getLastErrors()['error_count'] > 0) {
-                            $dateCommission = new \DateTime("01-01-1970");
-                        }
+                        $dateAnniv      = $parseDate((string)($row['E'] ?? ''));
+                        $dateEnreg      = $parseDate((string)($row['B'] ?? ''));
+                        $dateCommission = $parseDate((string)($row['J'] ?? ''));
 
                         // dump($row);
                         $rowData = [
@@ -127,7 +143,9 @@ class ApiUploadControler extends ApiInterface
 
 
                         //Je verifie si le professionnel existe déjà pour eviter les doublons
-                        $rowData['numId'] != null ? $existingPerson = $professionnelRepository->findOneBy(['code' => $rowData['numId']]) : null;
+                        $existingPerson = $rowData['numId'] != null
+                            ? $professionnelRepository->findOneBy(['code' => $rowData['numId']])
+                            : null;
                         if ($existingPerson) {
                             $successCount++;
                             // $errors[] = [
@@ -146,6 +164,8 @@ class ApiUploadControler extends ApiInterface
                                 $personne->setPrenoms($prenoms);
                                 $personne->setActived(true);
                                 $personne->setCode($rowData['numId']);
+                                $personne->setLieuNaissance($rowData['lieuNaissance']);
+                                $personne->setEtatOld('inite');
                                 
                                 $personne->setDateNaissance($rowData['dateNaissance']);
 

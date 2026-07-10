@@ -282,13 +282,209 @@ class ApiInterface extends AbstractController
         try {
             $finalHeaders = empty($headers) ? ['Content-Type' => 'application/json'] : $headers;
 
+            $request = $this->paginationService->getRequest();
+            $search = $request ? ($request->query->get('search') ?? $request->query->get('q') ?? $request->query->get('searchTerm')) : null;
+
+            if ($search) {
+                if (is_array($data)) {
+                    $data = array_values(array_filter($data, function ($item) use ($search) {
+                        $fields = ['libelle', 'code', 'nom', 'prenoms', 'email', 'message', 'title', 'titre', 'text', 'name'];
+                        if (is_array($item)) {
+                            foreach ($fields as $field) {
+                                if (isset($item[$field]) && $item[$field] !== null && stripos((string)$item[$field], $search) !== false) {
+                                    return true;
+                                }
+                            }
+                            if (isset($item['personne']) && is_array($item['personne'])) {
+                                foreach ($fields as $field) {
+                                    if (isset($item['personne'][$field]) && $item['personne'][$field] !== null && stripos((string)$item['personne'][$field], $search) !== false) {
+                                        return true;
+                                    }
+                                }
+                            }
+                        } elseif (is_object($item)) {
+                            foreach ($fields as $field) {
+                                $getter = 'get' . ucfirst($field);
+                                if (method_exists($item, $getter)) {
+                                    $val = $item->$getter();
+                                    if ($val !== null && stripos((string)$val, $search) !== false) {
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                        return false;
+                    }));
+                } elseif ($data instanceof \Doctrine\ORM\QueryBuilder) {
+                    $aliases = $data->getRootAliases();
+                    if (!empty($aliases)) {
+                        $alias = $aliases[0];
+                        $metadata = $data->getEntityManager()->getClassMetadata($data->getRootEntities()[0]);
+                        $orX = $data->expr()->orX();
+                        $hasSearchable = false;
+                        $fields = ['libelle', 'code', 'nom', 'prenoms', 'email', 'message', 'title', 'titre', 'text', 'name'];
+                        foreach ($fields as $field) {
+                            if ($metadata->hasField($field)) {
+                                $orX->add($data->expr()->like($alias . '.' . $field, ':search'));
+                                $hasSearchable = true;
+                            }
+                        }
+                        if ($hasSearchable) {
+                            $data->andWhere($orX)->setParameter('search', '%' . $search . '%');
+                        }
+                    }
+                }
+            }
+
+            $queryParams = $request ? $request->query->all() : [];
+            unset($queryParams['with_pagination'], $queryParams['page'], $queryParams['limit'], $queryParams['search'], $queryParams['q'], $queryParams['searchTerm']);
+
+            if (!empty($queryParams)) {
+                if (is_array($data)) {
+                    $data = array_values(array_filter($data, function ($item) use ($queryParams) {
+                        foreach ($queryParams as $key => $value) {
+                            if ($value === null || $value === '') {
+                                continue;
+                            }
+                            $resolveNested = function ($array, $path) {
+                                $keys = explode('.', $path);
+                                foreach ($keys as $k) {
+                                    if (is_array($array) && isset($array[$k])) {
+                                        $array = $array[$k];
+                                    } else {
+                                        return null;
+                                    }
+                                }
+                                return $array;
+                            };
+
+                            if (is_array($item)) {
+                                $val = $resolveNested($item, $key);
+                                if ($val === null && isset($item['personne'])) {
+                                    $val = $resolveNested($item['personne'], $key);
+                                }
+                                if ($val === null) {
+                                    // Fallback for flat keys
+                                    if (isset($item[$key])) {
+                                        $val = $item[$key];
+                                    } elseif (isset($item['personne']) && is_array($item['personne']) && isset($item['personne'][$key])) {
+                                        $val = $item['personne'][$key];
+                                    }
+                                }
+                                if ($val !== null) {
+                                    if ((string)$val !== (string)$value) {
+                                        return false;
+                                    }
+                                } else {
+                                    return false;
+                                }
+                            } elseif (is_object($item)) {
+                                $getter = 'get' . ucfirst($key);
+                                if (method_exists($item, $getter)) {
+                                    $val = $item->$getter();
+                                    if (is_object($val)) {
+                                        if (method_exists($val, 'getId')) {
+                                            if ((string)$val->getId() !== (string)$value) {
+                                                return false;
+                                            }
+                                        } else {
+                                            return false;
+                                        }
+                                    } else {
+                                        if ((string)$val !== (string)$value) {
+                                            return false;
+                                        }
+                                    }
+                                } else {
+                                    return false;
+                                }
+                            } else {
+                                return false;
+                             }
+                        }
+                        return true;
+                    }));
+                } elseif ($data instanceof \Doctrine\ORM\QueryBuilder) {
+                    $aliases = $data->getRootAliases();
+                    if (!empty($aliases)) {
+                        $alias = $aliases[0];
+                        $metadata = $data->getEntityManager()->getClassMetadata($data->getRootEntities()[0]);
+                        foreach ($queryParams as $key => $value) {
+                            if ($value === null || $value === '') {
+                                continue;
+                            }
+                            if ($metadata->hasField($key)) {
+                                $paramName = 'filter_' . $key;
+                                $data->andWhere($alias . '.' . $key . ' = :' . $paramName)
+                                     ->setParameter($paramName, $value);
+                            } elseif ($metadata->hasAssociation($key)) {
+                                $paramName = 'filter_' . $key;
+                                $data->andWhere($alias . '.' . $key . ' = :' . $paramName)
+                                     ->setParameter($paramName, $value);
+                            }
+                        }
+                    }
+                }
+            }
+
+            $withPagination = $request ? $request->query->get('with_pagination') === 'true' : false;
+
+            if ($withPagination && !$data instanceof PaginationInterface && $data !== null) {
+                $data = $this->paginationService->paginate($data);
+                $paginate = true;
+            }
+
+            $tabCounts = null;
+            if ($request && strpos($request->getPathInfo(), 'professionnel') !== false) {
+                try {
+                    $countsResult = $this->em->createQueryBuilder()
+                        ->select('p.status, COUNT(u.id) as count')
+                        ->from(\App\Entity\User::class, 'u')
+                        ->innerJoin('u.personne', 'p')
+                        ->andWhere('u.typeUser = :typeUser')
+                        ->setParameter('typeUser', 'PROFESSIONNEL')
+                        ->groupBy('p.status')
+                        ->getQuery()
+                        ->getResult();
+
+                    $tabCounts = [];
+                    foreach ($countsResult as $row) {
+                        if (isset($row['status']) && $row['status']) {
+                            $tabCounts[$row['status']] = (int) $row['count'];
+                        }
+                    }
+                } catch (\Exception $e) {
+                    // Fail gracefully if schema differs
+                }
+            } elseif ($request && strpos($request->getPathInfo(), 'etablissement') !== false) {
+                try {
+                    $countsResult = $this->em->createQueryBuilder()
+                        ->select('p.status, COUNT(u.id) as count')
+                        ->from(\App\Entity\User::class, 'u')
+                        ->innerJoin('u.personne', 'p')
+                        ->andWhere('u.typeUser = :typeUser')
+                        ->setParameter('typeUser', 'ETABLISSEMENT')
+                        ->groupBy('p.status')
+                        ->getQuery()
+                        ->getResult();
+
+                    $tabCounts = [];
+                    foreach ($countsResult as $row) {
+                        if (isset($row['status']) && $row['status']) {
+                            $tabCounts[$row['status']] = (int) $row['count'];
+                        }
+                    }
+                } catch (\Exception $e) {
+                    // Fail gracefully if schema differs
+                }
+            }
+
             $context = [AbstractNormalizer::GROUPS => $group];
 
-            // Cas paginé (KnpPaginator ou PaginationInterface)
             if ($paginate && $data instanceof PaginationInterface) {
                 $items = $this->serializer->serialize($data->getItems(), 'json', $context);
 
-                $response = new JsonResponse([
+                $responseData = [
                     'code' => 200,
                     'message' => $this->getMessage(),
                     'data' => json_decode($items),
@@ -299,17 +495,24 @@ class ApiInterface extends AbstractController
                         'totalPages'  => ceil($data->getTotalItemCount() / $data->getItemNumberPerPage())
                     ],
                     'errors' => []
-                ], 200, $finalHeaders);
+                ];
+                if ($tabCounts !== null) {
+                    $responseData['tabCounts'] = $tabCounts;
+                }
+                $response = new JsonResponse($responseData, 200, $finalHeaders);
             } else {
-                // Cas normal (array ou collection simple)
                 $json = $this->serializer->serialize($data, 'json', $context);
 
-                $response = new JsonResponse([
+                $responseData = [
                     'code' => 200,
                     'message' => $this->getMessage(),
                     'data' => json_decode($json),
                     'errors' => []
-                ], 200, $finalHeaders);
+                ];
+                if ($tabCounts !== null) {
+                    $responseData['tabCounts'] = $tabCounts;
+                }
+                $response = new JsonResponse($responseData, 200, $finalHeaders);
             }
 
             $response->headers->set('Access-Control-Allow-Origin', '*');

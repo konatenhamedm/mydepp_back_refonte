@@ -40,20 +40,11 @@ class ApiMessageController extends ApiInterface
     public function index(MessageRepository $messageRepository): Response
     {
         try {
-
             $messages = $messageRepository->findAll();
-
-            $context = [AbstractNormalizer::GROUPS => 'group1'];
-            $json = $this->serializer->serialize($messages, 'json', $context);
-
-            return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
+            return $this->responseData($messages, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
-            $response = $this->response('[]');
+            return $this->responseData([], 'group1', ['Content-Type' => 'application/json']);
         }
-
-        // On envoie la réponse
-        return $response;
     }
 
 
@@ -139,7 +130,7 @@ class ApiMessageController extends ApiInterface
     ): Response {
         try {
             $messages = $messageRepository->findConversation($sender, $receiver);
-/* dd($messages); */
+            /* dd($messages); */
             if (empty($messages)) {
 
                 $this->setMessage("Aucun message trouvé entre ces utilisateurs.");
@@ -172,7 +163,7 @@ class ApiMessageController extends ApiInterface
                     new OA\Property(property: "sender", type: "string"),
                     new OA\Property(property: "receiver", type: "string"),
                     new OA\Property(property: "message", type: "string"),
-                    
+
 
 
                 ],
@@ -184,7 +175,7 @@ class ApiMessageController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'message')]
-    
+
     public function create(Request $request, MessageRepository $messageRepository): Response
     {
 
@@ -217,7 +208,7 @@ class ApiMessageController extends ApiInterface
                     new OA\Property(property: "sender", type: "string"),
                     new OA\Property(property: "receiver", type: "string"),
                     new OA\Property(property: "message", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -228,7 +219,7 @@ class ApiMessageController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'message')]
-    
+
     public function update(Request $request, Message $message, MessageRepository $messageRepository): Response
     {
         try {
@@ -239,7 +230,7 @@ class ApiMessageController extends ApiInterface
                 $message->setSender($this->userRepository->find($data->receiver));
                 $message->setMessage($data->message);
                 $message->setUpdatedBy($this->getUser());
-                $message->setUpdatedAt(new \DateTime());
+                $message->setUpdatedAt();
                 $errorResponse = $this->errorResponse($message);
 
                 if ($errorResponse !== null) {
@@ -316,7 +307,7 @@ class ApiMessageController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'message')]
-    
+
     public function deleteAll(Request $request, MessageRepository $villeRepository): Response
     {
         try {

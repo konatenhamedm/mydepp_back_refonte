@@ -19,6 +19,7 @@ framework:
                 - renouvellement
                 - a_jour
                 - refuse_mise_a_jour
+                - attente_document_supplementaire
             transitions:
                 acceptation:
                     from: attente
@@ -34,6 +35,12 @@ framework:
                     to: refuse_mise_a_jour
                 retour_mise_a_jour:
                     from: refuse_mise_a_jour
+                    to: accepte
+                demande_document_supplementaire:
+                    from: [accepte, refuse_mise_a_jour, refuse]
+                    to: attente_document_supplementaire
+                retour_document_supplementaire:
+                    from: attente_document_supplementaire
                     to: accepte
                 validation:
                     from: accepte 
@@ -111,3 +118,32 @@ framework:
                 rejet_final:
                     from: oep_visite_effectue_attente_validation_directrice
                     to: oep_dossier_non_conforme
+
+        validation_ancien_professionnel:
+            type: 'state_machine'
+            audit_trail:
+                enabled: true
+            marking_store:
+                type: 'method'
+                property: 'etatOld'
+            supports:
+                - App\Entity\Professionnel
+            initial_marking: inite
+            places:
+                - inite
+                - soumis_attente_documents
+                - documents_recus_valide
+                - documents_recus_invalide
+            transitions:
+                soumettre_dossier:
+                    from: inite
+                    to: soumis_attente_documents
+                resoumettre_dossier:
+                    from: documents_recus_invalide
+                    to: soumis_attente_documents
+                documents_valider:
+                    from: soumis_attente_documents
+                    to: documents_recus_valide
+                documents_invalider:
+                    from: soumis_attente_documents
+                    to: documents_recus_invalide

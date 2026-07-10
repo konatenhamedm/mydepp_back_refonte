@@ -47,20 +47,11 @@ class ApiUserController extends ApiInterface
     public function index(UserRepository $userRepository): Response
     {
         try {
-
             $users = $userRepository->findAll();
-
-            $context = [AbstractNormalizer::GROUPS => 'group_pro'];
-            $json = $this->serializer->serialize($users, 'json', $context);
-
-            return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
+            return $this->responseData($users, 'group_pro', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
-            $response = $this->response('[]');
+            return $this->responseData([], 'group_pro', ['Content-Type' => 'application/json']);
         }
-
-        // On envoie la réponse
-        return $response;
     }
 
 
@@ -83,16 +74,19 @@ class ApiUserController extends ApiInterface
     public function indexInstructeur(UserRepository $userRepository): Response
     {
         try {
-
             $users = $userRepository->findUserByTypeCode();
-
-            $response = $this->responseData($users, 'group_user', ['Content-Type' => 'application/json']);
+            $formatted = array_map(fn($u) => [
+                'id'      => $u->getId(),
+                'email'   => $u->getEmail(),
+                'nom'     => $u->getPersonne()?->getNom(),
+                'prenoms' => $u->getPersonne()?->getPrenoms(),
+            ], $users);
+            $response = $this->responseData($formatted, 'group_user', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("");
             $response = $this->response('[]');
         }
 
-        // On envoie la réponse
         return $response;
     }
     #[Route('/liste/instructeur/etablissement', methods: ['GET'])]
@@ -113,16 +107,19 @@ class ApiUserController extends ApiInterface
     public function indexInstructeurEtab(UserRepository $userRepository): Response
     {
         try {
-
             $users = $userRepository->findUserByTypeCodeEtab();
-
-            $response = $this->responseData($users, 'group_user', ['Content-Type' => 'application/json']);
+            $formatted = array_map(fn($u) => [
+                'id'      => $u->getId(),
+                'email'   => $u->getEmail(),
+                'nom'     => $u->getPersonne()?->getNom(),
+                'prenoms' => $u->getPersonne()?->getPrenoms(),
+            ], $users);
+            $response = $this->responseData($formatted, 'group_user', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage("");
             $response = $this->response('[]');
         }
 
-        // On envoie la réponse
         return $response;
     }
 
@@ -317,8 +314,8 @@ class ApiUserController extends ApiInterface
             $personne->setPrenoms($request->get('prenoms'));
 
 
-            $personne->setUpdatedAt(new \DateTime());
-            $personne->setCreatedAtValue(new \DateTime());
+            $personne->setUpdatedAt();
+            $personne->setCreatedAtValue();
 
 
             $this->em->persist($personne);
@@ -334,8 +331,8 @@ class ApiUserController extends ApiInterface
                 $user->setPassword($this->hasher->hashPassword($user,  $request->get('password')));
 
             $user->setUpdatedBy($this->getUser());
-            $user->setUpdatedAt(new \DateTime());
-            $user->setCreatedAtValue(new \DateTime());
+            $user->setUpdatedAt();
+            $user->setCreatedAtValue();
             // $user->setCreatedBy($this->getUser());
 
             /* if ($uploadedFile) {
@@ -666,7 +663,6 @@ class ApiUserController extends ApiInterface
     public function updateMembre(Request $request, User $user, UserRepository $userRepository): Response
     {
         try {
-            $data = json_decode($request->getContent());
             $names = 'document_' . '01';
             $filePrefix  = str_slug($names);
             $filePath = $this->getUploadDir(self::UPLOAD_PATH, true);
@@ -676,7 +672,8 @@ class ApiUserController extends ApiInterface
 
                 $password = $request->get('password');
                 $newPassword = $request->get('newPassword');
-                $userUpdate = $this->userRepository->find($request->get('userUpdate'));
+                /* $userUpdateId = $request->get('userUpdate'); */
+               // $userUpdate = $userUpdateId ? $this->userRepository->find($userUpdateId) : null;
 
                 if (!empty($password) && !empty($newPassword)) {
                     if (!$this->hasher->isPasswordValid($user, $password)) {
@@ -686,19 +683,16 @@ class ApiUserController extends ApiInterface
                 }
 
                 // Mise à jour des informations utilisateur
-                $user->setUpdatedBy($userUpdate);
-                $user->setUpdatedAt(new \DateTime());
+                /* if ($userUpdate) {
+                    } */
+               $user->setUpdatedBy($this->getUser());
+                $user->setUpdatedAt();
 
                 // Gestion de l'upload de l'avatar
                 if ($uploadedFile) {
-                    if ($fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH)) {
+                    if ($fichier = $this->utils->sauvegardeFichier($filePath, $filePrefix, $uploadedFile, self::UPLOAD_PATH, $user->getAvatar())) {
                         $user->setAvatar($fichier);
                     }
-                }
-
-                // Vérification des erreurs
-                if ($errorResponse = $this->errorResponse($user)) {
-                    return $errorResponse;
                 }
 
                 $userRepository->add($user, true);
@@ -711,7 +705,7 @@ class ApiUserController extends ApiInterface
                 $response = $this->response('[]');
             }
         } catch (\Exception $exception) {
-            $this->setMessage("");
+            $this->setMessage("Erreur : " . $exception->getMessage());
             $response = $this->response('[]');
         }
         return $response;
@@ -1065,4 +1059,66 @@ class ApiUserController extends ApiInterface
 
         return $this->json(['message' => 'Utilisateur créé avec succès']);
     }
+
+    #[Route('/update/location/{id}', methods: ['POST', 'PUT'])]
+    #[OA\Post(
+        summary: "Mettre à jour la géolocalisation d'une entité",
+        description: "Permet d'enregistrer la latitude et la longitude pour une entité (professionnel ou établissement) par son identifiant.",
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "latitude", type: "string"),
+                    new OA\Property(property: "longitude", type: "string"),
+                ],
+                type: "object"
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: "Géolocalisation mise à jour avec succès"),
+            new OA\Response(response: 404, description: "Entité non trouvée"),
+            new OA\Response(response: 500, description: "Erreur interne du serveur")
+        ]
+    )]
+    #[OA\Tag(name: 'user')]
+    public function updateLocation(int $id, Request $request, \App\Repository\EntiteRepository $entiteRepository): Response
+    {
+        try {
+            $entite = $entiteRepository->find($id);
+            if (!$entite) {
+                $this->setMessage("Entité non trouvée");
+                $this->setStatusCode(404);
+                return $this->response('[]');
+            }
+
+            $data = json_decode($request->getContent(), true);
+            $latitude = $data['latitude'] ?? null;
+            $longitude = $data['longitude'] ?? null;
+
+            if ($latitude === null || $longitude === null) {
+                $this->setMessage("Latitude et Longitude sont requises");
+                $this->setStatusCode(400);
+                return $this->response('[]');
+            }
+
+            $entite->setLatitude($latitude);
+            $entite->setLongitude($longitude);
+            $entite->setUpdatedAt(new \DateTimeImmutable());
+
+            $this->em->flush();
+
+            return $this->responseData([
+                'success' => true,
+                'id' => $entite->getId(),
+                'latitude' => $entite->getLatitude(),
+                'longitude' => $entite->getLongitude()
+            ], 'group_pro', ['Content-Type' => 'application/json']);
+
+        } catch (\Exception $exception) {
+            $this->setMessage($exception->getMessage());
+            $this->setStatusCode(500);
+            return $this->response('[]');
+        }
+    }
 }
+

@@ -296,15 +296,14 @@ class ApiStatistiqueController extends ApiInterface
             $annee = $request->query->get('annee');
             $mois = $request->query->get('mois');
             $tranche = $request->query->get('tranche');
-            // dd($mois,$periode,$annee,$tranche);
-            // Calcul de la plage de dates
-            [$startDate, $endDate] = $this->getDateRangeFromPeriode((int)$annee, $periode, (int)$mois, (int)$tranche);
-
-            //dd($startDate,$endDate);
-            // dd($startDate,$endDate,$annee,$mois,$tranche);
-
-            // Requête optimisée sans filtres supplémentaires
-            $stats2 = $professionnelRepository->findDiplomeStats(new \DateTime($startDate), new \DateTime($endDate));
+            $startDate = null;
+            $endDate = null;
+            if ($annee !== "null" && $annee !== null && $periode !== "null" && $periode !== null) {
+                [$startDate, $endDate] = $this->getDateRangeFromPeriode((int)$annee, $periode, (int)$mois, (int)$tranche);
+                $stats2 = $professionnelRepository->findDiplomeStats(new \DateTime($startDate), new \DateTime($endDate));
+            } else {
+                $stats2 = $professionnelRepository->findDiplomeStats(null, null);
+            }
             //dd($stats2);
             //dd($startDate,$endDate,$annee);
 
@@ -382,9 +381,17 @@ class ApiStatistiqueController extends ApiInterface
                 'statistiques' => $stats2
             ];
 
-            return $this->responseData($result, 'group_user', ['Content-Type' => 'application/json']);
+            return $this->json([
+                'code' => 200,
+                'message' => 'Operation effectuée avec succes',
+                'data' => $result,
+                'errors' => []
+            ]);
         } catch (\Exception $exception) {
-            return $this->response($exception->getMessage());
+            return $this->json([
+                'message' => $exception->getMessage(),
+                'trace' => $exception->getTraceAsString()
+            ]);
         }
     }
 
@@ -599,6 +606,7 @@ class ApiStatistiqueController extends ApiInterface
     )]
     #[OA\Tag(name: 'statistiques')]
     public function indexAdminGeneral(
+        Request $request,
         UserRepository $userRepository,
         TransactionRepository $transactionRepository,
         ProfessionnelRepository $professionnelRepository,
@@ -611,38 +619,43 @@ class ApiStatistiqueController extends ApiInterface
                 return $this->setStatusCode(403)->setMessage("Cette ressource est réservée aux administrateurs.")->response('[]');
             }
 
+            [$startDate, $endDate] = $this->resolveDateRangeFromQuery($request);
+
             // 1. Analyse des Utilisateurs
             $users = [
-                'total' => $userRepository->count(['deleteAt' => null]),
-                'professionnels' => $userRepository->count(['typeUser' => 'PROFESSIONNEL', 'deleteAt' => null]),
-                'etablissements' => $userRepository->count(['typeUser' => 'ETABLISSEMENT', 'deleteAt' => null]),
-                'administrateurs' => $userRepository->count(['typeUser' => 'ADMINISTRATEUR', 'deleteAt' => null]),
+                'total' => $this->countEntitiesInRange(User::class, ['deleteAt' => null], $startDate, $endDate),
+                'professionnels' => $this->countEntitiesInRange(User::class, ['typeUser' => 'PROFESSIONNEL', 'deleteAt' => null], $startDate, $endDate),
+                'etablissements' => $this->countEntitiesInRange(User::class, ['typeUser' => 'ETABLISSEMENT', 'deleteAt' => null], $startDate, $endDate),
+                'administrateurs' => $this->countEntitiesInRange(User::class, ['typeUser' => 'ADMINISTRATEUR', 'deleteAt' => null], $startDate, $endDate),
             ];
 
             // 2. Analyse des Transactions (Chiffre d'Affaires)
-            $totalSuccessfulAmount = (int)$transactionRepository->montantTotal();
+            $totalSuccessfulAmount = $this->sumTransactionFieldInRange('montant', $startDate, $endDate);
+            $totalFee = $this->sumTransactionFieldInRange('fee', $startDate, $endDate);
             $transactions = [
                 'montant_total' => $totalSuccessfulAmount,
-                'succes' => $transactionRepository->count(['state' => 1]),
-                'echec' => $transactionRepository->count(['state' => 0]),
+                'succes' => $this->countEntitiesInRange(Transaction::class, ['state' => 1], $startDate, $endDate),
+                'echec' => $this->countEntitiesInRange(Transaction::class, ['state' => 0], $startDate, $endDate),
+                'fee_total' => $totalFee,
+                'solde_retirable' => $totalSuccessfulAmount - $totalFee,
             ];
 
             // 3. Dossiers Professionnels
             $professionnels = [
-                'total' => $professionnelRepository->count([]),
-                'ajour' => count($professionnelRepository->allProfAjour()),
-                'attente' => $professionnelRepository->count(['status' => 'attente']),
-                'rejete' => $professionnelRepository->count(['status' => 'rejete']),
-                'accepte' => $professionnelRepository->count(['status' => 'accepte']),
+                'total' => $this->countEntitiesInRange(Professionnel::class, [], $startDate, $endDate),
+                'ajour' => $this->countEntitiesInRange(Professionnel::class, ['status' => 'a_jour'], $startDate, $endDate),
+                'attente' => $this->countEntitiesInRange(Professionnel::class, ['status' => 'attente'], $startDate, $endDate),
+                'rejete' => $this->countEntitiesInRange(Professionnel::class, ['status' => 'rejete'], $startDate, $endDate),
+                'accepte' => $this->countEntitiesInRange(Professionnel::class, ['status' => 'accepte'], $startDate, $endDate),
             ];
 
             // 4. Dossiers Établissements
             $etablissements = [
-                'total' => $etablissementRepository->count([]),
-                'valides' => $etablissementRepository->count(['status' => 'accepte']), // Adapté selon les statuts réels
-                'ajour' => $etablissementRepository->count(['status' => 'accepte']),
-                'en_attente' => $etablissementRepository->count(['status' => 'attente']),
-                'rejete' => $etablissementRepository->count(['status' => 'rejete']),
+                'total' => $this->countEntitiesInRange(Etablissement::class, [], $startDate, $endDate),
+                'valides' => $this->countEntitiesInRange(Etablissement::class, ['status' => 'accepte'], $startDate, $endDate), // Adapté selon les statuts réels
+                'ajour' => $this->countEntitiesInRange(Etablissement::class, ['status' => 'accepte'], $startDate, $endDate),
+                'en_attente' => $this->countEntitiesInRange(Etablissement::class, ['status' => 'attente'], $startDate, $endDate),
+                'rejete' => $this->countEntitiesInRange(Etablissement::class, ['status' => 'rejete'], $startDate, $endDate),
             ];
 
             $tab = [
@@ -652,10 +665,252 @@ class ApiStatistiqueController extends ApiInterface
                 'etablissements' => $etablissements,
             ];
 
-            return $this->responseData($tab, 'group_user', ['Content-Type' => 'application/json']);
+            return $this->json([
+                'code'    => 200,
+                'message' => 'Operation effectuée avec succes',
+                'data'    => $tab,
+                'errors'  => [],
+            ]);
         } catch (\Exception $exception) {
             $this->setMessage($exception->getMessage());
             return $this->response('[]');
         }
+    }
+
+    /**
+     * Résout la période (année, mois/trimestre/semestre) transmise en query params
+     * en un intervalle de dates. Retourne [null, null] si aucune période n'est fournie.
+     *
+     * @return array{0: ?\DateTimeImmutable, 1: ?\DateTimeImmutable}
+     */
+    private function resolveDateRangeFromQuery(Request $request): array
+    {
+        $annee = $request->query->get('annee');
+        $periode = $request->query->get('periode');
+        $mois = $request->query->get('mois');
+        $tranche = $request->query->get('tranche');
+
+        if (!$annee || $annee === 'null' || !$periode || $periode === 'null') {
+            return [null, null];
+        }
+
+        $annee = (int) $annee;
+        $mois = $mois ? (int) $mois : (int) date('m');
+        $tranche = (int) ($tranche ?: 1);
+
+        switch ($periode) {
+            case 'mois':
+                $start = new \DateTimeImmutable(sprintf('%d-%02d-01 00:00:00', $annee, $mois));
+                $end = $start->modify('last day of this month')->setTime(23, 59, 59);
+                break;
+
+            case 'trimestre':
+                $trimestres = [1 => [1, 3], 2 => [4, 6], 3 => [7, 9], 4 => [10, 12]];
+                [$m1, $m2] = $trimestres[$tranche] ?? $trimestres[1];
+                $start = new \DateTimeImmutable(sprintf('%d-%02d-01 00:00:00', $annee, $m1));
+                $end = (new \DateTimeImmutable(sprintf('%d-%02d-01', $annee, $m2)))->modify('last day of this month')->setTime(23, 59, 59);
+                break;
+
+            case 'semestre':
+                $semestres = [1 => [1, 6], 2 => [7, 12]];
+                [$m1, $m2] = $semestres[$tranche] ?? $semestres[1];
+                $start = new \DateTimeImmutable(sprintf('%d-%02d-01 00:00:00', $annee, $m1));
+                $end = (new \DateTimeImmutable(sprintf('%d-%02d-01', $annee, $m2)))->modify('last day of this month')->setTime(23, 59, 59);
+                break;
+
+            case 'annee':
+            default:
+                $start = new \DateTimeImmutable(sprintf('%d-01-01 00:00:00', $annee));
+                $end = new \DateTimeImmutable(sprintf('%d-12-31 23:59:59', $annee));
+                break;
+        }
+
+        return [$start, $end];
+    }
+
+    private function countEntitiesInRange(string $entityClass, array $criteria, ?\DateTimeImmutable $start, ?\DateTimeImmutable $end): int
+    {
+        $qb = $this->em->createQueryBuilder()
+            ->select('COUNT(e.id)')
+            ->from($entityClass, 'e');
+
+        foreach ($criteria as $field => $value) {
+            if ($value === null) {
+                $qb->andWhere("e.{$field} IS NULL");
+            } else {
+                $qb->andWhere("e.{$field} = :{$field}")->setParameter($field, $value);
+            }
+        }
+
+        if ($start && $end) {
+            $qb->andWhere('e.createdAt BETWEEN :start AND :end')
+                ->setParameter('start', $start)
+                ->setParameter('end', $end);
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    private function sumTransactionFieldInRange(string $field, ?\DateTimeImmutable $start, ?\DateTimeImmutable $end): int
+    {
+        $qb = $this->em->createQueryBuilder()
+            ->select("COALESCE(SUM(t.{$field}), 0)")
+            ->from(Transaction::class, 't')
+            ->andWhere('t.state = :state')
+            ->setParameter('state', 1);
+
+        if ($start && $end) {
+            $qb->andWhere('t.createdAt BETWEEN :start AND :end')
+                ->setParameter('start', $start)
+                ->setParameter('end', $end);
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    #[Route('/comptable/bilan', methods: ['GET'])]
+    #[OA\Response(
+        response: 200,
+        description: 'Bilan complet et soft pour le comptable',
+        content: new OA\JsonContent(type: 'object')
+    )]
+    #[OA\Tag(name: 'statistiques')]
+    public function comptableBilan(Request $request, TransactionRepository $transactionRepository): Response
+    {
+        try {
+            $startDate = $request->query->get('startDate');
+            $endDate = $request->query->get('endDate');
+            $professionId = $request->query->get('profession');
+            $regionId = $request->query->get('region');
+
+            if ($startDate === 'null' || $startDate === '') $startDate = null;
+            if ($endDate === 'null' || $endDate === '') $endDate = null;
+            if ($professionId === 'null' || $professionId === '') $professionId = null;
+            if ($regionId === 'null' || $regionId === '') $regionId = null;
+
+            $rawTransactions = $transactionRepository->getComptableBilanData($startDate, $endDate, $professionId, $regionId);
+
+            $montantTotal = 0;
+            $nombreSuccess = 0;
+            $nombreFail = 0;
+
+            $byChannelMap = [];
+            $byTypeUserMap = [];
+            $byProfessionMap = [];
+            $byRegionMap = [];
+            $byMonthMap = [];
+
+            foreach ($rawTransactions as $t) {
+                $state = (int)$t['state'];
+                if ($state === 1) {
+                    $montant = (int)$t['montant'];
+                    $montantTotal += $montant;
+                    $nombreSuccess++;
+
+                    // Channel
+                    $chan = $t['channel'] ?: 'Inconnu';
+                    if (!isset($byChannelMap[$chan])) {
+                        $byChannelMap[$chan] = ['name' => $chan, 'count' => 0, 'montant' => 0];
+                    }
+                    $byChannelMap[$chan]['count']++;
+                    $byChannelMap[$chan]['montant'] += $montant;
+
+                    // Type User
+                    $typeUser = $t['typeUser'] ?: 'Inconnu';
+                    $typeUserUpper = strtoupper($typeUser);
+                    if (!isset($byTypeUserMap[$typeUserUpper])) {
+                        $byTypeUserMap[$typeUserUpper] = ['name' => $typeUserUpper, 'count' => 0, 'montant' => 0];
+                    }
+                    $byTypeUserMap[$typeUserUpper]['count']++;
+                    $byTypeUserMap[$typeUserUpper]['montant'] += $montant;
+
+                    // Month
+                    $dateStr = $t['createdAt'];
+                    $monthYear = 'Inconnu';
+                    if ($dateStr) {
+                        try {
+                            $dt = new \DateTime($dateStr);
+                            $monthYear = $this->frenchMonth($dt->format('n')) . ' ' . $dt->format('Y');
+                        } catch (\Exception $e) {}
+                    }
+                    if (!isset($byMonthMap[$monthYear])) {
+                        $byMonthMap[$monthYear] = ['name' => $monthYear, 'count' => 0, 'montant' => 0];
+                    }
+                    $byMonthMap[$monthYear]['count']++;
+                    $byMonthMap[$monthYear]['montant'] += $montant;
+
+                    // Profession & Region only for PROFESSIONNEL
+                    if ($typeUserUpper === 'PROFESSIONNEL') {
+                        $prof = $t['professionLibelle'] ?: 'Sans profession';
+                        if (!isset($byProfessionMap[$prof])) {
+                            $byProfessionMap[$prof] = ['name' => $prof, 'count' => 0, 'montant' => 0];
+                        }
+                        $byProfessionMap[$prof]['count']++;
+                        $byProfessionMap[$prof]['montant'] += $montant;
+
+                        $reg = $t['regionLibelle'] ?: 'Sans région';
+                        if (!isset($byRegionMap[$reg])) {
+                            $byRegionMap[$reg] = ['name' => $reg, 'count' => 0, 'montant' => 0];
+                        }
+                        $byRegionMap[$reg]['count']++;
+                        $byRegionMap[$reg]['montant'] += $montant;
+                    }
+                } elseif ($state === 0) {
+                    $nombreFail++;
+                }
+            }
+
+            $avgAmount = $nombreSuccess > 0 ? (int)($montantTotal / $nombreSuccess) : 0;
+
+            // Sort maps by amount descending
+            $sortFn = function($a, $b) {
+                return $b['montant'] <=> $a['montant'];
+            };
+            usort($byChannelMap, $sortFn);
+            usort($byTypeUserMap, $sortFn);
+            usort($byProfessionMap, $sortFn);
+            usort($byRegionMap, $sortFn);
+
+            // Keep monthly order (we can sort by date, but let's just convert map values to array)
+            $byMonth = array_values($byMonthMap);
+
+            $result = [
+                'totals' => [
+                    'montantTotal' => $montantTotal,
+                    'nombreSuccess' => $nombreSuccess,
+                    'nombreFail' => $nombreFail,
+                    'avgAmount' => $avgAmount
+                ],
+                'byChannel' => array_values($byChannelMap),
+                'byTypeUser' => array_values($byTypeUserMap),
+                'byProfession' => array_values($byProfessionMap),
+                'byRegion' => array_values($byRegionMap),
+                'byMonth' => $byMonth
+            ];
+
+            return $this->json([
+                'code' => 200,
+                'message' => 'Bilan comptable généré avec succès',
+                'data' => $result,
+                'errors' => []
+            ]);
+
+        } catch (\Exception $exception) {
+            return $this->json([
+                'code' => 500,
+                'message' => $exception->getMessage(),
+                'trace' => $exception->getTraceAsString()
+            ], 500);
+        }
+    }
+
+    private function frenchMonth(int $m): string
+    {
+        $months = [
+            1 => 'Janvier', 2 => 'Février', 3 => 'Mars', 4 => 'Avril',
+            5 => 'Mai', 6 => 'Juin', 7 => 'Juillet', 8 => 'Août',
+            9 => 'Septembre', 10 => 'Octobre', 11 => 'Novembre', 12 => 'Décembre'
+        ];
+        return $months[$m] ?? '';
     }
 }

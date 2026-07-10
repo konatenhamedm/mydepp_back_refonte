@@ -43,8 +43,8 @@ class TransactionRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('t')
             ->andWhere('t.user = :userId')
-            ->andWhere('t.type = :state')
-            ->setParameter('state', "NOUVELLE DEMANDE")
+            ->andWhere('t.state = :state')
+            ->setParameter('state', 1)
             ->setParameter('userId', $userId)
             ->orderBy('t.createdAt', 'DESC')
             ->setMaxResults(1)
@@ -56,6 +56,16 @@ class TransactionRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('t')
             ->select('SUM(t.montant) AS total')
+            ->andWhere('t.state = :state')
+            ->setParameter('state', 1)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function feeTotal()
+    {
+        return $this->createQueryBuilder('t')
+            ->select('COALESCE(SUM(t.fee), 0) AS total')
             ->andWhere('t.state = :state')
             ->setParameter('state', 1)
             ->getQuery()
@@ -157,15 +167,193 @@ class TransactionRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('t')
             ->innerJoin('t.user', 'u')
             ->andWhere('t.user = :user')
-            ->andWhere('t.state = :state')
-            ->setParameter('state', 1)
             ->setParameter('user', $user)
             ->orderBy('t.id', 'ASC')
-
             ->getQuery()
             ->getResult()
         ;
     }
+
+    public function getComptableBilanData($startDate = null, $endDate = null, $professionId = null, $regionId = null): array
+    {
+        $em = $this->getEntityManager();
+        $conn = $em->getConnection();
+
+        $transactionTable = $this->getTableName(Transaction::class, $em);
+        $userTable = $this->getTableName(\App\Entity\User::class, $em);
+        $personneTable = $this->getTableName(\App\Entity\Entite::class, $em);
+        $professionnelTable = $this->getTableName(\App\Entity\Professionnel::class, $em);
+        $professionTable = $this->getTableName(\App\Entity\Profession::class, $em);
+        $regionTable = $this->getTableName(\App\Entity\Region::class, $em);
+
+        $sql = "
+            SELECT 
+                t.id, 
+                t.montant, 
+                t.state, 
+                t.channel, 
+                t.type_user as typeUser, 
+                t.created_at as createdAt,
+                prof.libelle as professionLibelle,
+                reg.libelle as regionLibelle
+            FROM {$transactionTable} t
+            LEFT JOIN {$userTable} u ON t.user_id = u.id
+            LEFT JOIN {$personneTable} p ON u.personne_id = p.id
+            LEFT JOIN {$professionnelTable} mp ON p.id = mp.id
+            LEFT JOIN {$professionTable} prof ON mp.profession_id = prof.id
+            LEFT JOIN {$regionTable} reg ON mp.region_id = reg.id
+            WHERE t.state IN (0, 1)
+        ";
+
+        $params = [];
+
+        if ($startDate) {
+            $sql .= " AND t.created_at >= :startDate";
+            $params['startDate'] = $startDate . ' 00:00:00';
+        }
+
+        if ($endDate) {
+            $sql .= " AND t.created_at <= :endDate";
+            $params['endDate'] = $endDate . ' 23:59:59';
+        }
+
+        if ($professionId) {
+            $sql .= " AND mp.profession_id = :professionId";
+            $params['professionId'] = $professionId;
+        }
+
+        if ($regionId) {
+            $sql .= " AND mp.region_id = :regionId";
+            $params['regionId'] = $regionId;
+        }
+
+        $sql .= " ORDER BY t.created_at DESC";
+
+        $stmt = $conn->executeQuery($sql, $params);
+        return $stmt->fetchAllAssociative();
+    }
+
+    public function getFilteredTransactions($type, $search = null, $montant = null, $startDate = null, $endDate = null, $professionId = null): array
+    {
+        $qb = $this->createQueryBuilder('t')
+            ->innerJoin('t.user', 'u')
+            ->leftJoin('u.personne', 'p')
+            ->andWhere('t.user IS NOT NULL');
+
+        if ($type !== 'admin') {
+            $qb->andWhere('t.typeUser = :type')
+               ->setParameter('type', $type);
+        }
+
+        if ($montant !== null && $montant !== '' && $montant !== 'all') {
+            $qb->andWhere('t.montant = :montant')
+               ->setParameter('montant', $montant);
+        }
+
+        if ($startDate) {
+            $qb->andWhere('t.createdAt >= :startDate')
+               ->setParameter('startDate', new \DateTime($startDate . ' 00:00:00'));
+        }
+
+        if ($endDate) {
+            $qb->andWhere('t.createdAt <= :endDate')
+               ->setParameter('endDate', new \DateTime($endDate . ' 23:59:59'));
+        }
+
+        if ($professionId) {
+            $qb->innerJoin('App\Entity\Professionnel', 'mp', 'WITH', 'p.id = mp.id')
+               ->andWhere('mp.profession = :professionId')
+               ->setParameter('professionId', $professionId);
+        }
+
+        if ($search) {
+            $qb->andWhere($qb->expr()->orX(
+                $qb->expr()->like('t.reference', ':search'),
+                $qb->expr()->like('t.type', ':search'),
+                $qb->expr()->like('t.channel', ':search'),
+                $qb->expr()->like('u.email', ':search'),
+                $qb->expr()->like('p.nom', ':search'),
+                $qb->expr()->like('p.prenoms', ':search')
+            ))->setParameter('search', '%' . $search . '%');
+        }
+
+        $qb->andWhere('t.state = :state')
+           ->setParameter('state', 1);
+
+        $qb->orderBy('t.id', 'DESC');
+
+        return $qb->getQuery()->getResult();
+    }
+
+    public function getFilteredTransactionsKpis($type, $search = null, $montant = null, $startDate = null, $endDate = null, $professionId = null): array
+    {
+        $qb = $this->createQueryBuilder('t')
+            ->innerJoin('t.user', 'u')
+            ->leftJoin('u.personne', 'p')
+            ->andWhere('t.user IS NOT NULL');
+
+        if ($type !== 'admin') {
+            $qb->andWhere('t.typeUser = :type')
+               ->setParameter('type', $type);
+        }
+
+        if ($montant !== null && $montant !== '' && $montant !== 'all') {
+            $qb->andWhere('t.montant = :montant')
+               ->setParameter('montant', $montant);
+        }
+
+        if ($startDate) {
+            $qb->andWhere('t.createdAt >= :startDate')
+               ->setParameter('startDate', new \DateTime($startDate . ' 00:00:00'));
+        }
+
+        if ($endDate) {
+            $qb->andWhere('t.createdAt <= :endDate')
+               ->setParameter('endDate', new \DateTime($endDate . ' 23:59:59'));
+        }
+
+        if ($professionId) {
+            $qb->innerJoin('App\Entity\Professionnel', 'mp', 'WITH', 'p.id = mp.id')
+               ->andWhere('mp.profession = :professionId')
+               ->setParameter('professionId', $professionId);
+        }
+
+        if ($search) {
+            $qb->andWhere($qb->expr()->orX(
+                $qb->expr()->like('t.reference', ':search'),
+                $qb->expr()->like('t.type', ':search'),
+                $qb->expr()->like('t.channel', ':search'),
+                $qb->expr()->like('u.email', ':search'),
+                $qb->expr()->like('p.nom', ':search'),
+                $qb->expr()->like('p.prenoms', ':search')
+            ))->setParameter('search', '%' . $search . '%');
+        }
+
+        $qb->select('t.montant, t.state');
+        $results = $qb->getQuery()->getScalarResult();
+
+        $montantTotal = 0;
+        $nombreSuccess = 0;
+        $nombreFail = 0;
+
+        foreach ($results as $r) {
+            $state = (int)$r['state'];
+            $mont = (int)$r['montant'];
+            if ($state === 1) {
+                $montantTotal += $mont;
+                $nombreSuccess++;
+            } elseif ($state === 0) {
+                $nombreFail++;
+            }
+        }
+
+        return [
+            'montantTotal' => $montantTotal,
+            'nombreSuccess' => $nombreSuccess,
+            'nombreFail' => $nombreFail,
+        ];
+    }
+
 
 
     

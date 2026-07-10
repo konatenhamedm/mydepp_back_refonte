@@ -43,7 +43,7 @@ class ApiOrdreController extends ApiInterface
 
             $ordres = $ordreRepository->findAll();
 
-          
+
 
             $response =  $this->responseData($ordres, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
@@ -109,7 +109,7 @@ class ApiOrdreController extends ApiInterface
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
                     new OA\Property(property: "codeGeneration", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -120,7 +120,7 @@ class ApiOrdreController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'ordre')]
-    
+
     public function create(Request $request, OrdreRepository $ordreRepository): Response
     {
 
@@ -152,7 +152,7 @@ class ApiOrdreController extends ApiInterface
                     new OA\Property(property: "libelle", type: "string"),
                     new OA\Property(property: "code", type: "string"),
                     new OA\Property(property: "codeGeneration", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -163,7 +163,7 @@ class ApiOrdreController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'ordre')]
-    
+
     public function update(Request $request, Ordre $ordre, OrdreRepository $ordreRepository): Response
     {
         try {
@@ -172,7 +172,7 @@ class ApiOrdreController extends ApiInterface
 
                 $ordre->setLibelle($data->libelle);
                 $ordre->setUpdatedBy($this->getUser());
-                $ordre->setUpdatedAt(new \DateTime());
+                $ordre->setUpdatedAt();
                 $errorResponse = $this->errorResponse($ordre);
 
                 if ($errorResponse !== null) {
@@ -249,7 +249,7 @@ class ApiOrdreController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'ordre')]
-    
+
     public function deleteAll(Request $request, OrdreRepository $villeRepository): Response
     {
         try {

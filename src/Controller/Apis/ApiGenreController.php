@@ -40,20 +40,11 @@ class ApiGenreController extends ApiInterface
     public function index(GenreRepository $genreRepository): Response
     {
         try {
-
             $genres = $genreRepository->findAll();
-
-            $context = [AbstractNormalizer::GROUPS => 'group1'];
-            $json = $this->serializer->serialize($genres, 'json', $context);
-
-            return new JsonResponse(['code' => 200, 'data' => json_decode($json)]);
+            return $this->responseData($genres, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
-            $this->setMessage("");
-            $response = $this->response('[]');
+            return $this->responseData([], 'group1', ['Content-Type' => 'application/json']);
         }
-
-        // On envoie la réponse
-        return $response;
     }
 
 
@@ -108,7 +99,7 @@ class ApiGenreController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -119,7 +110,7 @@ class ApiGenreController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'genre')]
-    
+
     public function create(Request $request, GenreRepository $genreRepository): Response
     {
 
@@ -149,7 +140,7 @@ class ApiGenreController extends ApiInterface
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: "libelle", type: "string"),
-                    
+
 
                 ],
                 type: "object"
@@ -160,7 +151,7 @@ class ApiGenreController extends ApiInterface
         ]
     )]
     #[OA\Tag(name: 'genre')]
-    
+
     public function update(Request $request, Genre $genre, GenreRepository $genreRepository): Response
     {
         try {
@@ -169,7 +160,7 @@ class ApiGenreController extends ApiInterface
 
                 $genre->setLibelle($data->libelle);
                 $genre->setUpdatedBy($this->getUser());
-                $genre->setUpdatedAt(new \DateTime());
+                $genre->setUpdatedAt();
 
                 $errorResponse = $this->errorResponse($genre);
 
@@ -247,7 +238,7 @@ class ApiGenreController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'genre')]
-    
+
     public function deleteAll(Request $request, GenreRepository $villeRepository): Response
     {
         try {
