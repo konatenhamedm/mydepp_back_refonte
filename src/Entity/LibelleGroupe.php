@@ -60,6 +60,12 @@ class LibelleGroupe
     #[ORM\OneToMany(targetEntity: DocumentOepTemp::class, mappedBy: 'libelleGroupe')]
     private Collection $documentOepTemps;
 
+    /**
+     * @var Collection<int, NiveauIntervention>
+     */
+    #[ORM\ManyToMany(targetEntity: NiveauIntervention::class, mappedBy: 'libelleGroupes')]
+    private Collection $niveauInterventions;
+
     public function __construct()
     {
         $this->typeDocuments = new ArrayCollection();
@@ -67,6 +73,7 @@ class LibelleGroupe
         $this->documentTemporaires = new ArrayCollection();
         $this->documentOeps = new ArrayCollection();
         $this->documentOepTemps = new ArrayCollection();
+        $this->niveauInterventions = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -243,6 +250,33 @@ class LibelleGroupe
             if ($documentOepTemp->getLibelleGroupe() === $this) {
                 $documentOepTemp->setLibelleGroupe(null);
             }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, NiveauIntervention>
+     */
+    public function getNiveauInterventions(): Collection
+    {
+        return $this->niveauInterventions;
+    }
+
+    public function addNiveauIntervention(NiveauIntervention $niveauIntervention): static
+    {
+        if (!$this->niveauInterventions->contains($niveauIntervention)) {
+            $this->niveauInterventions->add($niveauIntervention);
+            $niveauIntervention->addLibelleGroupe($this);
+        }
+
+        return $this;
+    }
+
+    public function removeNiveauIntervention(NiveauIntervention $niveauIntervention): static
+    {
+        if ($this->niveauInterventions->removeElement($niveauIntervention)) {
+            $niveauIntervention->removeLibelleGroupe($this);
         }
 
         return $this;

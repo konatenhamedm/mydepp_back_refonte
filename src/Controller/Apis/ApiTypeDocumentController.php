@@ -228,12 +228,16 @@ class ApiTypeDocumentController extends ApiInterface
 
 
 
+        $libelleGroupeId = $data['libelleGroupe'] ?? null;
+        $typePersonneId = $data['typePersonne'] ?? null;
+
         $typeDocument = new TypeDocument();
 
         $typeDocument->setLibelle($data['libelle']);
-        $typeDocument->setLibelleGroupe($libelleGroupeRepository->find($data['libelleGroupe']));
-        $typeDocument->setNombre($data['nombre']);
-        $typeDocument->setTypePersonne($typePersonneRepository->find($data['typePersonne']));
+        $typeDocument->setLibelleGroupe($libelleGroupeId ? $libelleGroupeRepository->find($libelleGroupeId) : null);
+        $typeDocument->setNombre((int) ($data['nombre'] ?? 1));
+        $typeDocument->setTypePersonne($typePersonneId ? $typePersonneRepository->find($typePersonneId) : null);
+        $typeDocument->setObligatoire(filter_var($data['obligatoire'] ?? true, FILTER_VALIDATE_BOOLEAN));
         $typeDocument->setCreatedAtValue();
         $typeDocument->setUpdatedAt();
         $typeDocument->setCreatedBy($this->getUser());
@@ -292,10 +296,14 @@ class ApiTypeDocumentController extends ApiInterface
 
             if ($typeDocument != null) {
 
+                $libelleGroupeId = $data->libelleGroupe ?? null;
+                $typePersonneId = $data->typePersonne ?? null;
+
                 $typeDocument->setLibelle($data->libelle);
-                $typeDocument->setNombre($data->nombre);
-                $typeDocument->setLibelleGroupe($libelleGroupeRepository->find($data->libelleGroupe));
-                $typeDocument->setTypePersonne($typePersonneRepository->find($data->typePersonne));
+                $typeDocument->setNombre((int) ($data->nombre ?? 1));
+                $typeDocument->setLibelleGroupe($libelleGroupeId ? $libelleGroupeRepository->find($libelleGroupeId) : null);
+                $typeDocument->setTypePersonne($typePersonneId ? $typePersonneRepository->find($typePersonneId) : null);
+                $typeDocument->setObligatoire(filter_var($data->obligatoire ?? true, FILTER_VALIDATE_BOOLEAN));
                 $typeDocument->setUpdatedAt();
                 $typeDocument->setUpdatedBy($this->getUser());
                 $errorResponse = $this->errorResponse($typeDocument);
