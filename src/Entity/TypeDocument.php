@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\TypeDocumentRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups as Group;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -10,7 +12,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 #[ORM\Entity(repositoryClass: TypeDocumentRepository::class)]
 class TypeDocument
 {
-    use TraitEntity; 
+    use TraitEntity;
 
     
     #[ORM\Id]
@@ -40,6 +42,22 @@ class TypeDocument
     #[ORM\Column(options: ["default" => true])]
     #[Group(["group1","group_libelle"])]
     private bool $obligatoire = true;
+
+    /**
+     * Niveaux d'intervention pour lesquels ce document est requis.
+     * Collection vide = requis pour tous les niveaux.
+     *
+     * @var Collection<int, NiveauIntervention>
+     */
+    #[ORM\ManyToMany(targetEntity: NiveauIntervention::class, inversedBy: 'typeDocuments')]
+    #[ORM\JoinTable(name: 'type_document_niveau_intervention')]
+    #[Group(["group1"])]
+    private Collection $niveauInterventions;
+
+    public function __construct()
+    {
+        $this->niveauInterventions = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -104,6 +122,30 @@ class TypeDocument
     public function setObligatoire(bool $obligatoire): static
     {
         $this->obligatoire = $obligatoire;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, NiveauIntervention>
+     */
+    public function getNiveauInterventions(): Collection
+    {
+        return $this->niveauInterventions;
+    }
+
+    public function addNiveauIntervention(NiveauIntervention $niveauIntervention): static
+    {
+        if (!$this->niveauInterventions->contains($niveauIntervention)) {
+            $this->niveauInterventions->add($niveauIntervention);
+        }
+
+        return $this;
+    }
+
+    public function removeNiveauIntervention(NiveauIntervention $niveauIntervention): static
+    {
+        $this->niveauInterventions->removeElement($niveauIntervention);
 
         return $this;
     }

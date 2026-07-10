@@ -40,17 +40,16 @@ class NiveauIntervention
     private ?string $montantRenouvellement = null;
 
     /**
-     * @var Collection<int, LibelleGroupe>
+     * @var Collection<int, TypeDocument>
      */
-    #[ORM\ManyToMany(targetEntity: LibelleGroupe::class, inversedBy: 'niveauInterventions')]
-    #[ORM\JoinTable(name: 'niveau_intervention_libelle_groupe')]
+    #[ORM\ManyToMany(targetEntity: TypeDocument::class, mappedBy: 'niveauInterventions')]
     #[Groups(["group1"])]
-    private Collection $libelleGroupes;
+    private Collection $typeDocuments;
 
     public function __construct()
     {
         $this->etablissements = new ArrayCollection();
-        $this->libelleGroupes = new ArrayCollection();
+        $this->typeDocuments = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -137,25 +136,28 @@ class NiveauIntervention
     }
 
     /**
-     * @return Collection<int, LibelleGroupe>
+     * @return Collection<int, TypeDocument>
      */
-    public function getLibelleGroupes(): Collection
+    public function getTypeDocuments(): Collection
     {
-        return $this->libelleGroupes;
+        return $this->typeDocuments;
     }
 
-    public function addLibelleGroupe(LibelleGroupe $libelleGroupe): static
+    public function addTypeDocument(TypeDocument $typeDocument): static
     {
-        if (!$this->libelleGroupes->contains($libelleGroupe)) {
-            $this->libelleGroupes->add($libelleGroupe);
+        if (!$this->typeDocuments->contains($typeDocument)) {
+            $this->typeDocuments->add($typeDocument);
+            $typeDocument->addNiveauIntervention($this);
         }
 
         return $this;
     }
 
-    public function removeLibelleGroupe(LibelleGroupe $libelleGroupe): static
+    public function removeTypeDocument(TypeDocument $typeDocument): static
     {
-        $this->libelleGroupes->removeElement($libelleGroupe);
+        if ($this->typeDocuments->removeElement($typeDocument)) {
+            $typeDocument->removeNiveauIntervention($this);
+        }
 
         return $this;
     }

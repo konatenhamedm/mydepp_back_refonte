@@ -8,6 +8,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\TypeDocument;
 use App\Entity\TypePersonne;
 use App\Repository\LibelleGroupeRepository;
+use App\Repository\NiveauInterventionRepository;
 use App\Repository\TypeDocumentRepository;
 use App\Repository\TypePersonneRepository;
 use App\Repository\UserRepository;
@@ -220,7 +221,7 @@ class ApiTypeDocumentController extends ApiInterface
     )]
     #[OA\Tag(name: 'typeDocument')]
 
-    public function create(Request $request, LibelleGroupeRepository $libelleGroupeRepository, TypeDocumentRepository $typeDocumentRepository, TypePersonneRepository $typePersonneRepository): Response
+    public function create(Request $request, LibelleGroupeRepository $libelleGroupeRepository, TypeDocumentRepository $typeDocumentRepository, TypePersonneRepository $typePersonneRepository, NiveauInterventionRepository $niveauInterventionRepository): Response
     {
 
         $data = json_decode($request->getContent(), true);
@@ -238,6 +239,7 @@ class ApiTypeDocumentController extends ApiInterface
         $typeDocument->setNombre((int) ($data['nombre'] ?? 1));
         $typeDocument->setTypePersonne($typePersonneId ? $typePersonneRepository->find($typePersonneId) : null);
         $typeDocument->setObligatoire(filter_var($data['obligatoire'] ?? true, FILTER_VALIDATE_BOOLEAN));
+        $this->syncNiveauInterventions($typeDocument, $data['niveauInterventions'] ?? [], $niveauInterventionRepository);
         $typeDocument->setCreatedAtValue();
         $typeDocument->setUpdatedAt();
         $typeDocument->setCreatedBy($this->getUser());
@@ -258,6 +260,24 @@ class ApiTypeDocumentController extends ApiInterface
         $response = $this->response('[]');
 
         return $response;
+    }
+
+    /**
+     * Remplace les NiveauIntervention liés à un type de document par la liste d'ids fournie.
+     * Liste vide => le document s'applique à tous les niveaux.
+     */
+    private function syncNiveauInterventions(TypeDocument $typeDocument, array $ids, NiveauInterventionRepository $niveauInterventionRepository): void
+    {
+        foreach ($typeDocument->getNiveauInterventions()->toArray() as $existing) {
+            $typeDocument->removeNiveauIntervention($existing);
+        }
+
+        foreach ($ids as $id) {
+            $niveauIntervention = $niveauInterventionRepository->find($id);
+            if ($niveauIntervention) {
+                $typeDocument->addNiveauIntervention($niveauIntervention);
+            }
+        }
     }
 
 
@@ -286,7 +306,7 @@ class ApiTypeDocumentController extends ApiInterface
     )]
     #[OA\Tag(name: 'typeDocument')]
 
-    public function update(Request $request, $id, LibelleGroupeRepository $libelleGroupeRepository, TypeDocumentRepository $typeDocumentRepository, TypePersonneRepository $typePersonneRepository): Response
+    public function update(Request $request, $id, LibelleGroupeRepository $libelleGroupeRepository, TypeDocumentRepository $typeDocumentRepository, TypePersonneRepository $typePersonneRepository, NiveauInterventionRepository $niveauInterventionRepository): Response
     {
         try {
             $data = json_decode($request->getContent());
@@ -304,6 +324,7 @@ class ApiTypeDocumentController extends ApiInterface
                 $typeDocument->setLibelleGroupe($libelleGroupeId ? $libelleGroupeRepository->find($libelleGroupeId) : null);
                 $typeDocument->setTypePersonne($typePersonneId ? $typePersonneRepository->find($typePersonneId) : null);
                 $typeDocument->setObligatoire(filter_var($data->obligatoire ?? true, FILTER_VALIDATE_BOOLEAN));
+                $this->syncNiveauInterventions($typeDocument, isset($data->niveauInterventions) ? (array) $data->niveauInterventions : [], $niveauInterventionRepository);
                 $typeDocument->setUpdatedAt();
                 $typeDocument->setUpdatedBy($this->getUser());
                 $errorResponse = $this->errorResponse($typeDocument);
