@@ -94,9 +94,13 @@ class ApiNatureEtablissementController extends ApiInterface
     public function create(Request $request, NatureEtablissementRepository $natureEtablissementRepository): Response
     {
         $data = json_decode($request->getContent(), true);
+        $code = trim($data['code'] ?? '');
+        if ($code === '') {
+            $code = $this->utils->generateShortCodeFromLibelle($data['libelle'], $natureEtablissementRepository);
+        }
         $natureEtablissement = new NatureEtablissement();
         $natureEtablissement->setLibelle($data['libelle']);
-        $natureEtablissement->setCode($data['code'] ?? null);
+        $natureEtablissement->setCode($code);
         $natureEtablissement->setCreatedBy($this->getUser());
         $natureEtablissement->setUpdatedBy($this->getUser());
         $errorResponse = $this->errorResponse($natureEtablissement);
@@ -132,8 +136,12 @@ class ApiNatureEtablissementController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
             if ($natureEtablissement != null) {
+                $code = trim($data->code ?? '');
+                if ($code === '') {
+                    $code = $natureEtablissement->getCode() ?: $this->utils->generateShortCodeFromLibelle($data->libelle, $natureEtablissementRepository);
+                }
                 $natureEtablissement->setLibelle($data->libelle);
-                $natureEtablissement->setCode($data->code ?? null);
+                $natureEtablissement->setCode($code);
                 $natureEtablissement->setUpdatedBy($this->getUser());
                 $natureEtablissement->setUpdatedAt();
 

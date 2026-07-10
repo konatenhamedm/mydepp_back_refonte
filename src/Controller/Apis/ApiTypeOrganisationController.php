@@ -94,9 +94,13 @@ class ApiTypeOrganisationController extends ApiInterface
     public function create(Request $request, TypeOrganisationRepository $typeOrganisationRepository): Response
     {
         $data = json_decode($request->getContent(), true);
+        $code = trim($data['code'] ?? '');
+        if ($code === '') {
+            $code = $this->utils->generateShortCodeFromLibelle($data['libelle'], $typeOrganisationRepository);
+        }
         $typeOrganisation = new TypeOrganisation();
         $typeOrganisation->setLibelle($data['libelle']);
-        $typeOrganisation->setCode($data['code'] ?? null);
+        $typeOrganisation->setCode($code);
         $typeOrganisation->setCreatedBy($this->getUser());
         $typeOrganisation->setUpdatedBy($this->getUser());
         $errorResponse = $this->errorResponse($typeOrganisation);
@@ -132,8 +136,12 @@ class ApiTypeOrganisationController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
             if ($typeOrganisation != null) {
+                $code = trim($data->code ?? '');
+                if ($code === '') {
+                    $code = $typeOrganisation->getCode() ?: $this->utils->generateShortCodeFromLibelle($data->libelle, $typeOrganisationRepository);
+                }
                 $typeOrganisation->setLibelle($data->libelle);
-                $typeOrganisation->setCode($data->code ?? null);
+                $typeOrganisation->setCode($code);
                 $typeOrganisation->setUpdatedBy($this->getUser());
                 $typeOrganisation->setUpdatedAt();
 

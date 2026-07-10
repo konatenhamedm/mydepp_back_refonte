@@ -126,11 +126,15 @@ class ApiNiveauInterventionController extends ApiInterface
     {
 
         $data = json_decode($request->getContent(), true);
+        $code = trim($data['code'] ?? '');
+        if ($code === '') {
+            $code = $this->utils->generateShortCodeFromLibelle($data['libelle'], $niveauInterventionRepository);
+        }
         $niveauIntervention = new NiveauIntervention();
         $niveauIntervention->setLibelle($data['libelle']);
         $niveauIntervention->setMontant($data['montant']);
         $niveauIntervention->setMontantRenouvellement($data['montantRenouvellement']);
-        $niveauIntervention->setCode($data['code']);
+        $niveauIntervention->setCode($code);
         $niveauIntervention->setCreatedBy($this->getUser());
         $niveauIntervention->setUpdatedBy($this->getUser());
         $errorResponse = $this->errorResponse($niveauIntervention);
@@ -175,8 +179,12 @@ class ApiNiveauInterventionController extends ApiInterface
             $data = json_decode($request->getContent());
             if ($niveauIntervention != null) {
 
+                $code = trim($data->code ?? '');
+                if ($code === '') {
+                    $code = $niveauIntervention->getCode() ?: $this->utils->generateShortCodeFromLibelle($data->libelle, $niveauInterventionRepository);
+                }
                 $niveauIntervention->setLibelle($data->libelle);
-                $niveauIntervention->setCode($data->code);
+                $niveauIntervention->setCode($code);
                 $niveauIntervention->setMontant($data->montant);
                 $niveauIntervention->setMontantRenouvellement($data->montantRenouvellement);
                 $niveauIntervention->setUpdatedBy($this->getUser());

@@ -292,5 +292,36 @@ class Utils
             sprintf('Impossible de générer un code unique pour la profession "%s" après 9999 tentatives.', $profession)
         );
     }
+
+    /**
+     * Génère un code court (3 à 4 lettres majuscules) à partir d'un libellé,
+     * à utiliser quand l'utilisateur ne renseigne pas de code lui-même.
+     * Le code est garanti unique dans le repository donné (un suffixe numérique
+     * est ajouté en cas de collision).
+     *
+     * @param object $repository Repository disposant d'une méthode findOneBy(['code' => ...])
+     */
+    public function generateShortCodeFromLibelle(string $libelle, $repository, int $length = 4): string
+    {
+        $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $libelle) ?: $libelle;
+        $letters = strtoupper(preg_replace('/[^A-Za-z]/', '', $ascii));
+
+        if ($letters === '') {
+            $letters = 'GEN';
+        }
+
+        $base = substr($letters, 0, $length);
+        if (strlen($base) < 3) {
+            $base = str_pad($base, 3, 'X');
+        }
+
+        $code = $base;
+        for ($suffix = 1; $repository->findOneBy(['code' => $code]) !== null && $suffix < 1000; $suffix++) {
+            $suffixStr = (string) $suffix;
+            $code = substr($base, 0, max(1, $length - strlen($suffixStr))) . $suffixStr;
+        }
+
+        return $code;
+    }
 }
 
