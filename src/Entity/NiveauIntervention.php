@@ -39,9 +39,18 @@ class NiveauIntervention
     #[Groups(["group1"])]
     private ?string $montantRenouvellement = null;
 
+    /**
+     * @var Collection<int, LibelleGroupe>
+     */
+    #[ORM\ManyToMany(targetEntity: LibelleGroupe::class, inversedBy: 'niveauInterventions')]
+    #[ORM\JoinTable(name: 'niveau_intervention_libelle_groupe')]
+    #[Groups(["group1"])]
+    private Collection $libelleGroupes;
+
     public function __construct()
     {
         $this->etablissements = new ArrayCollection();
+        $this->libelleGroupes = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -123,6 +132,30 @@ class NiveauIntervention
     public function setMontantRenouvellement(?string $montantRenouvellement): static
     {
         $this->montantRenouvellement = $montantRenouvellement;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, LibelleGroupe>
+     */
+    public function getLibelleGroupes(): Collection
+    {
+        return $this->libelleGroupes;
+    }
+
+    public function addLibelleGroupe(LibelleGroupe $libelleGroupe): static
+    {
+        if (!$this->libelleGroupes->contains($libelleGroupe)) {
+            $this->libelleGroupes->add($libelleGroupe);
+        }
+
+        return $this;
+    }
+
+    public function removeLibelleGroupe(LibelleGroupe $libelleGroupe): static
+    {
+        $this->libelleGroupes->removeElement($libelleGroupe);
 
         return $this;
     }

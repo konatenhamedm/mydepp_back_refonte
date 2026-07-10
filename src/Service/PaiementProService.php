@@ -65,6 +65,11 @@ class PaiementProService
         $professionInfo = $data['profession'] ?? $request->get('profession');
         $niveauInterventionInfo = $data['niveauIntervention'] ?? $request->get('niveauIntervention');
 
+        $email = $data['email'] ?? $request->get('email');
+        if ($email && $this->userRepository->findOneBy(['email' => $email])) {
+            return ['code' => 409, 'error' => 'Cet email est déjà utilisé par un autre compte.'];
+        }
+
         $montant = $type == "professionnel"
             ? $this->em->getRepository(\App\Entity\Profession::class)->find($professionInfo)->getMontantNouvelleDemande()
             : $this->em->getRepository(\App\Entity\NiveauIntervention::class)->find($niveauInterventionInfo)->getMontant();

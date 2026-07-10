@@ -37,6 +37,10 @@ class TypeDocument
     #[Group(["group1"])]
     private ?LibelleGroupe $libelleGroupe = null;
 
+    #[ORM\Column(options: ["default" => true])]
+    #[Group(["group1","group_libelle"])]
+    private bool $obligatoire = true;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -88,6 +92,18 @@ class TypeDocument
     public function setLibelleGroupe(?LibelleGroupe $libelleGroupe): static
     {
         $this->libelleGroupe = $libelleGroupe;
+
+        return $this;
+    }
+
+    public function isObligatoire(): bool
+    {
+        return $this->obligatoire;
+    }
+
+    public function setObligatoire(bool $obligatoire): static
+    {
+        $this->obligatoire = $obligatoire;
 
         return $this;
     }
