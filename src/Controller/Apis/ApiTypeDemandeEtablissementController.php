@@ -94,9 +94,13 @@ class ApiTypeDemandeEtablissementController extends ApiInterface
     public function create(Request $request, TypeDemandeEtablissementRepository $typeDemandeEtablissementRepository): Response
     {
         $data = json_decode($request->getContent(), true);
+        $code = trim($data['code'] ?? '');
+        if ($code === '') {
+            $code = $this->utils->generateShortCodeFromLibelle($data['libelle'], $typeDemandeEtablissementRepository);
+        }
         $typeDemandeEtablissement = new TypeDemandeEtablissement();
         $typeDemandeEtablissement->setLibelle($data['libelle']);
-        $typeDemandeEtablissement->setCode($data['code'] ?? null);
+        $typeDemandeEtablissement->setCode($code);
         $typeDemandeEtablissement->setCreatedBy($this->getUser());
         $typeDemandeEtablissement->setUpdatedBy($this->getUser());
         $errorResponse = $this->errorResponse($typeDemandeEtablissement);
@@ -132,8 +136,12 @@ class ApiTypeDemandeEtablissementController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
             if ($typeDemandeEtablissement != null) {
+                $code = trim($data->code ?? '');
+                if ($code === '') {
+                    $code = $typeDemandeEtablissement->getCode() ?: $this->utils->generateShortCodeFromLibelle($data->libelle, $typeDemandeEtablissementRepository);
+                }
                 $typeDemandeEtablissement->setLibelle($data->libelle);
-                $typeDemandeEtablissement->setCode($data->code ?? null);
+                $typeDemandeEtablissement->setCode($code);
                 $typeDemandeEtablissement->setUpdatedBy($this->getUser());
                 $typeDemandeEtablissement->setUpdatedAt();
 

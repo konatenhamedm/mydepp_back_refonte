@@ -94,9 +94,13 @@ class ApiTypeEtablissementController extends ApiInterface
     public function create(Request $request, TypeEtablissementRepository $typeEtablissementRepository): Response
     {
         $data = json_decode($request->getContent(), true);
+        $code = trim($data['code'] ?? '');
+        if ($code === '') {
+            $code = $this->utils->generateShortCodeFromLibelle($data['libelle'], $typeEtablissementRepository);
+        }
         $typeEtablissement = new TypeEtablissement();
         $typeEtablissement->setLibelle($data['libelle']);
-        $typeEtablissement->setCode($data['code'] ?? null);
+        $typeEtablissement->setCode($code);
         $typeEtablissement->setCreatedBy($this->getUser());
         $typeEtablissement->setUpdatedBy($this->getUser());
         $errorResponse = $this->errorResponse($typeEtablissement);
@@ -132,8 +136,12 @@ class ApiTypeEtablissementController extends ApiInterface
         try {
             $data = json_decode($request->getContent());
             if ($typeEtablissement != null) {
+                $code = trim($data->code ?? '');
+                if ($code === '') {
+                    $code = $typeEtablissement->getCode() ?: $this->utils->generateShortCodeFromLibelle($data->libelle, $typeEtablissementRepository);
+                }
                 $typeEtablissement->setLibelle($data->libelle);
-                $typeEtablissement->setCode($data->code ?? null);
+                $typeEtablissement->setCode($code);
                 $typeEtablissement->setUpdatedBy($this->getUser());
                 $typeEtablissement->setUpdatedAt();
 

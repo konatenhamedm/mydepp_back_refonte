@@ -116,9 +116,13 @@ class ApiTypePersonneController extends ApiInterface
     {
 
         $data = json_decode($request->getContent(), true);
+        $code = trim($data['code'] ?? '');
+        if ($code === '') {
+            $code = $this->utils->generateShortCodeFromLibelle($data['libelle'], $typePersonneRepository);
+        }
         $typePersonne = new TypePersonne();
         $typePersonne->setLibelle($data['libelle']);
-        $typePersonne->setCode($data['code']);
+        $typePersonne->setCode($code);
         $typePersonne->setCreatedBy($this->getUser());
         $typePersonne->setUpdatedBy($this->getUser());
         $errorResponse = $this->errorResponse($typePersonne);
@@ -161,8 +165,12 @@ class ApiTypePersonneController extends ApiInterface
             $data = json_decode($request->getContent());
             if ($typePersonne != null) {
 
+                $code = trim($data->code ?? '');
+                if ($code === '') {
+                    $code = $typePersonne->getCode() ?: $this->utils->generateShortCodeFromLibelle($data->libelle, $typePersonneRepository);
+                }
                 $typePersonne->setLibelle($data->libelle);
-                $typePersonne->setCode($data->code);
+                $typePersonne->setCode($code);
                 $typePersonne->setUpdatedBy($this->getUser());
                 $typePersonne->setUpdatedAt();
 
