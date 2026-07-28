@@ -515,7 +515,7 @@ class ApiProfessionnelController extends ApiInterface
     )]
 
     #[OA\Tag(name: 'professionnel')]
-    public function indexEtat(ProfessionnelRepository $professionnelRepository, $status, UserRepository $userRepository, ProfessionRepository $professionRepository): Response
+    public function indexEtat(ProfessionnelRepository $professionnelRepository, string $status, UserRepository $userRepository, ProfessionRepository $professionRepository): Response
     {
         try {
 
@@ -525,7 +525,7 @@ class ApiProfessionnelController extends ApiInterface
             if (in_array($status, ['attente', 'accepte', 'rejete', 'refuse'])) {
                 $professionnels = array_filter($professionnels, function ($professionnel) {
                     $personne = $professionnel->getPersonne();
-                    return $personne && $personne->getCode() === null;
+                    return $personne && empty($personne->getCode());
                 });
             }
 
