@@ -132,14 +132,15 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     {
         $qb = $this->createQueryBuilder('u')
             ->innerJoin('u.personne', 'p')
+            ->leftJoin('App\Entity\Professionnel', 'pro', 'WITH', 'pro.id = p.id')
             ->andWhere('p.status = :val')
             ->setParameter('val', $status);
 
-
+//dd($status);
         if (in_array($status, ['attente', 'accepte', 'rejete', 'refuse'])) {
-            dd($status);
+           // dd($status);
 
-            $qb->andWhere('p.code IS NULL OR p.code = :emptyCode')
+            $qb->andWhere('pro.code IS NULL OR pro.code = :emptyCode')
                ->setParameter('emptyCode', '');
         }
 
