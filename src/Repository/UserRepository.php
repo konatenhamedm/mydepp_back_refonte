@@ -130,13 +130,17 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
 
     public function getProfessionnelByetat($status)
     {
-
-        return $this->createQueryBuilder('u')
+        $qb = $this->createQueryBuilder('u')
             ->innerJoin('u.personne', 'p')
             ->andWhere('p.status = :val')
-            ->setParameter('val', $status)
-            ->getQuery()
-            ->getResult();
+            ->setParameter('val', $status);
+
+        if (in_array($status, ['attente', 'accepte', 'rejete', 'refuse'])) {
+            $qb->andWhere('p.code IS NULL OR p.code = :emptyCode')
+               ->setParameter('emptyCode', '');
+        }
+
+        return $qb->getQuery()->getResult();
     }
 
     public function findActiveProfessionnelsByImputationWithouParam()

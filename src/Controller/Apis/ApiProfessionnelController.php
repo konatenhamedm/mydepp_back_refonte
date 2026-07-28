@@ -522,12 +522,7 @@ class ApiProfessionnelController extends ApiInterface
 
             $professionnels = $userRepository->getProfessionnelByetat($status);
 
-            if (in_array($status, ['attente', 'accepte', 'rejete', 'refuse'])) {
-                $professionnels = array_filter($professionnels, function ($professionnel) {
-                    $personne = $professionnel->getPersonne();
-                    return $personne && empty($personne->getCode());
-                });
-            }
+
 
             $formattedProfessionnels = array_map(function ($professionnel) use ($professionRepository) {
                 $personne = $professionnel->getPersonne();
