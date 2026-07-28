@@ -135,7 +135,10 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->andWhere('p.status = :val')
             ->setParameter('val', $status);
 
+
         if (in_array($status, ['attente', 'accepte', 'rejete', 'refuse'])) {
+            dd($status);
+
             $qb->andWhere('p.code IS NULL OR p.code = :emptyCode')
                ->setParameter('emptyCode', '');
         }
