@@ -520,12 +520,14 @@ class ApiProfessionnelController extends ApiInterface
         try {
 
 
-            // $professionnels = $userRepository->findActiveProfessionnelsByImputationWithouParam();
             $professionnels = $userRepository->getProfessionnelByetat($status);
 
-            //$professionnels = $userRepository->findBy(['typeUser' => 'PROFESSIONNEL'], ['id' => 'DESC']);
-
-            // dd($professionnels);
+            if (in_array($status, ['attente', 'accepte', 'rejete', 'refuse'])) {
+                $professionnels = array_filter($professionnels, function ($professionnel) {
+                    $personne = $professionnel->getPersonne();
+                    return $personne && $personne->getCode() === null;
+                });
+            }
 
             $formattedProfessionnels = array_map(function ($professionnel) use ($professionRepository) {
                 $personne = $professionnel->getPersonne();
