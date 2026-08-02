@@ -515,17 +515,14 @@ class ApiProfessionnelController extends ApiInterface
     )]
 
     #[OA\Tag(name: 'professionnel')]
-    public function indexEtat(ProfessionnelRepository $professionnelRepository, $status, UserRepository $userRepository, ProfessionRepository $professionRepository): Response
+    public function indexEtat(ProfessionnelRepository $professionnelRepository, string $status, UserRepository $userRepository, ProfessionRepository $professionRepository): Response
     {
         try {
 
 
-            // $professionnels = $userRepository->findActiveProfessionnelsByImputationWithouParam();
             $professionnels = $userRepository->getProfessionnelByetat($status);
 
-            //$professionnels = $userRepository->findBy(['typeUser' => 'PROFESSIONNEL'], ['id' => 'DESC']);
 
-            // dd($professionnels);
 
             $formattedProfessionnels = array_map(function ($professionnel) use ($professionRepository) {
                 $personne = $professionnel->getPersonne();

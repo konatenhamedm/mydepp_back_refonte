@@ -60,13 +60,15 @@ class ApiPaiementController extends ApiInterface
             $startDate = $request->query->get('startDate');
             $endDate = $request->query->get('endDate');
             $professionId = $request->query->get('profession');
+            $state = $request->query->get('state');
 
             if ($startDate === 'null' || $startDate === '') $startDate = null;
             if ($endDate === 'null' || $endDate === '') $endDate = null;
             if ($professionId === 'null' || $professionId === '') $professionId = null;
             if ($montant === 'null' || $montant === '') $montant = null;
+            if ($state === 'null' || $state === '') $state = null;
 
-            $transactions = $transactionRepository->getFilteredTransactions($type, $search, $montant, $startDate, $endDate, $professionId);
+            $transactions = $transactionRepository->getFilteredTransactions($type, $search, $montant, $startDate, $endDate, $professionId, $state);
 
             $formattedTransactions = array_map(function (Transaction $transaction) use ($professionRepository, $type) {
                 $personne = $transaction->getUser()->getPersonne();
@@ -185,13 +187,15 @@ class ApiPaiementController extends ApiInterface
             $startDate = $request->query->get('startDate');
             $endDate = $request->query->get('endDate');
             $professionId = $request->query->get('profession');
+            $state = $request->query->get('state');
 
             if ($startDate === 'null' || $startDate === '') $startDate = null;
             if ($endDate === 'null' || $endDate === '') $endDate = null;
             if ($professionId === 'null' || $professionId === '') $professionId = null;
             if ($montant === 'null' || $montant === '') $montant = null;
+            if ($state === 'null' || $state === '') $state = null;
 
-            $kpis = $transactionRepository->getFilteredTransactionsKpis($type, $search, $montant, $startDate, $endDate, $professionId);
+            $kpis = $transactionRepository->getFilteredTransactionsKpis($type, $search, $montant, $startDate, $endDate, $professionId, $state);
 
             return $this->json([
                 'code' => 200,

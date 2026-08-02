@@ -28,10 +28,19 @@ class ApiReunionController extends ApiInterface
         )
     )]
     #[OA\Tag(name: 'reunion')]
-    public function index(ReunionRepository $reunionRepository): Response
+    public function index(Request $request, ReunionRepository $reunionRepository): Response
     {
         try {
-            $reunions = $reunionRepository->findBy([], ['id' => 'DESC']);
+            $startDate = $request->query->get('start_date');
+            $endDate = $request->query->get('end_date');
+            $type = $request->query->get('type');
+
+            if ($startDate || $endDate || $type) {
+                $reunions = $reunionRepository->findByAdvancedFilter($startDate, $endDate, $type);
+            } else {
+                $reunions = $reunionRepository->findBy([], ['id' => 'DESC']);
+            }
+            
             return $this->responseData($reunions, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             return $this->responseData([], 'group1', ['Content-Type' => 'application/json']);

@@ -233,7 +233,7 @@ class TransactionRepository extends ServiceEntityRepository
         return $stmt->fetchAllAssociative();
     }
 
-    public function getFilteredTransactions($type, $search = null, $montant = null, $startDate = null, $endDate = null, $professionId = null): array
+    public function getFilteredTransactions($type, $search = null, $montant = null, $startDate = null, $endDate = null, $professionId = null, $state = null): array
     {
         $qb = $this->createQueryBuilder('t')
             ->innerJoin('t.user', 'u')
@@ -277,15 +277,21 @@ class TransactionRepository extends ServiceEntityRepository
             ))->setParameter('search', '%' . $search . '%');
         }
 
-        $qb->andWhere('t.state = :state')
-           ->setParameter('state', 1);
+        if ($state !== null && $state !== '') {
+            $qb->andWhere('t.state = :state')
+               ->setParameter('state', (int)$state);
+        } else {
+            // Include both 0 and 1 if no state filter is provided, or you can leave this out to include all.
+            // Let's filter to only 0 or 1.
+            $qb->andWhere('t.state IN (0, 1)');
+        }
 
         $qb->orderBy('t.id', 'DESC');
 
         return $qb->getQuery()->getResult();
     }
 
-    public function getFilteredTransactionsKpis($type, $search = null, $montant = null, $startDate = null, $endDate = null, $professionId = null): array
+    public function getFilteredTransactionsKpis($type, $search = null, $montant = null, $startDate = null, $endDate = null, $professionId = null, $state = null): array
     {
         $qb = $this->createQueryBuilder('t')
             ->innerJoin('t.user', 'u')
@@ -327,6 +333,13 @@ class TransactionRepository extends ServiceEntityRepository
                 $qb->expr()->like('p.nom', ':search'),
                 $qb->expr()->like('p.prenoms', ':search')
             ))->setParameter('search', '%' . $search . '%');
+        }
+
+        if ($state !== null && $state !== '') {
+            $qb->andWhere('t.state = :state')
+               ->setParameter('state', (int)$state);
+        } else {
+            $qb->andWhere('t.state IN (0, 1)');
         }
 
         $qb->select('t.montant, t.state');

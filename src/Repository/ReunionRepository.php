@@ -33,4 +33,31 @@ class ReunionRepository extends ServiceEntityRepository
             $this->getEntityManager()->flush();
         }
     }
+
+    /**
+     * Recherche avancée des réunions avec filtres optionnels
+     */
+    public function findByAdvancedFilter(?string $startDate, ?string $endDate, ?string $type)
+    {
+        $qb = $this->createQueryBuilder('r');
+
+        if ($startDate) {
+            $qb->andWhere('r.jour >= :startDate')
+               ->setParameter('startDate', $startDate . ' 00:00:00');
+        }
+
+        if ($endDate) {
+            $qb->andWhere('r.jour <= :endDate')
+               ->setParameter('endDate', $endDate . ' 23:59:59');
+        }
+
+        if ($type) {
+            $qb->andWhere('r.type = :type')
+               ->setParameter('type', $type);
+        }
+
+        $qb->orderBy('r.id', 'DESC');
+
+        return $qb->getQuery()->getResult();
+    }
 }
