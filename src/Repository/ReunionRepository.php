@@ -35,9 +35,9 @@ class ReunionRepository extends ServiceEntityRepository
     }
 
     /**
-     * Recherche avancée des réunions avec filtres optionnels
+     * Recherche avancée des réunions avec filtres optionnels et filtre par utilisateur
      */
-    public function findByAdvancedFilter(?string $startDate, ?string $endDate, ?string $type)
+    public function findByAdvancedFilter(?string $startDate, ?string $endDate, ?string $type, ?\App\Entity\User $user = null)
     {
         $qb = $this->createQueryBuilder('r');
 
@@ -54,6 +54,11 @@ class ReunionRepository extends ServiceEntityRepository
         if ($type) {
             $qb->andWhere('r.type = :type')
                ->setParameter('type', $type);
+        }
+
+        if ($user) {
+            $qb->andWhere('r.createdBy = :user')
+               ->setParameter('user', $user);
         }
 
         $qb->orderBy('r.id', 'DESC');

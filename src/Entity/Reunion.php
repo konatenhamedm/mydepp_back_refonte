@@ -28,9 +28,17 @@ class Reunion
     #[ORM\OneToMany(targetEntity: Presence::class, mappedBy: 'reunion', cascade: ['remove'])]
     private Collection $presences;
 
+    /**
+     * @var Collection<int, ReunionPartenaire>
+     */
+    #[ORM\OneToMany(targetEntity: ReunionPartenaire::class, mappedBy: 'reunion', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[Group(["group1"])]
+    private Collection $partenaires;
+
     public function __construct()
     {
         $this->presences = new ArrayCollection();
+        $this->partenaires = new ArrayCollection();
     }
 
     #[ORM\Column(length: 255)]
@@ -146,6 +154,35 @@ class Reunion
         if ($this->presences->removeElement($presence)) {
             if ($presence->getReunion() === $this) {
                 $presence->setReunion(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ReunionPartenaire>
+     */
+    public function getPartenaires(): Collection
+    {
+        return $this->partenaires;
+    }
+
+    public function addPartenaire(ReunionPartenaire $partenaire): static
+    {
+        if (!$this->partenaires->contains($partenaire)) {
+            $this->partenaires->add($partenaire);
+            $partenaire->setReunion($this);
+        }
+
+        return $this;
+    }
+
+    public function removePartenaire(ReunionPartenaire $partenaire): static
+    {
+        if ($this->partenaires->removeElement($partenaire)) {
+            if ($partenaire->getReunion() === $this) {
+                $partenaire->setReunion(null);
             }
         }
 

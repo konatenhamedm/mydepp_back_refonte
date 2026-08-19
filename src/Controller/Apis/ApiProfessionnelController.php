@@ -763,7 +763,7 @@ class ApiProfessionnelController extends ApiInterface
                     );
 
                     $professionnel->setCode($numeroGenere);
-                    $professionnel->setDateValidation(new DateTime());
+                    $professionnel->setDateValidation((new DateTime())->modify('+1 year'));
                 } catch (\Exception $e) {
                     error_log("Erreur génération code: " . $e->getMessage());
                 }

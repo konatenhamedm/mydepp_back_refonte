@@ -533,7 +533,7 @@ class PaiementService
 
         $professionnel->setPoleSanitaire($dataTemp->getPoleSanitaire());
         $professionnel->setLieuObtentionDiplome($dataTemp->getLieuObtentionDiplome());
-        $professionnel->setDateValidation(new DateTime());
+        $professionnel->setDateValidation((new DateTime())->modify('+1 year'));
         $professionnel->setLieuDiplome($dataTemp->getLieuDiplome() ?? null);
 
        // $professionnel->setLieuObtentionDiplome();
