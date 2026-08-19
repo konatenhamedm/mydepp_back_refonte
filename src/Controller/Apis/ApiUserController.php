@@ -15,6 +15,7 @@ use App\Repository\UserRepository;
 use App\Service\ResetPasswordService;
 use App\Service\SendMailService;
 use DateTime;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -1027,35 +1028,39 @@ class ApiUserController extends ApiInterface
             return $this->json(['message' => 'Professionnel non trouvée'], 400);
         }
 
-        $professionnel->setStatus("a_jour");
+        try {
+            $professionnel->setStatus("a_jour");
 
-        $professionnelRepository->add($professionnel, true);
+            $professionnelRepository->add($professionnel, true);
 
-        $user = new User();
-        $user->setEmail($data['email']);
-        $user->setPayement("payed");
-        $user->setPassword($passwordHasher->hashPassword($user, $data['password']));
-        $user->setRoles(['ROLE_MEMBRE']);
-        $user->setTypeUser("PROFESSIONNEL");
-        $user->setPersonne($professionnel);
-        $userRepo->add($user, true);
-
-
-        $sendMailService->send(
-            "depps@leadagro.net",
-            $user->getEmail(),
-            "Nouvelle inscription",
-            "new_professionnel_code",
-            [
-                "user" => [
-                    "email" => $data['email'],
-                    "password" => $data['password'],
-                ],
-                "login_url" => "https://mydepps.net/connexion"
-            ]
-        );
+            $user = new User();
+            $user->setEmail($data['email']);
+            $user->setPayement("payed");
+            $user->setPassword($passwordHasher->hashPassword($user, $data['password']));
+            $user->setRoles(['ROLE_MEMBRE']);
+            $user->setTypeUser("PROFESSIONNEL");
+            $user->setPersonne($professionnel);
+            $userRepo->add($user, true);
 
 
+            $sendMailService->send(
+                "depps@leadagro.net",
+                $user->getEmail(),
+                "Nouvelle inscription",
+                "new_professionnel_code",
+                [
+                    "user" => [
+                        "email" => $data['email'],
+                        "password" => $data['password'],
+                    ],
+                    "login_url" => "https://mydepps.net/connexion"
+                ]
+            );
+        } catch (UniqueConstraintViolationException $exception) {
+            return $this->json(['message' => 'Cet email est déjà utilisé par un autre compte. Veuillez en choisir un autre.'], 400);
+        } catch (\Exception $exception) {
+            return $this->json(['message' => 'Une erreur est survenue lors de la création de votre compte. Veuillez réessayer.'], 500);
+        }
 
         return $this->json(['message' => 'Utilisateur créé avec succès']);
     }

@@ -81,8 +81,8 @@ class PaiementBusinessLogicService
         $professionnel->setLieuObtentionDiplome(
             $this->lieuDiplomeRepository->find($dataTemp->getLieuDiplome())
         );
-        $professionnel->setDateValidation(new DateTime());
-        
+        $professionnel->setDateValidation((new DateTime())->modify('+1 year'));
+
         // Localisation
         $professionnel->setRegion($this->regionRepository->find($dataTemp->getRegion()));
         $professionnel->setDistrict($this->districtRepository->find($dataTemp->getDistrict()));
