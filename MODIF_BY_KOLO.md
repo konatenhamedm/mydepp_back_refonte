@@ -81,6 +81,15 @@ de planter silencieusement.
   n'empêche encore la création de plusieurs comptes différents pour le même numéro d'inscription
   avec des emails différents. Le try/catch évite le crash, mais ne résout pas ce problème de fond.
 
+## Complément : envoi du mail isolé de la logique de création
+
+L'envoi du mail de bienvenue (`SendMailService::send()`) est maintenant dans son propre `try/catch`,
+séparé de celui qui protège la création du `Professionnel`/`User`. Si l'envoi du mail échoue (SMTP
+indisponible, `MAILER_DSN` mal configuré, etc.), l'erreur est avalée silencieusement et la réponse
+reste `{"message": "Utilisateur créé avec succès"}` — le compte est déjà bien créé en base à ce
+stade, donc un échec d'envoi de mail ne doit pas faire remonter une erreur au professionnel ni
+annuler la création qui a déjà réussi.
+
 ## Vérifications effectuées
 
 - `php -l` sur les 4 fichiers modifiés : aucune erreur de syntaxe.

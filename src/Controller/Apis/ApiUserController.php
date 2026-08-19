@@ -1042,20 +1042,23 @@ class ApiUserController extends ApiInterface
             $user->setPersonne($professionnel);
             $userRepo->add($user, true);
 
-
-            $sendMailService->send(
-                "depps@leadagro.net",
-                $user->getEmail(),
-                "Nouvelle inscription",
-                "new_professionnel_code",
-                [
-                    "user" => [
-                        "email" => $data['email'],
-                        "password" => $data['password'],
-                    ],
-                    "login_url" => "https://mydepps.net/connexion"
-                ]
-            );
+            try {
+                $sendMailService->send(
+                    "depps@leadagro.net",
+                    $user->getEmail(),
+                    "Nouvelle inscription",
+                    "new_professionnel_code",
+                    [
+                        "user" => [
+                            "email" => $data['email'],
+                            "password" => $data['password'],
+                        ],
+                        "login_url" => "https://mydepps.net/connexion"
+                    ]
+                );
+            } catch (\Exception $mailException) {
+                // L'envoi du mail est secondaire : le compte est déjà créé, on ne bloque pas la réponse pour autant.
+            }
         } catch (UniqueConstraintViolationException $exception) {
             return $this->json(['message' => 'Cet email est déjà utilisé par un autre compte. Veuillez en choisir un autre.'], 400);
         } catch (\Exception $exception) {
