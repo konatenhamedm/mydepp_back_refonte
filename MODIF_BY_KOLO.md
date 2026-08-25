@@ -1,3 +1,8 @@
+> ⚠️ **Mise à jour** : la section ci-dessous (calcul basé sur `dateValidation`) a été **remplacée**
+> par l'approche décrite plus bas dans "Renouvellement basé sur le `code`" — décision prise après
+> discussion, pour repartir de l'année contenue dans le `code` du professionnel plutôt que de
+> `dateValidation`. Cette section reste ici pour l'historique/traçabilité de la décision.
+
 # Modifications — Renouvellement professionnel
 
 Correctif du bug bloquant l'affichage/calcul du renouvellement d'abonnement des professionnels.
@@ -80,6 +85,62 @@ de planter silencieusement.
 - Aucune contrainte d'unicité n'existe sur la relation `personne` (User → Professionnel) : rien
   n'empêche encore la création de plusieurs comptes différents pour le même numéro d'inscription
   avec des emails différents. Le try/catch évite le crash, mais ne résout pas ce problème de fond.
+
+---
+
+# Renouvellement basé sur le `code` (remplace l'approche `dateValidation`)
+
+## Décision
+
+Après discussion, on repart du principe que la dette de renouvellement se calcule à partir de
+l'année contenue dans le `code` du professionnel (ex: `MS2024MKINE2998.0094` → année 2024), plutôt
+que de `Professionnel.dateValidation`. Raison : de toute façon il fallait mettre à jour le `code` à
+chaque renouvellement (pour rester cohérent avec les autres usages du `code`), donc autant en faire
+la seule source de vérité pour ce calcul plutôt que de maintenir deux champs en parallèle.
+
+Le risque identifié avant ce choix (le `code` n'était jamais régénéré après un paiement, donc la
+dette calculée aurait recommencé à grimper indéfiniment depuis l'année d'inscription d'origine, même
+pour quelqu'un à jour) est traité en régénérant l'année dans le `code` à chaque renouvellement réussi.
+
+## Fichiers modifiés
+
+### 1. `src/Controller/PaymentProController.php` — méthode `status()`
+Retour au calcul basé sur le `code` (regex `/(?<!\d)((?:19|20)\d{2})(?!\d)/` cherchant une année à 4
+chiffres isolée dans le `code`), à la place du calcul basé sur `dateValidation`.
+
+### 2. `src/Service/PaiementProService.php`
+- Ajout d'une méthode privée `updateCodeYear(?string $code, int $newYear): ?string` qui remplace,
+  dans le `code`, uniquement les 4 chiffres de l'année trouvée par le regex — le reste du code
+  (préfixe, code profession, chrono) reste identique.
+- `finaliserRenouvellement()` : à chaque renouvellement réussi (complet ou partiel), le `code` du
+  professionnel est maintenant régénéré avec `année_dans_le_code_actuel + yearsPaid` (nombre
+  d'années effectivement payées), en plus de la mise à jour de `dateValidation` (conservée, même si
+  elle n'est plus utilisée par `status()`).
+
+## Exemple vérifié
+
+```
+Code initial : MS2024MKINE2998.0094
+Renouvellement de 2 ans payé en 2026 (yearsPaid=2)
+Code après   : MS2026MKINE2998.0094
+Nouvelle vérification de status() sur ce code -> expire = false (à jour)
+```
+
+## Limites connues de cette approche (fragilité du `code`, à garder en tête)
+
+- Le regex ne trouve l'année que si elle n'est **pas collée à un autre chiffre** dans le `code`. Ça
+  fonctionne dans les exemples réels observés parce que le code de la profession
+  (`Profession.codeGeneration`, ex: `MKINE`, `OPTLO`) est alphabétique, ce qui isole naturellement
+  l'année. Mais si une profession a un `codeGeneration` numérique (le fallback par défaut est `'00'`
+  dans `Utils::numeroGeneration()`), l'année se retrouverait collée à ces chiffres et le regex ne
+  matcherait plus — même souci que le bug initialement diagnostiqué, juste moins probable avec les
+  données actuelles.
+- Si un `code` contient plusieurs séquences à 4 chiffres ressemblant à une année (ex: année de
+  naissance en `19xx`), seule la **première** trouvée dans la chaîne est utilisée. Ça reste correct
+  tant que l'année d'inscription précède l'année de naissance dans le format du code (c'est le cas
+  actuellement), mais c'est un couplage implicite à l'ordre des champs dans `numeroGeneration()`.
+- La branche ÉTABLISSEMENT de `status()` utilisait déjà cette logique basée sur le `code` et n'a pas
+  été touchée.
 
 ## Complément : envoi du mail isolé de la logique de création
 
