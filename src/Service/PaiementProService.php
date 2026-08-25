@@ -830,6 +830,26 @@ class PaiementProService
         return ['code' => 400, 'message' => 'Failure'];
     }
 
+    /**
+     * Remplace, dans un code professionnel (ex: MS2024MKINE2998.0094), la première
+     * séquence à 4 chiffres ressemblant à une année (19xx/20xx) par $newYear, en
+     * conservant tout le reste du code (préfixe, code profession, chrono) à l'identique.
+     * Retourne le code inchangé si aucune année n'y est trouvée.
+     */
+    private function updateCodeYear(?string $code, int $newYear): ?string
+    {
+        if ($code === null) {
+            return $code;
+        }
+
+        if (preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $code, $matches, PREG_OFFSET_CAPTURE)) {
+            $offset = $matches[1][1];
+            return substr_replace($code, (string) $newYear, $offset, 4);
+        }
+
+        return $code;
+    }
+
     public function finaliserRenouvellement(Transaction $transaction): array
     {
         $user = $transaction->getUser();
@@ -846,6 +866,17 @@ class PaiementProService
         $now = new \DateTime();
         $profession = method_exists($personne, 'getProfession') ? $personne->getProfession() : null;
         $currentExpiration = method_exists($personne, 'getDateValidation') ? $personne->getDateValidation() : null;
+
+        // L'année de référence pour le calcul de la dette (status()) vient du `code`,
+        // donc on la fait avancer du nombre d'années effectivement payées, quel que
+        // soit le cas (régularisation complète ou partielle).
+        $currentCode = method_exists($personne, 'getCode') ? $personne->getCode() : null;
+        if ($currentCode && method_exists($personne, 'setCode')
+            && preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $currentCode, $codeMatches)
+        ) {
+            $yearInCode = (int) $codeMatches[1];
+            $personne->setCode($this->updateCodeYear($currentCode, $yearInCode + $yearsPaid));
+        }
 
         if ($yearsPaid >= $yearsDue) {
             // Entièrement régularisé : passage à "a_jour" et +1 an à partir d'aujourd'hui

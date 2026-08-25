@@ -245,30 +245,29 @@ class PaymentProController extends ApiInterface
                     $etatPro = false;
                 } else {
                     $today = new \DateTime();
-                    $dateValidation = $user->getPersonne()->getDateValidation();
+                    // La dette de renouvellement se base sur l'année d'inscription contenue
+                    // dans le `code` du professionnel (ex: MS2024MKINE2998.0094 -> 2024).
+                    // Ce code est régénéré (année mise à jour) à chaque renouvellement complet
+                    // par PaiementProService::finaliserRenouvellement(), pour que ce calcul
+                    // reflète bien le dernier renouvellement payé.
+                    $code = $user->getPersonne()->getCode() ?? '';
 
-                    if ($dateValidation !== null) {
-                        // dateValidation représente la date d'expiration de l'abonnement
-                        // (mise à jour à chaque paiement initial/renouvellement), et non la
-                        // date de validation brute : c'est la même convention que celle déjà
-                        // utilisée par PaiementProService::traiterPaiementRenouvellement().
-                        $expiration = \DateTime::createFromInterface($dateValidation);
+                    if (preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $code, $matches)) {
+                        $yearInCode = (int)$matches[1];
                         $currentYear = (int)$today->format('Y');
 
-                        $expire = $expiration < $today;
+                        $expire = $yearInCode < $currentYear;
+                        $expiration = new \DateTime($yearInCode . '-12-31');
 
                         if ($expire) {
                             $joursRestants = 0;
-                            $yearDue = $currentYear - (int)$expiration->format('Y');
-                            if ($yearDue < 1) {
-                                $yearDue = 1;
-                            }
+                            $yearDue = $currentYear - $yearInCode;
                         } else {
                             $joursRestants = $today->diff($expiration)->days;
                             $yearDue = 0;
                         }
                     } else {
-                        // Pas encore de date de validation : rien à renouveler pour l'instant
+                        // S'il n'a pas encore de code ou que le code ne contient pas d'année
                         $expire = false;
                         $expiration = new \DateTime();
                         $joursRestants = 0;
