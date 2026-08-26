@@ -142,6 +142,44 @@ Nouvelle vérification de status() sur ce code -> expire = false (à jour)
 - La branche ÉTABLISSEMENT de `status()` utilisait déjà cette logique basée sur le `code` et n'a pas
   été touchée.
 
+---
+
+# Statistiques admin/comptable : échecs, succès, en attente, soldes
+
+## Décision
+
+Les compteurs "Échecs" des tableaux de bord comptaient en fait les transactions `state = 0`
+(en attente de confirmation MTN MoMo), pas les vrais échecs (`state = -1`). De plus, tous les
+calculs de statistiques transactions/montants incluaient n'importe quel `type` de transaction
+(y compris `OUVERTURE D'EXPLOITATION`, qui concerne les établissements, pas l'adhésion pro), alors
+qu'ils devraient se limiter aux transactions d'adhésion professionnel : `NOUVELLE DEMANDE`
+(inscription initiale) et `RENOUVELLEMENT`.
+
+## Fichiers modifiés
+
+### `src/Repository/TransactionRepository.php`
+- Ajout de la constante `TYPES_ADHESION_PRO = ['NOUVELLE DEMANDE', 'RENOUVELLEMENT']`.
+- `montantTotal()` et `feeTotal()` : ajout du filtre `t.type IN (...)`.
+- `getComptableBilanData()` : le `WHERE t.state IN (0, 1)` excluait déjà les échecs (`state = -1`)
+  **au niveau SQL**, avant même d'atteindre la boucle PHP de `comptableBilan()` — donc mon
+  correctif précédent sur cette boucle n'avait aucun effet pour ce endpoint tant que ce filtre SQL
+  n'était pas aussi corrigé. Changé en `WHERE t.state IN (-1, 0, 1) AND t.type IN (:adhesionTypes)`.
+
+### `src/Controller/Apis/ApiStatistiqueController.php`
+- `countEntitiesInRange()` : accepte désormais un tableau de valeurs par critère (génère un `IN (...)`
+  au lieu d'une égalité stricte), nécessaire pour filtrer sur les deux types d'adhésion à la fois.
+- `sumTransactionFieldInRange()` (montant_total / fee_total du dashboard admin général) : ajout du
+  filtre `t.type IN (...)`.
+- `indexAdminGeneral()` : `succes`/`echec`/`en_attente` filtrent maintenant aussi sur
+  `TransactionRepository::TYPES_ADHESION_PRO`.
+- Ancien `/dashboard` (branche COMPTABLE) : `nombreSuccess`/`nombreFail`/`nombreEnAttente` filtrent
+  aussi sur le type désormais.
+
+## Non touché (hors périmètre de cette demande)
+
+- `transactionsEchoueesDuJour()` compare toujours `t.type` (une chaîne comme `'RENOUVELLEMENT'`) à
+  un entier `0`/`1` — bug distinct, déjà signalé, pas corrigé ici faute de demande explicite.
+
 ## Complément : envoi du mail isolé de la logique de création
 
 L'envoi du mail de bienvenue (`SendMailService::send()`) est maintenant dans son propre `try/catch`,
