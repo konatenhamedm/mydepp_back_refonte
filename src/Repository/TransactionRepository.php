@@ -15,6 +15,13 @@ class TransactionRepository extends ServiceEntityRepository
 {
     use TableInfoTrait;
 
+    /**
+     * Types de transaction correspondant à une adhésion professionnel (inscription initiale
+     * ou renouvellement). Les statistiques admin/comptable ne doivent porter que sur celles-ci
+     * (on exclut par ex. "OUVERTURE D'EXPLOITATION" qui concerne les établissements).
+     */
+    public const TYPES_ADHESION_PRO = ['NOUVELLE DEMANDE', 'RENOUVELLEMENT'];
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Transaction::class);
@@ -57,7 +64,9 @@ class TransactionRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('t')
             ->select('SUM(t.montant) AS total')
             ->andWhere('t.state = :state')
+            ->andWhere('t.type IN (:types)')
             ->setParameter('state', 1)
+            ->setParameter('types', self::TYPES_ADHESION_PRO)
             ->getQuery()
             ->getSingleScalarResult();
     }
@@ -67,7 +76,9 @@ class TransactionRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('t')
             ->select('COALESCE(SUM(t.fee), 0) AS total')
             ->andWhere('t.state = :state')
+            ->andWhere('t.type IN (:types)')
             ->setParameter('state', 1)
+            ->setParameter('types', self::TYPES_ADHESION_PRO)
             ->getQuery()
             ->getSingleScalarResult();
     }
@@ -202,10 +213,13 @@ class TransactionRepository extends ServiceEntityRepository
             LEFT JOIN {$professionnelTable} mp ON p.id = mp.id
             LEFT JOIN {$professionTable} prof ON mp.profession_id = prof.id
             LEFT JOIN {$regionTable} reg ON mp.region_id = reg.id
-            WHERE t.state IN (0, 1)
+            WHERE t.state IN (-1, 0, 1)
+            AND t.type IN (:adhesionTypes)
         ";
 
-        $params = [];
+        $params = [
+            'adhesionTypes' => self::TYPES_ADHESION_PRO,
+        ];
 
         if ($startDate) {
             $sql .= " AND t.created_at >= :startDate";
@@ -229,7 +243,9 @@ class TransactionRepository extends ServiceEntityRepository
 
         $sql .= " ORDER BY t.created_at DESC";
 
-        $stmt = $conn->executeQuery($sql, $params);
+        $stmt = $conn->executeQuery($sql, $params, [
+            'adhesionTypes' => \Doctrine\DBAL\Connection::PARAM_STR_ARRAY,
+        ]);
         return $stmt->fetchAllAssociative();
     }
 

@@ -193,10 +193,12 @@ class ApiStatistiqueController extends ApiInterface
 
                 ///recupere les transactions ou le champ data n'est pas null
                 $dataValide = array_filter($allTransactions, fn($transaction) => $transaction);
+                $adhesionTypes = TransactionRepository::TYPES_ADHESION_PRO;
                 $tab = [
                     'montantTotal' => $transactionRepository->montantTotal(),
-                    'nombreSuccess' => count($transactionRepository->findBy(['state' => 1])),
-                    'nombreFail' => count($transactionRepository->findBy(['state' => 0])),
+                    'nombreSuccess' => count($transactionRepository->findBy(['type' => $adhesionTypes, 'state' => 1])),
+                    'nombreFail' => count($transactionRepository->findBy(['type' => $adhesionTypes, 'state' => -1])),
+                    'nombreEnAttente' => count($transactionRepository->findBy(['type' => $adhesionTypes, 'state' => 0])),
                     'toDayTransactionFail' => count($transactionRepository->transactionsEchoueesDuJour(0)),
                     'toDayTransactionSuccess' => count($transactionRepository->transactionsEchoueesDuJour(1)),
 
@@ -632,10 +634,12 @@ class ApiStatistiqueController extends ApiInterface
             // 2. Analyse des Transactions (Chiffre d'Affaires)
             $totalSuccessfulAmount = $this->sumTransactionFieldInRange('montant', $startDate, $endDate);
             $totalFee = $this->sumTransactionFieldInRange('fee', $startDate, $endDate);
+            $adhesionTypes = TransactionRepository::TYPES_ADHESION_PRO;
             $transactions = [
                 'montant_total' => $totalSuccessfulAmount,
-                'succes' => $this->countEntitiesInRange(Transaction::class, ['state' => 1], $startDate, $endDate),
-                'echec' => $this->countEntitiesInRange(Transaction::class, ['state' => 0], $startDate, $endDate),
+                'succes' => $this->countEntitiesInRange(Transaction::class, ['type' => $adhesionTypes, 'state' => 1], $startDate, $endDate),
+                'echec' => $this->countEntitiesInRange(Transaction::class, ['type' => $adhesionTypes, 'state' => -1], $startDate, $endDate),
+                'en_attente' => $this->countEntitiesInRange(Transaction::class, ['type' => $adhesionTypes, 'state' => 0], $startDate, $endDate),
                 'fee_total' => $totalFee,
                 'solde_retirable' => $totalSuccessfulAmount - $totalFee,
             ];
@@ -737,6 +741,8 @@ class ApiStatistiqueController extends ApiInterface
         foreach ($criteria as $field => $value) {
             if ($value === null) {
                 $qb->andWhere("e.{$field} IS NULL");
+            } elseif (is_array($value)) {
+                $qb->andWhere("e.{$field} IN (:{$field})")->setParameter($field, $value);
             } else {
                 $qb->andWhere("e.{$field} = :{$field}")->setParameter($field, $value);
             }
@@ -757,7 +763,9 @@ class ApiStatistiqueController extends ApiInterface
             ->select("COALESCE(SUM(t.{$field}), 0)")
             ->from(Transaction::class, 't')
             ->andWhere('t.state = :state')
-            ->setParameter('state', 1);
+            ->andWhere('t.type IN (:types)')
+            ->setParameter('state', 1)
+            ->setParameter('types', TransactionRepository::TYPES_ADHESION_PRO);
 
         if ($start && $end) {
             $qb->andWhere('t.createdAt BETWEEN :start AND :end')
@@ -793,6 +801,7 @@ class ApiStatistiqueController extends ApiInterface
             $montantTotal = 0;
             $nombreSuccess = 0;
             $nombreFail = 0;
+            $nombreEnAttente = 0;
 
             $byChannelMap = [];
             $byTypeUserMap = [];
@@ -855,8 +864,10 @@ class ApiStatistiqueController extends ApiInterface
                         $byRegionMap[$reg]['count']++;
                         $byRegionMap[$reg]['montant'] += $montant;
                     }
-                } elseif ($state === 0) {
+                } elseif ($state === -1) {
                     $nombreFail++;
+                } elseif ($state === 0) {
+                    $nombreEnAttente++;
                 }
             }
 
@@ -879,6 +890,7 @@ class ApiStatistiqueController extends ApiInterface
                     'montantTotal' => $montantTotal,
                     'nombreSuccess' => $nombreSuccess,
                     'nombreFail' => $nombreFail,
+                    'nombreEnAttente' => $nombreEnAttente,
                     'avgAmount' => $avgAmount
                 ],
                 'byChannel' => array_values($byChannelMap),
