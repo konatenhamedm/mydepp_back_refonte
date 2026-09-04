@@ -266,9 +266,8 @@ class Utils
             $chrono = ($chrono % 9999) + 1; // 1..9999, jamais 0
 
             $candidate = sprintf(
-                "%s%s%s%s%s%s.%04d",
+                "%s%s%s%s%s.%04d",
                 $prefixe,
-                //$civilite,
                 $anneeInscription,
                 $professionCode,
                 $jour,

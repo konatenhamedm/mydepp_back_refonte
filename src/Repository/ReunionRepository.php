@@ -40,6 +40,7 @@ class ReunionRepository extends ServiceEntityRepository
     public function findByAdvancedFilter(?string $startDate, ?string $endDate, ?string $type, ?\App\Entity\User $user = null)
     {
         $qb = $this->createQueryBuilder('r');
+        $qb->andWhere('r.deletedAt IS NULL');
 
         if ($startDate) {
             $qb->andWhere('r.jour >= :startDate')
