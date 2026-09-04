@@ -245,30 +245,29 @@ class PaymentProController extends ApiInterface
                     $etatPro = false;
                 } else {
                     $today = new \DateTime();
-                    $dateValidation = $user->getPersonne()->getDateValidation();
+                    // La dette de renouvellement se base sur l'année d'inscription contenue
+                    // dans le `code` du professionnel (ex: MS2024MKINE2998.0094 -> 2024).
+                    // Ce code est régénéré (année mise à jour) à chaque renouvellement complet
+                    // par PaiementProService::finaliserRenouvellement(), pour que ce calcul
+                    // reflète bien le dernier renouvellement payé.
+                    $code = $user->getPersonne()->getCode() ?? '';
 
-                    if ($dateValidation !== null) {
-                        // dateValidation représente la date d'expiration de l'abonnement
-                        // (mise à jour à chaque paiement initial/renouvellement), et non la
-                        // date de validation brute : c'est la même convention que celle déjà
-                        // utilisée par PaiementProService::traiterPaiementRenouvellement().
-                        $expiration = \DateTime::createFromInterface($dateValidation);
+                    if (preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $code, $matches)) {
+                        $yearInCode = (int)$matches[1];
                         $currentYear = (int)$today->format('Y');
 
-                        $expire = $expiration < $today;
+                        $expire = $yearInCode < $currentYear;
+                        $expiration = new \DateTime($yearInCode . '-12-31');
 
                         if ($expire) {
                             $joursRestants = 0;
-                            $yearDue = $currentYear - (int)$expiration->format('Y');
-                            if ($yearDue < 1) {
-                                $yearDue = 1;
-                            }
+                            $yearDue = $currentYear - $yearInCode;
                         } else {
                             $joursRestants = $today->diff($expiration)->days;
                             $yearDue = 0;
                         }
                     } else {
-                        // Pas encore de date de validation : rien à renouveler pour l'instant
+                        // S'il n'a pas encore de code ou que le code ne contient pas d'année
                         $expire = false;
                         $expiration = new \DateTime();
                         $joursRestants = 0;
@@ -348,7 +347,7 @@ class PaymentProController extends ApiInterface
     )]
     #[OA\Tag(name: 'paiements')]
     // 
-    public function indexInfoTransaction(TransactionRepository $transactionRepository, PaiementProService $paiementService, ProfessionnelRepository $professionnelRepository, $transactionId): Response
+    public function indexInfoTransaction(TransactionRepository $transactionRepository, PaiementProService $paiementService, $transactionId): Response
     {
         try {
             $transaction = $transactionRepository->findOneBy(['reference' => $transactionId]);
@@ -376,54 +375,21 @@ class PaymentProController extends ApiInterface
             $momoStatus = $statusResult['status'];
 
             if ($momoStatus === 'SUCCESSFUL') {
-                $transaction->setState(1);
-                $transaction->setUpdatedAt();
-                $transactionRepository->add($transaction, true);
-
-                // ── Mise à jour de l'année dans le code du professionnel ──────────
-                // Récupérer le professionnel lié à la transaction via l'utilisateur
-                $user = $transaction->getUser();
-                if ($user && $user->getPersonne() !== null) {
-                    $personne = $user->getPersonne();
-                    $professionnel = $professionnelRepository->find($personne->getId());
-
-                    if ($professionnel && $professionnel->getCode() !== null) {
-                        $oldCode = $professionnel->getCode();
-                        $newCode = $oldCode;
-
-                        // Lire le nombre d'années directement depuis le champ dédié
-                        // Fallback sur getData() JSON pour la compatibilité avec les anciennes transactions
-                        $yearsToPay = $transaction->getNbreAnnee()
-                            ?? (int) (json_decode($transaction->getData() ?? '{}', true)['yearsToPay'] ?? 1);
-                        if ($yearsToPay < 1) $yearsToPay = 1;
-
-                        // Regex universelle : trouve la première année (19xx/20xx) dans le code
-                        // Stratégie : extraire l'année DU CODE et y ajouter yearsToPay
-                        // MS2024APDENT1725.0006 + 2 ans → MS2026APDENT1725.0006
-                        // MSNI2023OPTLO2989.0032 + 1 an  → MSNI2024OPTLO2989.0032
-                        if (preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $oldCode, $matches, PREG_OFFSET_CAPTURE)) {
-                            $yearFound  = (int) $matches[1][0];
-                            $yearPos    = $matches[1][1];
-                            $newYear    = (string) ($yearFound + $yearsToPay);
-                            $newCode    = substr($oldCode, 0, $yearPos)
-                                        . $newYear
-                                        . substr($oldCode, $yearPos + strlen((string) $yearFound));
-                        } else {
-                            // Fallback : pas d'année trouvée → insérer l'année calculée depuis now
-                            $baseYear = (int) date('Y');
-                            $newYear  = (string) ($baseYear + $yearsToPay - 1);
-                            if (preg_match('/^([A-Za-z]+)(.*)$/', $oldCode, $parts)) {
-                                $newCode = $parts[1] . $newYear . $parts[2];
-                            }
-                        }
-
-                        if ($newCode !== $oldCode) {
-                            $professionnel->setCode($newCode);
-                            $professionnelRepository->add($professionnel, true);
-                        }
-                    }
+                // Déléguer à PaiementProService::finaliserRenouvellement() : c'est la
+                // SEULE logique qui met à jour le code/l'expiration du professionnel,
+                // qu'on arrive ici via ce polling ou via le webhook MTN
+                // (/api/paiement2/info-paiement-renouvellement). Avant ce correctif,
+                // ce endpoint réimplémentait sa propre version de ce calcul en ligne,
+                // ce qui permettait au code d'être incrémenté deux fois pour le même
+                // paiement si le webhook arrivait en plus de ce polling (ou l'inverse).
+                // finaliserRenouvellement() est elle-même idempotente (cf. son code).
+                if ($transaction->getType() === 'RENOUVELLEMENT') {
+                    $paiementService->finaliserRenouvellement($transaction);
+                } else {
+                    $transaction->setState(1);
+                    $transaction->setUpdatedAt();
+                    $transactionRepository->add($transaction, true);
                 }
-                // ─────────────────────────────────────────────────────────────────
 
                 return $this->json(['data' => ['state' => 1, 'message' => 'Paiement confirmé avec succès']]);
             } elseif ($momoStatus === 'FAILED') {

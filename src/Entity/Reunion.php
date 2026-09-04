@@ -66,6 +66,11 @@ class Reunion
     #[Group(["group1"])]
     private ?\DateTimeInterface $jour = null;
 
+    // Date de suppression logique (soft delete) : si renseignée, la réunion
+    // n'apparaît plus dans les listes ni via son token public, mais reste en base.
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $deletedAt = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -127,6 +132,18 @@ class Reunion
     public function setJour(?\DateTimeInterface $jour): static
     {
         $this->jour = $jour;
+
+        return $this;
+    }
+
+    public function getDeletedAt(): ?\DateTimeImmutable
+    {
+        return $this->deletedAt;
+    }
+
+    public function setDeletedAt(?\DateTimeImmutable $deletedAt): static
+    {
+        $this->deletedAt = $deletedAt;
 
         return $this;
     }

@@ -103,15 +103,22 @@ class ApiReunionController extends ApiInterface
     {
         try {
             $reunion = $reunionRepository->findOneBy(['token' => $token]);
-            if ($reunion) {
-                $response = $this->responseData($reunion, 'group1', ['Content-Type' => 'application/json']);
-            } else {
+            if (!$reunion) {
                 $this->setMessage('Réunion introuvable');
                 $this->setStatusCode(404);
                 $response = $this->response('[]');
+            } elseif ($reunion->getDeletedAt() !== null) {
+                $this->setMessage('Cette réunion a été supprimée');
+                $this->setStatusCode(410);
+                $response = $this->response('[]');
+            } else {
+                $response = $this->responseData($reunion, 'group1', ['Content-Type' => 'application/json']);
             }
         } catch (\Exception $exception) {
-            $this->setMessage($exception->getMessage());
+            // Message générique côté client (endpoint public, pas de détail d'implémentation) ;
+            // le statut 500 distingue une panne serveur d'un token simplement invalide.
+            $this->setMessage('Erreur serveur, veuillez réessayer plus tard.');
+            $this->setStatusCode(500);
             $response = $this->response('[]');
         }
 
@@ -246,7 +253,10 @@ class ApiReunionController extends ApiInterface
             }
 
             if ($reunion !== null) {
-                $reunionRepository->remove($reunion, true);
+                // Soft delete : le token devient inaccessible immédiatement (cf. publicByToken),
+                // mais l'enregistrement et les présences déjà signées restent en base pour l'historique.
+                $reunion->setDeletedAt(new \DateTimeImmutable());
+                $this->em->flush();
 
                 $this->setMessage("Opération effectuée avec succès");
                 return $this->response($reunion);
@@ -282,7 +292,7 @@ class ApiReunionController extends ApiInterface
                     if ($id) {
                         $reunion = $reunionRepository->find($id);
                         if ($reunion !== null) {
-                            $reunionRepository->remove($reunion);
+                            $reunion->setDeletedAt(new \DateTimeImmutable());
                         }
                     }
                 }

@@ -646,11 +646,22 @@ class PaiementProService
         $expiration = method_exists($personne, 'getDateValidation') ? $personne->getDateValidation() : null;
         $today = new \DateTime();
 
+        // Capturés ICI, à l'initiation du paiement, pour que finaliserRenouvellement()
+        // puisse calculer une valeur cible ABSOLUE (annéeInitiale + yearsPaid) plutôt que
+        // relative à l'état courant de la personne. Sans ça, si la finalisation s'exécute
+        // deux fois pour la même transaction (webhook + polling, retry webhook...), le
+        // deuxième passage repartirait de la valeur déjà mise à jour par le premier et
+        // ferait avancer le code/l'expiration une deuxième fois (ex: 2024→2026→2028).
+        $yearInCodeAtInit = null;
+        $code = method_exists($personne, 'getCode') ? ($personne->getCode() ?? '') : '';
+        if ($code && preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $code, $matches)) {
+            $yearInCodeAtInit = (int) $matches[1];
+        }
+
         if ($expiration) {
-            $code = method_exists($personne, 'getCode') ? ($personne->getCode() ?? '') : '';
-            if ($code && preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $code, $matches)) {
+            if ($yearInCodeAtInit !== null) {
                 // Utilise l'année inscrite dans le code (MS2024..., MSNI2024..., etc.)
-                $yearDue = (int)$today->format('Y') - (int)$matches[1];
+                $yearDue = (int)$today->format('Y') - $yearInCodeAtInit;
             } else {
                 $yearDue = (int)$today->format('Y') - (int)$expiration->format('Y');
             }
@@ -698,7 +709,14 @@ class PaiementProService
         $transaction->setTypeUser($data['type'] ?? 'professionnel');
         $transaction->setNbreAnnee($yearsToPay);  // ← champ dédié, plus lisible que getData()
         $transaction->setState(0);
-        $transaction->setData(json_encode(['yearsToPay' => $yearsToPay, 'yearDue' => $yearDue])); // conservé pour compatibilité
+        $transaction->setData(json_encode([
+            'yearsToPay' => $yearsToPay,
+            'yearDue' => $yearDue,
+            // Cliché de l'état AVANT paiement, pour un calcul cible absolu et idempotent
+            // dans finaliserRenouvellement() (cf. commentaire plus haut).
+            'yearInCodeAtInit' => $yearInCodeAtInit,
+            'expirationAtInit' => $expiration ? $expiration->format('Y-m-d') : null,
+        ]));
         $transaction->setCreatedAtValue();
         $transaction->setUpdatedAt();
         $this->transactionRepository->add($transaction, true);
@@ -830,8 +848,36 @@ class PaiementProService
         return ['code' => 400, 'message' => 'Failure'];
     }
 
+    /**
+     * Remplace, dans un code professionnel (ex: MS2024MKINE2998.0094), la première
+     * séquence à 4 chiffres ressemblant à une année (19xx/20xx) par $newYear, en
+     * conservant tout le reste du code (préfixe, code profession, chrono) à l'identique.
+     * Retourne le code inchangé si aucune année n'y est trouvée.
+     */
+    private function updateCodeYear(?string $code, int $newYear): ?string
+    {
+        if ($code === null) {
+            return $code;
+        }
+
+        if (preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $code, $matches, PREG_OFFSET_CAPTURE)) {
+            $offset = $matches[1][1];
+            return substr_replace($code, (string) $newYear, $offset, 4);
+        }
+
+        return $code;
+    }
+
     public function finaliserRenouvellement(Transaction $transaction): array
     {
+        // Idempotence : si cette transaction a déjà été finalisée (webhook rejoué,
+        // double appel webhook + polling, retry MTN...), on ne rejoue pas la mise à
+        // jour du code/de l'expiration. Sans ce garde-fou, un second passage ferait
+        // avancer l'année une deuxième fois (ex: 2024→2026 puis 2026→2028).
+        if ($transaction->getState() === 1) {
+            return ['code' => 200, 'message' => 'Renouvellement déjà finalisé'];
+        }
+
         $user = $transaction->getUser();
         if (!$user) return ['code' => 400, 'message' => 'User not found'];
 
@@ -847,6 +893,28 @@ class PaiementProService
         $profession = method_exists($personne, 'getProfession') ? $personne->getProfession() : null;
         $currentExpiration = method_exists($personne, 'getDateValidation') ? $personne->getDateValidation() : null;
 
+        // L'année de référence pour le calcul de la dette (status()) vient du `code`,
+        // donc on la fait avancer du nombre d'années effectivement payées, quel que
+        // soit le cas (régularisation complète ou partielle).
+        //
+        // IMPORTANT : on part de l'année capturée à L'INITIATION du paiement
+        // (transactionData['yearInCodeAtInit']), pas de l'année actuelle du code.
+        // Ça rend le résultat ABSOLU (annéeInitiale + yearsPaid) et donc idempotent :
+        // si cette méthode s'exécutait quand même deux fois pour la même transaction,
+        // les deux exécutions calculeraient la même valeur cible, au lieu de composer
+        // (fallback sur l'année courante du code pour les anciennes transactions créées
+        // avant ce correctif, qui n'ont pas ce champ).
+        $currentCode = method_exists($personne, 'getCode') ? $personne->getCode() : null;
+        $yearInCodeAtInit = $transactionData['yearInCodeAtInit'] ?? null;
+        if ($yearInCodeAtInit === null && $currentCode
+            && preg_match('/(?<!\d)((?:19|20)\d{2})(?!\d)/', $currentCode, $codeMatches)
+        ) {
+            $yearInCodeAtInit = (int) $codeMatches[1];
+        }
+        if ($currentCode && $yearInCodeAtInit !== null && method_exists($personne, 'setCode')) {
+            $personne->setCode($this->updateCodeYear($currentCode, $yearInCodeAtInit + $yearsPaid));
+        }
+
         if ($yearsPaid >= $yearsDue) {
             // Entièrement régularisé : passage à "a_jour" et +1 an à partir d'aujourd'hui
             $personne->setStatus("a_jour");
@@ -855,9 +923,14 @@ class PaiementProService
                 $personne->setDateValidation($newExpiration);
             }
         } else {
-            // Paiement partiel : on ajoute juste les années payées à l'expiration actuelle, status inchangé
-            if ($currentExpiration) {
-                $newExpiration = (clone $currentExpiration)->modify("+$yearsPaid years");
+            // Paiement partiel : on ajoute les années payées à l'expiration D'ORIGINE
+            // (celle capturée à l'initiation, cf. commentaire ci-dessus sur le code),
+            // pas à l'expiration courante — même raison d'idempotence.
+            $expirationAtInitStr = $transactionData['expirationAtInit'] ?? null;
+            $baseExpiration = $expirationAtInitStr ? new \DateTime($expirationAtInitStr) : $currentExpiration;
+
+            if ($baseExpiration) {
+                $newExpiration = (clone $baseExpiration)->modify("+$yearsPaid years");
                 if (method_exists($personne, 'setDateValidation')) {
                     $personne->setDateValidation($newExpiration);
                 }
