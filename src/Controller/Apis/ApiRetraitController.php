@@ -61,6 +61,17 @@ class ApiRetraitController extends ApiInterface
         }
     }
 
+    // Nom lisible du super admin en cours, pour horodater la décision (valider/annuler).
+    private function currentSuperAdminNom(): string
+    {
+        $user = $this->getUser();
+        $personne = $user ? $user->getPersonne() : null;
+
+        return ($personne && method_exists($personne, 'getNom'))
+            ? trim($personne->getNom() . ' ' . $personne->getPrenoms())
+            : ($user ? $user->getEmail() : 'Super administrateur');
+    }
+
     #[Route('/valider/{id}', methods: ['POST'])]
     /**
      * Marque une demande de retrait comme décaissée/validée (réservé aux super admins).
@@ -86,21 +97,83 @@ class ApiRetraitController extends ApiInterface
                 return $this->responseData($retrait, 'group1', ['Content-Type' => 'application/json']);
             }
 
+            if ($retrait->getStatut() === 'annule') {
+                $this->setMessage("Cette demande a été annulée, elle ne peut plus être validée.");
+                $this->setStatusCode(400);
+                return $this->response('[]');
+            }
+
             $user = $this->getUser();
-            $personne = $user ? $user->getPersonne() : null;
-            $valideParNom = ($personne && method_exists($personne, 'getNom'))
-                ? trim($personne->getNom() . ' ' . $personne->getPrenoms())
-                : ($user ? $user->getEmail() : 'Super administrateur');
 
             $retrait->setStatut('valide');
-            $retrait->setValideParNom($valideParNom);
-            $retrait->setValideAt(new \DateTimeImmutable());
+            $retrait->setTraiteParNom($this->currentSuperAdminNom());
+            $retrait->setTraiteAt(new \DateTimeImmutable());
             $retrait->setUpdatedBy($user);
             $retrait->setUpdatedAt();
 
             $retraitRepository->add($retrait, true);
 
             $this->setMessage("Demande de retrait validée avec succès.");
+            return $this->responseData($retrait, 'group1', ['Content-Type' => 'application/json']);
+        } catch (\Exception $exception) {
+            $this->setMessage($exception->getMessage());
+            $this->setStatusCode(500);
+            return $this->response('[]');
+        }
+    }
+
+    #[Route('/annuler/{id}', methods: ['POST'])]
+    /**
+     * Annule une demande de retrait (réservé aux super admins). Un motif
+     * optionnel peut être fourni ("motif" en JSON ou en champ de formulaire).
+     */
+    #[OA\Tag(name: 'retrait')]
+    public function annuler(Request $request, ?Retrait $retrait, RetraitRepository $retraitRepository): Response
+    {
+        try {
+            if (!$this->isSuperAdminUser()) {
+                $this->setMessage("Action réservée aux super administrateurs.");
+                $this->setStatusCode(403);
+                return $this->response('[]');
+            }
+
+            if (!$retrait) {
+                $this->setMessage("Cette demande de retrait est introuvable.");
+                $this->setStatusCode(404);
+                return $this->response('[]');
+            }
+
+            if ($retrait->getStatut() === 'annule') {
+                $this->setMessage("Cette demande a déjà été annulée.");
+                return $this->responseData($retrait, 'group1', ['Content-Type' => 'application/json']);
+            }
+
+            if ($retrait->getStatut() === 'valide') {
+                $this->setMessage("Cette demande a déjà été décaissée, elle ne peut plus être annulée.");
+                $this->setStatusCode(400);
+                return $this->response('[]');
+            }
+
+            $motif = $request->get('motif');
+            if (!$motif && $request->getContent()) {
+                $jsonData = json_decode($request->getContent(), true);
+                if (is_array($jsonData)) {
+                    $motif = $jsonData['motif'] ?? null;
+                }
+            }
+
+            $user = $this->getUser();
+
+            $retrait->setStatut('annule');
+            $retrait->setMotifAnnulation($motif ?: null);
+            $retrait->setTraiteParNom($this->currentSuperAdminNom());
+            $retrait->setTraiteAt(new \DateTimeImmutable());
+            $retrait->setUpdatedBy($user);
+            $retrait->setUpdatedAt();
+
+            $retraitRepository->add($retrait, true);
+
+            $this->setMessage("Demande de retrait annulée.");
             return $this->responseData($retrait, 'group1', ['Content-Type' => 'application/json']);
         } catch (\Exception $exception) {
             $this->setMessage($exception->getMessage());
