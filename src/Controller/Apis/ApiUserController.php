@@ -322,11 +322,17 @@ class ApiUserController extends ApiInterface
             $this->em->persist($personne);
             $this->em->flush();
 
+            $typeUser = $request->get('typeUser');
+
             $user = new User();
-            $user->setRoles(["ROLE_ADMIN"]);
+            // SUPER_ADMIN cumule ROLE_ADMIN (accès admin classique) et ROLE_SUPER_ADMIN
+            // (validation des décaissements de retrait, cf. ApiRetraitController::valider()).
+            // Ce typeUser n'est volontairement PAS proposé dans le select du formulaire
+            // de création de compte admin standard — sa création se fait à part.
+            $user->setRoles($typeUser === 'SUPER_ADMIN' ? ["ROLE_SUPER_ADMIN", "ROLE_ADMIN"] : ["ROLE_ADMIN"]);
             $user->setEmail($request->get('email'));
             $user->setPayement("payed");
-            $user->setTypeUser($request->get('typeUser'));
+            $user->setTypeUser($typeUser);
             $user->setPersonne($personne);
             if ($request->get('password') != "")
                 $user->setPassword($this->hasher->hashPassword($user,  $request->get('password')));

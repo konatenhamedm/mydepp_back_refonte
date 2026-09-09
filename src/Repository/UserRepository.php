@@ -186,8 +186,13 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         return $this->createQueryBuilder('u')
             ->andWhere('u.roles LIKE :role')
             /* ->andWhere('u.typeUser = :typeUser') */
+            // Les super admins (ROLE_SUPER_ADMIN, validation des décaissements de
+            // retrait) ne doivent pas apparaître dans la liste des comptes admin
+            // classique, même s'ils portent aussi ROLE_ADMIN.
+            ->andWhere('u.roles NOT LIKE :superAdminRole')
             ->andWhere('u.deleteAt IS  NULL')
             ->setParameter('role', '%"ROLE_ADMIN"%')
+            ->setParameter('superAdminRole', '%"ROLE_SUPER_ADMIN"%')
             /*  ->setParameter('typeUser', 'ADMINISTRATEUR') */
             ->orderBy("u.id","ASC")
             ->getQuery()
