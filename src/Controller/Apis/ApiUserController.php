@@ -571,11 +571,24 @@ class ApiUserController extends ApiInterface
             $prenoms = (string) $request->get('prenoms', '');
             $typeUser = (string) $request->get('typeUser', '');
             $password = (string) $request->get('password', '');
+            $email = (string) $request->get('email', '');
+            $isActive = $request->get('isActive');
 
             if ($nom === '' || $prenoms === '' || $typeUser === '') {
                 $this->setMessage("Champs obligatoires manquants");
                 $this->setStatusCode(400);
                 return $this->response('[]');
+            }
+
+            // Vérification de l'unicité de l'email si modifié
+            if ($email !== '' && $email !== $user->getEmail()) {
+                $existingUser = $userRepository->findOneBy(['email' => $email]);
+                if ($existingUser !== null && $existingUser->getId() !== $user->getId()) {
+                    $this->setMessage("Cet email est déjà utilisé par un autre compte. Veuillez en choisir un autre.");
+                    $this->setStatusCode(400);
+                    return $this->response('[]');
+                }
+                $user->setEmail($email);
             }
 
             $personne = $administrateurRepository->find($user->getPersonne()->getId());
@@ -594,6 +607,15 @@ class ApiUserController extends ApiInterface
             if ($password !== '') {
                 $user->setPassword($this->hasher->hashPassword($user, $password));
             }
+
+            // Mise à jour du statut actif/inactif
+            if ($isActive !== null) {
+                $isActiveBool = filter_var($isActive, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                if ($isActiveBool !== null) {
+                    $user->setIsActive($isActiveBool);
+                }
+            }
+
             //$user->setUpdatedBy($this->getUser());
             $user->setUpdatedAt(new \DateTimeImmutable());
 
