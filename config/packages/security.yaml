@@ -47,6 +47,7 @@ security:
             - { path: ^/api/reset-password/reset, roles: PUBLIC_ACCESS }
             - { path: ^/api/reunion/public, roles: PUBLIC_ACCESS }
             - { path: ^/api/presence/public, roles: PUBLIC_ACCESS }
+            - { path: ^/api/plaque-immatriculation/public, roles: PUBLIC_ACCESS }
             - { path: ^/login, roles: PUBLIC_ACCESS }
             - { path: ^/$, roles: PUBLIC_ACCESS }  
             - { path: ^/public/, roles: PUBLIC_ACCESS }
