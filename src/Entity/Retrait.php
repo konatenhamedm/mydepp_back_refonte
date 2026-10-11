@@ -41,20 +41,25 @@ class Retrait
     #[Group(["group1"])]
     private ?string $demandePar = null;
 
-    // Cycle de vie : "en_attente" (défaut) -> "valide" une fois l'argent décaissé
-    // et la demande validée par un super admin.
+    // Cycle de vie : "en_attente" (défaut) -> "valide" (décaissée) ou "annule",
+    // les deux étant des décisions définitives d'un super admin.
     #[ORM\Column(length: 20, options: ["default" => "en_attente"])]
     #[Group(["group1"])]
     private string $statut = 'en_attente';
 
-    // Nom du super admin ayant validé le décaissement, snapshot comme demandePar.
+    // Nom du super admin ayant validé OU annulé la demande, snapshot comme demandePar.
     #[ORM\Column(length: 255, nullable: true)]
     #[Group(["group1"])]
-    private ?string $valideParNom = null;
+    private ?string $traiteParNom = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     #[Group(["group1"])]
-    private ?\DateTimeImmutable $valideAt = null;
+    private ?\DateTimeImmutable $traiteAt = null;
+
+    // Motif renseigné par le super admin en cas d'annulation (optionnel).
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Group(["group1"])]
+    private ?string $motifAnnulation = null;
 
     public function getId(): ?int
     {
@@ -121,26 +126,38 @@ class Retrait
         return $this;
     }
 
-    public function getValideParNom(): ?string
+    public function getTraiteParNom(): ?string
     {
-        return $this->valideParNom;
+        return $this->traiteParNom;
     }
 
-    public function setValideParNom(?string $valideParNom): static
+    public function setTraiteParNom(?string $traiteParNom): static
     {
-        $this->valideParNom = $valideParNom;
+        $this->traiteParNom = $traiteParNom;
 
         return $this;
     }
 
-    public function getValideAt(): ?\DateTimeImmutable
+    public function getTraiteAt(): ?\DateTimeImmutable
     {
-        return $this->valideAt;
+        return $this->traiteAt;
     }
 
-    public function setValideAt(?\DateTimeImmutable $valideAt): static
+    public function setTraiteAt(?\DateTimeImmutable $traiteAt): static
     {
-        $this->valideAt = $valideAt;
+        $this->traiteAt = $traiteAt;
+
+        return $this;
+    }
+
+    public function getMotifAnnulation(): ?string
+    {
+        return $this->motifAnnulation;
+    }
+
+    public function setMotifAnnulation(?string $motifAnnulation): static
+    {
+        $this->motifAnnulation = $motifAnnulation;
 
         return $this;
     }

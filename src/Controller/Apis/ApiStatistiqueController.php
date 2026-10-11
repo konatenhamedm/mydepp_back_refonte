@@ -18,6 +18,7 @@ use App\Repository\CiviliteRepository;
 use App\Repository\EtablissementRepository;
 use App\Repository\ProfessionnelRepository;
 use App\Repository\ProfessionRepository;
+use App\Repository\RetraitRepository;
 use App\Repository\SpecialiteRepository;
 use App\Repository\TransactionRepository;
 use App\Repository\UserRepository;
@@ -145,7 +146,7 @@ class ApiStatistiqueController extends ApiInterface
     )]
     #[OA\Tag(name: 'statistiques')]
     // 
-    public function indexByTypeUser(EtablissementRepository $etablissementRepository, TransactionRepository $transactionRepository, ProfessionnelRepository $professionnelRepository, $type, $idUser): Response
+    public function indexByTypeUser(EtablissementRepository $etablissementRepository, TransactionRepository $transactionRepository, ProfessionnelRepository $professionnelRepository, RetraitRepository $retraitRepository, $type, $idUser): Response
     {
         try {
 
@@ -194,13 +195,17 @@ class ApiStatistiqueController extends ApiInterface
                 ///recupere les transactions ou le champ data n'est pas null
                 $dataValide = array_filter($allTransactions, fn($transaction) => $transaction);
                 $adhesionTypes = TransactionRepository::TYPES_ADHESION_PRO;
+                $montantTotal = $transactionRepository->montantTotal();
+                $montantRetire = $retraitRepository->montantTotalValide();
                 $tab = [
-                    'montantTotal' => $transactionRepository->montantTotal(),
+                    'montantTotal' => $montantTotal,
                     'nombreSuccess' => count($transactionRepository->findBy(['type' => $adhesionTypes, 'state' => 1])),
                     'nombreFail' => count($transactionRepository->findBy(['type' => $adhesionTypes, 'state' => -1])),
                     'nombreEnAttente' => count($transactionRepository->findBy(['type' => $adhesionTypes, 'state' => 0])),
                     'toDayTransactionFail' => count($transactionRepository->transactionsEchoueesDuJour(0)),
                     'toDayTransactionSuccess' => count($transactionRepository->transactionsEchoueesDuJour(1)),
+                    'montantRetire' => $montantRetire,
+                    'soldeNet' => $montantTotal - $montantRetire,
 
                 ];
             } else {
@@ -612,7 +617,8 @@ class ApiStatistiqueController extends ApiInterface
         UserRepository $userRepository,
         TransactionRepository $transactionRepository,
         ProfessionnelRepository $professionnelRepository,
-        EtablissementRepository $etablissementRepository
+        EtablissementRepository $etablissementRepository,
+        RetraitRepository $retraitRepository
     ): Response {
         try {
             /** @var User $userConnected */
@@ -634,6 +640,9 @@ class ApiStatistiqueController extends ApiInterface
             // 2. Analyse des Transactions (Chiffre d'Affaires)
             $totalSuccessfulAmount = $this->sumTransactionFieldInRange('montant', $startDate, $endDate);
             $totalFee = $this->sumTransactionFieldInRange('fee', $startDate, $endDate);
+            // Retraits déjà décaissés (validés par un super admin) : à déduire du
+            // solde encore disponible, sur la même plage que le CA affiché.
+            $montantRetire = $retraitRepository->montantTotalValide($startDate, $endDate);
             $adhesionTypes = TransactionRepository::TYPES_ADHESION_PRO;
             $transactions = [
                 'montant_total' => $totalSuccessfulAmount,
@@ -641,7 +650,8 @@ class ApiStatistiqueController extends ApiInterface
                 'echec' => $this->countEntitiesInRange(Transaction::class, ['type' => $adhesionTypes, 'state' => -1], $startDate, $endDate),
                 'en_attente' => $this->countEntitiesInRange(Transaction::class, ['type' => $adhesionTypes, 'state' => 0], $startDate, $endDate),
                 'fee_total' => $totalFee,
-                'solde_retirable' => $totalSuccessfulAmount - $totalFee,
+                'montant_retire' => $montantRetire,
+                'solde_retirable' => $totalSuccessfulAmount - $totalFee - $montantRetire,
             ];
 
             // 3. Dossiers Professionnels
@@ -783,7 +793,7 @@ class ApiStatistiqueController extends ApiInterface
         content: new OA\JsonContent(type: 'object')
     )]
     #[OA\Tag(name: 'statistiques')]
-    public function comptableBilan(Request $request, TransactionRepository $transactionRepository): Response
+    public function comptableBilan(Request $request, TransactionRepository $transactionRepository, RetraitRepository $retraitRepository): Response
     {
         try {
             $startDate = $request->query->get('startDate');
@@ -797,6 +807,12 @@ class ApiStatistiqueController extends ApiInterface
             if ($regionId === 'null' || $regionId === '') $regionId = null;
 
             $rawTransactions = $transactionRepository->getComptableBilanData($startDate, $endDate, $professionId, $regionId);
+
+            // Retraits déjà décaissés sur la même période, à déduire du CA encaissé.
+            $montantRetire = $retraitRepository->montantTotalValide(
+                $startDate ? new \DateTimeImmutable($startDate . ' 00:00:00') : null,
+                $endDate ? new \DateTimeImmutable($endDate . ' 23:59:59') : null
+            );
 
             $montantTotal = 0;
             $nombreSuccess = 0;
@@ -891,7 +907,9 @@ class ApiStatistiqueController extends ApiInterface
                     'nombreSuccess' => $nombreSuccess,
                     'nombreFail' => $nombreFail,
                     'nombreEnAttente' => $nombreEnAttente,
-                    'avgAmount' => $avgAmount
+                    'avgAmount' => $avgAmount,
+                    'montantRetire' => $montantRetire,
+                    'soldeNet' => $montantTotal - $montantRetire,
                 ],
                 'byChannel' => array_values($byChannelMap),
                 'byTypeUser' => array_values($byTypeUserMap),
