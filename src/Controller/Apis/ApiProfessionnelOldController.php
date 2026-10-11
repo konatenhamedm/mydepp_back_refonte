@@ -400,7 +400,7 @@ class ApiProfessionnelOldController extends ApiInterface
                 'nom' => $professionnel->getNom(),
                 'prenoms' => $professionnel->getPrenoms(),
                 'dateNaissance' => $professionnel->getDateNaissance()?->format('d/m/Y') ?? '—',
-                'lieuNaissance' => '—', // Professionnel entity doesn't store birth place
+                'lieuNaissance' => $professionnel->getLieuNaissance() ?? '—',
                 'contactPersonnel' => $professionnel->getNumber() ?? $professionnel->getEmail() ?? '—',
                 'residenceProfessionnelle' => $professionnel->getLieuExercicePro() ?? $professionnel->getQuartier() ?? '—',
                 'dateInscription' => $professionnel->getCreatedAt()?->format('d/m/Y') ?? '—',
@@ -408,7 +408,8 @@ class ApiProfessionnelOldController extends ApiInterface
                 'code' => $professionnel->getCode(),
                 'email' => $professionnel->getEmail() ?? ($user ? $user->getEmail() : '—'),
                 'civilite' => $professionnel->getCivilite()?->getLibelle() ?? '—',
-                'photo' => $photoFile ? $this->getFichierUrl($photoFile, $request) : null
+                'photo' => $photoFile ? $this->getFichierUrl($photoFile, $request) : null,
+                'ordre' => $professionnel->getOrdre()?->getLibelle() ?? null,
             ];
 
             return $this->json([
@@ -694,6 +695,43 @@ class ApiProfessionnelOldController extends ApiInterface
             $this->em->flush();
 
             return $this->json(['statut' => 1, 'message' => 'Lieu de naissance mis à jour avec succès.']);
+        } catch (\Exception $e) {
+            return $this->json(['statut' => 0, 'message' => 'Erreur : ' . $e->getMessage()], 500);
+        }
+    }
+
+    #[Route('/update-date-commission', name: 'api_professionnel_old_update_date_commission', methods: ['POST'])]
+    #[OA\Tag(name: 'professionnel')]
+    public function updateDateCommission(Request $request, ProfessionnelRepository $professionnelRepository): Response
+    {
+        try {
+            $data = json_decode($request->getContent(), true);
+            $id = $data['id'] ?? null;
+            $dateCommission = $data['dateCommission'] ?? null;
+
+            if (!$id || !$dateCommission) {
+                return $this->json(['statut' => 0, 'message' => 'ID et dateCommission requis.'], 400);
+            }
+
+            $professionnel = $professionnelRepository->find($id);
+            if (!$professionnel) {
+                return $this->json(['statut' => 0, 'message' => 'Professionnel introuvable.'], 404);
+            }
+
+            $date = \DateTime::createFromFormat('Y-m-d', $dateCommission);
+            if (!$date) {
+                return $this->json(['statut' => 0, 'message' => 'Format de date invalide. Utilisez YYYY-MM-DD.'], 400);
+            }
+
+            $professionnel->setDateValidation($date);
+            $this->em->persist($professionnel);
+            $this->em->flush();
+
+            return $this->json([
+                'statut' => 1,
+                'message' => 'Date de commission mise à jour avec succès.',
+                'dateValidation' => $date->format('d/m/Y'),
+            ]);
         } catch (\Exception $e) {
             return $this->json(['statut' => 0, 'message' => 'Erreur : ' . $e->getMessage()], 500);
         }

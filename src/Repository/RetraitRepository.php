@@ -42,4 +42,26 @@ class RetraitRepository extends ServiceEntityRepository
 
         return $qb;
     }
+
+    /**
+     * Somme des retraits VALIDÉS (argent effectivement décaissé), à déduire du
+     * chiffre d'affaires / solde disponible. Filtre optionnel sur la date de
+     * traitement (traiteAt), pour rester cohérent avec les plages de dates
+     * utilisées ailleurs dans les statistiques comptables.
+     */
+    public function montantTotalValide(?\DateTimeInterface $start = null, ?\DateTimeInterface $end = null): int
+    {
+        $qb = $this->createQueryBuilder('r')
+            ->select('COALESCE(SUM(r.montant), 0)')
+            ->andWhere('r.statut = :statut')
+            ->setParameter('statut', 'valide');
+
+        if ($start && $end) {
+            $qb->andWhere('r.traiteAt BETWEEN :start AND :end')
+                ->setParameter('start', $start)
+                ->setParameter('end', $end);
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
 }
