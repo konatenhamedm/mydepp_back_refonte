@@ -9,6 +9,7 @@ use App\Repository\PlaqueParametreRepository;
 use App\Service\PlaqueWordParser;
 use OpenApi\Attributes as OA;
 use Psr\Cache\CacheItemPoolInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -110,7 +111,32 @@ class ApiPlaqueImmatriculationController extends ApiInterface
         return $this->reponse($this->resume($plaque) + [
             'publique' => $plaque->getDonneesPubliques(),
             'privee' => $plaque->getDonneesPrivees(),
+            'signeDataUri' => $this->signeDataUri($plaque),
         ]);
+    }
+
+    /**
+     * Image du signe de visibilité en data URI : le front la dessine sur la plaque (canvas)
+     * sans problème de CORS (une image d'un autre domaine bloquerait l'export PNG).
+     */
+    private function signeDataUri(PlaqueImmatriculation $plaque): ?string
+    {
+        $chemin = $plaque->getSigneVisibilite();
+        if (!$chemin) {
+            return null;
+        }
+        $fichier = $this->getParameter('upload_dir') . '/' . $chemin;
+        if (!is_file($fichier)) {
+            return null;
+        }
+        $mime = match (strtolower(pathinfo($fichier, PATHINFO_EXTENSION))) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            default => 'image/png',
+        };
+
+        return 'data:' . $mime . ';base64,' . base64_encode((string) file_get_contents($fichier));
     }
 
     #[Route('/upload', methods: ['POST'])]
@@ -130,7 +156,8 @@ class ApiPlaqueImmatriculationController extends ApiInterface
     public function upload(
         Request $request,
         PlaqueImmatriculationRepository $repository,
-        PlaqueWordParser $parser
+        PlaqueWordParser $parser,
+        LoggerInterface $logger
     ): Response {
         if (!$this->isAdminUser()) {
             return $this->refusAdmin();
@@ -146,7 +173,7 @@ class ApiPlaqueImmatriculationController extends ApiInterface
 
         $resultats = [];
         foreach ($fichiers as $fichier) {
-            $resultats[] = $this->importerFichier($fichier, $repository, $parser);
+            $resultats[] = $this->importerFichier($fichier, $repository, $parser, $logger);
         }
 
         $nbErreurs = count(array_filter($resultats, fn ($r) => $r['statut'] === 'erreur'));
@@ -160,13 +187,15 @@ class ApiPlaqueImmatriculationController extends ApiInterface
     private function importerFichier(
         UploadedFile $fichier,
         PlaqueImmatriculationRepository $repository,
-        PlaqueWordParser $parser
+        PlaqueWordParser $parser,
+        LoggerInterface $logger
     ): array {
         $nom = $fichier->getClientOriginalName();
 
         try {
             if (!$fichier->isValid()) {
-                throw new \RuntimeException("Échec de l'envoi du fichier.");
+                // Motif précis (ex. limite upload_max_filesize du serveur, envoi interrompu…)
+                throw new \RuntimeException("Échec de l'envoi du fichier : " . $fichier->getErrorMessage());
             }
             if (strtolower($fichier->getClientOriginalExtension()) !== 'docx') {
                 throw new \RuntimeException('Seuls les fichiers Word .docx sont acceptés.');
@@ -221,10 +250,18 @@ class ApiPlaqueImmatriculationController extends ApiInterface
                 'plaque' => $this->resume($plaque),
             ];
         } catch (\Throwable $e) {
+            // Erreur imprévue (base de données, droits d'écriture…) : journalisée et affichée
+            // à l'administrateur pour pouvoir la corriger, au lieu d'un message générique.
+            if (!$e instanceof \RuntimeException || $e instanceof \Doctrine\DBAL\Exception) {
+                $logger->error('Import de plaque impossible', ['fichier' => $nom, 'exception' => $e]);
+            }
+
             return [
                 'fichier' => $nom,
                 'statut' => 'erreur',
-                'message' => $e instanceof \RuntimeException ? $e->getMessage() : 'Erreur lors de la lecture du fichier.',
+                'message' => $e instanceof \RuntimeException && !$e instanceof \Doctrine\DBAL\Exception
+                    ? $e->getMessage()
+                    : 'Erreur lors de l’enregistrement : ' . $e->getMessage(),
                 'plaque' => null,
             ];
         }
