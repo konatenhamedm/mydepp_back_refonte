@@ -6,6 +6,7 @@ use App\Controller\Apis\Config\ApiInterface;
 use App\Entity\PlaqueImmatriculation;
 use App\Repository\PlaqueImmatriculationRepository;
 use App\Repository\PlaqueParametreRepository;
+use App\Service\PlaqueGeolocalisation;
 use App\Service\PlaqueWordParser;
 use OpenApi\Attributes as OA;
 use Psr\Cache\CacheItemPoolInterface;
@@ -81,7 +82,24 @@ class ApiPlaqueImmatriculationController extends ApiInterface
             'nomFichier' => $p->getNomFichier(),
             'createdAt' => $p->getCreatedAt()?->format(\DateTimeInterface::ATOM),
             'updatedAt' => $p->getUpdatedAt()?->format(\DateTimeInterface::ATOM),
+            'position' => $this->position($p),
         ];
+    }
+
+    /**
+     * Position sur la carte : corrigée à la main si renseignée, sinon estimée depuis la localisation
+     * (centre de la commune ou de la ville), sinon null (à placer sur la carte).
+     *
+     * @return array{latitude: float, longitude: float, precision: string, lieu: ?string}|null
+     */
+    private function position(PlaqueImmatriculation $p): ?array
+    {
+        if ($p->getLatitude() !== null && $p->getLongitude() !== null) {
+            return ['latitude' => $p->getLatitude(), 'longitude' => $p->getLongitude(), 'precision' => 'manuelle', 'lieu' => null];
+        }
+        $estimation = PlaqueGeolocalisation::estimer($p->getLocalisation(), $p->getImmatriculation());
+
+        return $estimation === null ? null : $estimation + ['precision' => 'ville'];
     }
 
     /* ───────────────────────────── ADMIN ───────────────────────────── */
@@ -326,6 +344,90 @@ class ApiPlaqueImmatriculationController extends ApiInterface
         $repository->remove($plaque, true);
 
         return $this->reponse(null, 'Plaque supprimée. Ses QR codes ne fonctionnent plus.');
+    }
+
+    /**
+     * Tableau de bord : établissements avec plaque, répartition par nature et par niveau
+     * d'intervention (« MÉDICALE - CLINIQUE MÉDICALE »), par ville, état du positionnement.
+     */
+    #[Route('/statistiques', methods: ['GET'])]
+    #[OA\Tag(name: 'plaque-immatriculation')]
+    public function statistiques(PlaqueImmatriculationRepository $repository): Response
+    {
+        if (!$this->isAdminUser()) {
+            return $this->refusAdmin();
+        }
+
+        $plaques = $repository->findAllOrdered();
+        $parNature = [];
+        $parNiveau = [];
+        $parVille = [];
+        $positions = ['manuelle' => 0, 'ville' => 0, 'aPlacer' => 0];
+        $ceMois = 0;
+        $debutMois = new \DateTimeImmutable('first day of this month 00:00');
+
+        foreach ($plaques as $p) {
+            [$categorie, $niveau] = PlaqueGeolocalisation::decouperNature($p->getNature());
+            $parNature[$categorie] = ($parNature[$categorie] ?? 0) + 1;
+            $parNiveau[$niveau] ??= ['niveau' => $niveau, 'nature' => $categorie, 'total' => 0];
+            ++$parNiveau[$niveau]['total'];
+
+            $position = $this->position($p);
+            $positions[$position === null ? 'aPlacer' : $position['precision']]++;
+            $ville = PlaqueGeolocalisation::estimer($p->getLocalisation(), $p->getImmatriculation())['lieu'] ?? 'Non localisée';
+            // Les communes d'Abidjan sont regroupées sous « Abidjan » pour la répartition par ville
+            $ville = \in_array($ville, ['Port-Bouët', 'Treichville', 'Marcory', 'Koumassi', 'Plateau', 'Adjamé', 'Attécoubé', 'Yopougon', 'Abobo', 'Cocody', 'Cocody (Riviera)', 'Bingerville', 'Anyama', 'Songon'], true) ? 'Abidjan' : $ville;
+            $parVille[$ville] = ($parVille[$ville] ?? 0) + 1;
+
+            if ($p->getCreatedAt() !== null && $p->getCreatedAt() >= $debutMois) {
+                ++$ceMois;
+            }
+        }
+        arsort($parNature);
+        arsort($parVille);
+        usort($parNiveau, static fn ($a, $b) => $b['total'] <=> $a['total']);
+
+        return $this->reponse([
+            'total' => \count($plaques),
+            'ajoutesCeMois' => $ceMois,
+            'parNature' => array_map(static fn ($k, $v) => ['nature' => $k, 'total' => $v], array_keys($parNature), $parNature),
+            'parNiveau' => array_values($parNiveau),
+            'parVille' => array_map(static fn ($k, $v) => ['ville' => $k, 'total' => $v], array_keys($parVille), $parVille),
+            'positions' => $positions,
+        ]);
+    }
+
+    /** Corrige la position d'un établissement sur la carte (latitude / longitude null : retour à l'estimation). */
+    #[Route('/{id}/position', methods: ['PUT', 'POST'], requirements: ['id' => '\d+'])]
+    #[OA\Tag(name: 'plaque-immatriculation')]
+    public function modifierPosition(?PlaqueImmatriculation $plaque, Request $request, PlaqueImmatriculationRepository $repository): Response
+    {
+        if (!$this->isAdminUser()) {
+            return $this->refusAdmin();
+        }
+        if (!$plaque) {
+            return $this->reponse(null, 'Plaque introuvable.', 404);
+        }
+
+        $body = json_decode($request->getContent(), true) ?: [];
+        $lat = $body['latitude'] ?? null;
+        $lng = $body['longitude'] ?? null;
+        if ($lat === null && $lng === null) {
+            $plaque->setPosition(null, null);
+        } elseif (!is_numeric($lat) || !is_numeric($lng)) {
+            return $this->reponse(null, 'Latitude et longitude numériques attendues.', 422);
+        } else {
+            $lat = (float) $lat;
+            $lng = (float) $lng;
+            // Côte d'Ivoire et alentours : évite une position aberrante (clic hors du pays)
+            if ($lat < 3.5 || $lat > 11.5 || $lng < -9.5 || $lng > -1.5) {
+                return $this->reponse(null, 'Position hors de la Côte d’Ivoire.', 422);
+            }
+            $plaque->setPosition(round($lat, 6), round($lng, 6));
+        }
+        $repository->add($plaque, true);
+
+        return $this->reponse($this->resume($plaque), $plaque->getLatitude() === null ? 'Position estimée rétablie.' : 'Position enregistrée.');
     }
 
     #[Route('/code-acces', methods: ['GET'])]

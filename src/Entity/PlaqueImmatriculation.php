@@ -60,6 +60,13 @@ class PlaqueImmatriculation
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $fichierStocke = null;
 
+    // Position corrigée à la main sur la carte (sinon : position estimée depuis la localisation)
+    #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    private ?float $latitude = null;
+
+    #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    private ?float $longitude = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -183,6 +190,24 @@ class PlaqueImmatriculation
     public function setFichierStocke(?string $fichierStocke): static
     {
         $this->fichierStocke = $fichierStocke;
+        return $this;
+    }
+
+    public function getLatitude(): ?float
+    {
+        return $this->latitude;
+    }
+
+    public function getLongitude(): ?float
+    {
+        return $this->longitude;
+    }
+
+    /** null/null : retour à la position estimée depuis la localisation. */
+    public function setPosition(?float $latitude, ?float $longitude): static
+    {
+        $this->latitude = $latitude;
+        $this->longitude = $longitude;
         return $this;
     }
 }
