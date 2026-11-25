@@ -2030,6 +2030,111 @@ Situation professionnelle * */
         }
     }
 
+    /**
+     * Envoie (mail + notification) à un ou plusieurs professionnels que leur carte est prête.
+     * Body : { "ids": [personneId, ...] }
+     */
+    #[Route('/notifier/carte-prete', methods: ['POST'])]
+    #[OA\Tag(name: 'professionnel')]
+    public function notifierCartePrete(Request $request, UserRepository $userRepository, SendMailService $sendMailService): Response
+    {
+        return $this->notifierProfessionnels($request, $userRepository, $sendMailService, 'carte_prete');
+    }
+
+    /**
+     * Envoie (mail + notification) à un ou plusieurs professionnels que leur dossier est incomplet.
+     * Body : { "ids": [personneId, ...], "motif": "texte libre optionnel" }
+     */
+    #[Route('/notifier/dossier-incomplet', methods: ['POST'])]
+    #[OA\Tag(name: 'professionnel')]
+    public function notifierDossierIncomplet(Request $request, UserRepository $userRepository, SendMailService $sendMailService): Response
+    {
+        return $this->notifierProfessionnels($request, $userRepository, $sendMailService, 'dossier_incomplet');
+    }
+
+    private function notifierProfessionnels(Request $request, UserRepository $userRepository, SendMailService $sendMailService, string $type): Response
+    {
+        $admin = $this->getUser();
+        if (!$admin || in_array($admin->getTypeUser(), ['PROFESSIONNEL', 'ETABLISSEMENT'], true)) {
+            return $this->json(['code' => 403, 'message' => 'Action non autorisée.'], Response::HTTP_FORBIDDEN);
+        }
+
+        $data  = json_decode($request->getContent(), true) ?? [];
+        $ids   = array_values(array_unique(array_filter((array) ($data['ids'] ?? []), 'is_numeric')));
+        $motif = trim((string) ($data['motif'] ?? ''));
+
+        if (empty($ids)) {
+            return $this->json(['code' => 400, 'message' => 'Aucun professionnel sélectionné.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $sujet = $type === 'carte_prete'
+            ? 'Votre carte professionnelle est prête - DEPPS'
+            : 'Votre dossier est incomplet - DEPPS';
+
+        $envoyes = 0;
+        $echecs  = [];
+
+        foreach ($ids as $id) {
+            $user = $userRepository->findOneBy(['personne' => (int) $id]);
+            $personne = $user?->getPersonne();
+            if (!$user || !$personne) {
+                $echecs[] = ['id' => (int) $id, 'raison' => 'Professionnel introuvable'];
+                continue;
+            }
+
+            $civilite = method_exists($personne, 'getCivilite') ? ($personne->getCivilite()?->getLibelle() ?? '') : '';
+            $nomComplet = trim($civilite . ' ' . $personne->getNom() . ' ' . $personne->getPrenoms());
+
+            // Notification interne (colonne libelle limitée à 255 caractères)
+            if ($type === 'carte_prete') {
+                $message = sprintf(
+                    'Bonjour %s, à l\'issue de la session du comité de recensement, votre demande a obtenu une suite favorable. Veuillez passer à la DEPPS (porte 16) retirer votre carte professionnelle.',
+                    $nomComplet
+                );
+            } else {
+                $message = sprintf('Bonjour %s, votre dossier est incomplet.', $nomComplet);
+                if ($motif !== '') {
+                    $message .= ' Motif : ' . $motif;
+                }
+                $message .= ' Veuillez le compléter.';
+            }
+
+            try {
+                $sendMailService->sendNotification(mb_strimwidth($message, 0, 255, '…'), $user, $admin);
+            } catch (\Exception $e) {
+                $echecs[] = ['id' => (int) $id, 'raison' => 'Notification: ' . $e->getMessage()];
+                continue;
+            }
+
+            // Mail
+            $emailTo = $personne->getEmail();
+            if (!$emailTo || !filter_var($emailTo, FILTER_VALIDATE_EMAIL)) {
+                $emailTo = $user->getEmail();
+            }
+            if (!$emailTo || !filter_var($emailTo, FILTER_VALIDATE_EMAIL)) {
+                $echecs[] = ['id' => (int) $id, 'raison' => 'Notification envoyée, aucune adresse e-mail valide'];
+                continue;
+            }
+
+            try {
+                $sendMailService->send('depps@leadagro.net', $emailTo, $sujet, 'notification_professionnel', [
+                    'type'       => $type,
+                    'nomComplet' => $nomComplet,
+                    'motif'      => $motif,
+                ]);
+                $envoyes++;
+            } catch (\Exception $e) {
+                $echecs[] = ['id' => (int) $id, 'raison' => 'Notification envoyée, échec e-mail: ' . $e->getMessage()];
+            }
+        }
+
+        return $this->json([
+            'code'    => 200,
+            'message' => sprintf('%d e-mail(s) envoyé(s) sur %d.', $envoyes, count($ids)),
+            'data'    => ['envoyes' => $envoyes, 'total' => count($ids), 'echecs' => $echecs],
+        ]);
+    }
+
     private function getMailSubject(string $transition): string
     {
         return match ($transition) {
