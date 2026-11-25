@@ -2031,6 +2031,85 @@ Situation professionnelle * */
     }
 
     /**
+     * Liste paginée des professionnels pour le retrait des cartes.
+     * Un professionnel est "à jour" lorsque l'année en cours figure dans son numéro
+     * d'identification (ex : MS2026OPTLO0198.0787 en 2026).
+     * Paramètres : etat=a_jour|non_a_jour, page, limit, search
+     */
+    #[Route('/cartes/liste', methods: ['GET'])]
+    #[OA\Tag(name: 'professionnel')]
+    public function listeCartes(Request $request, ProfessionnelRepository $professionnelRepository, UserRepository $userRepository): Response
+    {
+        try {
+            $etat   = $request->query->get('etat', 'a_jour') === 'non_a_jour' ? 'non_a_jour' : 'a_jour';
+            $page   = max(1, (int) $request->query->get('page', 1));
+            $limit  = min(100, max(1, (int) $request->query->get('limit', 10)));
+            $search = trim((string) $request->query->get('search', ''));
+            $prefix = 'MS' . (new \DateTime())->format('Y') . '%';
+
+            $build = function (string $mode) use ($professionnelRepository, $prefix, $search) {
+                $qb = $professionnelRepository->createQueryBuilder('p')
+                    ->andWhere('p.code IS NOT NULL')
+                    ->andWhere("p.code <> ''")
+                    ->andWhere('p.status NOT IN (:exclus)')
+                    ->setParameter('exclus', ['attente', 'rejete', 'refuse', 'accepte'])
+                    ->orderBy('p.id', 'DESC');
+
+                if ($mode === 'a_jour') {
+                    $qb->andWhere('p.code LIKE :prefix');
+                } else {
+                    $qb->andWhere('p.code NOT LIKE :prefix');
+                }
+                $qb->setParameter('prefix', $prefix);
+
+                if ($search !== '') {
+                    $qb->andWhere('p.nom LIKE :s OR p.prenoms LIKE :s OR p.code LIKE :s OR p.email LIKE :s OR p.number LIKE :s')
+                        ->setParameter('s', '%' . $search . '%');
+                }
+
+                return $qb;
+            };
+
+            $count = fn (string $mode) => (int) (clone $build($mode))->select('COUNT(p.id)')->resetDQLPart('orderBy')->getQuery()->getSingleScalarResult();
+            $total = $count($etat);
+
+            $rows = $build($etat)
+                ->setFirstResult(($page - 1) * $limit)
+                ->setMaxResults($limit)
+                ->getQuery()
+                ->getResult();
+
+            $items = array_map(function ($p) use ($userRepository) {
+                $user = $userRepository->findOneBy(['personne' => $p->getId()]);
+
+                return [
+                    'id'    => $user?->getId(),
+                    'email' => $user?->getEmail() ?: $p->getEmail(),
+                    'personne' => [
+                        'id'         => $p->getId(),
+                        'nom'        => $p->getNom(),
+                        'prenoms'    => $p->getPrenoms(),
+                        'code'       => $p->getCode(),
+                        'number'     => $p->getNumber(),
+                        'status'     => $p->getStatus(),
+                        'profession' => ['libelle' => $p->getProfession()?->getLibelle()],
+                    ],
+                ];
+            }, $rows);
+
+            return $this->json([
+                'code'       => 200,
+                'data'       => $items,
+                'pagination' => ['currentPage' => $page, 'totalItems' => $total, 'itemsPerPage' => $limit],
+                'tabCounts'  => ['a_jour' => $count('a_jour'), 'non_a_jour' => $count('non_a_jour')],
+                'annee'      => (int) (new \DateTime())->format('Y'),
+            ]);
+        } catch (\Exception $e) {
+            return $this->json(['code' => 500, 'message' => $e->getMessage(), 'data' => []], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
      * Envoie (mail + notification) à un ou plusieurs professionnels que leur carte est prête.
      * Body : { "ids": [personneId, ...] }
      */
