@@ -2045,9 +2045,9 @@ Situation professionnelle * */
             $page   = max(1, (int) $request->query->get('page', 1));
             $limit  = min(100, max(1, (int) $request->query->get('limit', 10)));
             $search = trim((string) $request->query->get('search', ''));
-            $prefix = 'MS' . (new \DateTime())->format('Y') . '%';
+            $annee  = (new \DateTime())->format('Y');
 
-            $build = function (string $mode) use ($professionnelRepository, $prefix, $search) {
+            $build = function (string $mode) use ($professionnelRepository, $annee, $search) {
                 $qb = $professionnelRepository->createQueryBuilder('p')
                     ->andWhere('p.code IS NOT NULL')
                     ->andWhere("p.code <> ''")
@@ -2055,15 +2055,17 @@ Situation professionnelle * */
                     ->setParameter('exclus', ['attente', 'rejete', 'refuse', 'accepte'])
                     ->orderBy('p.id', 'DESC');
 
+                // À jour : année du numéro (MSaaaa…) >= année en cours. Les professionnels qui ont
+                // payé par anticipation l'année suivante (MS2027… en 2026) restent donc à jour.
                 if ($mode === 'a_jour') {
-                    $qb->andWhere('p.code LIKE :prefix');
+                    $qb->andWhere("p.code LIKE 'MS%' AND SUBSTRING(p.code, 3, 4) >= :annee");
                 } else {
-                    $qb->andWhere('p.code NOT LIKE :prefix');
+                    $qb->andWhere("(p.code NOT LIKE 'MS%' OR SUBSTRING(p.code, 3, 4) < :annee)");
                 }
-                $qb->setParameter('prefix', $prefix);
+                $qb->setParameter('annee', $annee);
 
                 if ($search !== '') {
-                    $qb->andWhere('p.nom LIKE :s OR p.prenoms LIKE :s OR p.code LIKE :s OR p.email LIKE :s OR p.number LIKE :s')
+                    $qb->andWhere('(p.nom LIKE :s OR p.prenoms LIKE :s OR p.code LIKE :s OR p.email LIKE :s OR p.number LIKE :s)')
                         ->setParameter('s', '%' . $search . '%');
                 }
 

@@ -312,7 +312,22 @@ class PaymentProController extends ApiInterface
             $montantUnitaire = $user->getTypeUser() == "PROFESSIONNEL" ? $user->getPersonne()->getProfession()->getMontantRenouvellement() : null;
             $montantTotal = $user->getTypeUser() === "PROFESSIONNEL" ? (int) $montantUnitaire * (int) $yearDue : 0; // ou calcul spécifique à ETABLISSEMENT
 
+            // Paiement anticipé de l'année suivante : possible uniquement pour un professionnel
+            // payant dont l'année en cours est déjà réglée (code = année en cours).
+            $currentYearNow = (int) (new \DateTime())->format('Y');
+            $codeYear = isset($yearInCode) ? (int) $yearInCode : null;
+            $canPayAdvance = $user->getTypeUser() === 'PROFESSIONNEL'
+                && $etatPro
+                && $codeYear !== null
+                && $codeYear === $currentYearNow
+                && (int) $montantUnitaire > 0;
+
             $transactions = [
+                'currentYear' => $currentYearNow,
+                'yearInCode' => $codeYear,
+                'advanceYear' => $currentYearNow + 1,
+                'canPayAdvance' => $canPayAdvance,
+                'advancePaid' => $user->getTypeUser() === 'PROFESSIONNEL' && $codeYear !== null && $codeYear > $currentYearNow,
                 'expire' => $expire,
                 'etatPro' => $etatPro,
                 'montantTotal' => $montantTotal,

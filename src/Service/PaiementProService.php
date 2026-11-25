@@ -671,8 +671,38 @@ class PaiementProService
 
         if ($yearDue < 1) $yearDue = 1;
 
+        $currentYear  = (int) $today->format('Y');
+        $anticipe     = !empty($data['anticipe']);
+        $typeUser     = $user->getTypeUser();
+
+        // Garde-fous sur l'année du code (professionnels uniquement) :
+        //  - paiement anticipé : uniquement pour l'année suivante, et seulement si
+        //    l'année en cours est déjà réglée (code = année en cours) ;
+        //  - paiement normal  : uniquement s'il reste des arriérés (code < année en cours).
+        if ($typeUser === 'PROFESSIONNEL' && $yearInCodeAtInit !== null) {
+            if ($anticipe) {
+                if ($yearInCodeAtInit > $currentYear) {
+                    return ['code' => 400, 'message' => "Vous avez déjà réglé l'année " . $yearInCodeAtInit . '.', 'type' => $data['type'] ?? 'professionnel'];
+                }
+                if ($yearInCodeAtInit < $currentYear) {
+                    return ['code' => 400, 'message' => "Vous devez d'abord régulariser l'année " . $currentYear . ' avant de payer par anticipation.', 'type' => $data['type'] ?? 'professionnel'];
+                }
+                $yearDue = 1;
+                $data['yearsToPay'] = 1;
+            } else {
+                if ($yearInCodeAtInit >= $currentYear) {
+                    return ['code' => 400, 'message' => 'Aucun arriéré à régler : abonnement déjà à jour.', 'type' => $data['type'] ?? 'professionnel'];
+                }
+                // On ne peut pas dépasser l'année en cours hors paiement anticipé
+                $yearDue = $currentYear - $yearInCodeAtInit;
+            }
+        }
+
         $yearsToPay = $data['yearsToPay'] ?? $yearDue;
         if ($yearsToPay < 1) $yearsToPay = 1;
+        if ($typeUser === 'PROFESSIONNEL' && $yearInCodeAtInit !== null && !$anticipe && $yearsToPay > $yearDue) {
+            $yearsToPay = $yearDue;
+        }
 
         $montantTotal = $montant * $yearsToPay;
         $phoneNumber = $data['numero'] ?? null;
@@ -712,6 +742,7 @@ class PaiementProService
         $transaction->setData(json_encode([
             'yearsToPay' => $yearsToPay,
             'yearDue' => $yearDue,
+            'anticipe' => $anticipe,
             // Cliché de l'état AVANT paiement, pour un calcul cible absolu et idempotent
             // dans finaliserRenouvellement() (cf. commentaire plus haut).
             'yearInCodeAtInit' => $yearInCodeAtInit,
