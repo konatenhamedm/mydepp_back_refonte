@@ -63,6 +63,36 @@ class ApiReunionController extends ApiInterface
         }
     }
 
+    #[Route('/logos/{id}', methods: ['GET'])]
+    #[OA\Tag(name: 'reunion')]
+    /**
+     * Retourne les logos des partenaires d'une réunion en data-URL (base64).
+     * Sert à l'intégration dans les PDF côté front (les fichiers statiques n'exposent pas de CORS).
+     */
+    public function logosPartenaires(?Reunion $reunion): JsonResponse
+    {
+        $out = [];
+        if ($reunion) {
+            foreach ($reunion->getPartenaires() as $p) {
+                $logo = $p->getLogo();
+                if (!$logo || !$logo->getAlt()) {
+                    continue;
+                }
+                $file = $this->getUploadDir($logo->getPath() ?: self::UPLOAD_PATH) . '/' . basename($logo->getAlt());
+                if (!is_file($file)) {
+                    continue;
+                }
+                $mime = mime_content_type($file) ?: 'image/png';
+                $out[] = [
+                    'nom' => $p->getNom(),
+                    'dataUrl' => 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($file)),
+                ];
+            }
+        }
+
+        return new JsonResponse(['data' => $out]);
+    }
+
     #[Route('/get/one/{id}', methods: ['GET'])]
     /**
      * Affiche une réunion en offrant un identifiant.
