@@ -27,39 +27,39 @@ class Etablissement extends Entite
     #[Group(["group_pro"])]
     private Collection $documents;
 
-    #[ORM\Column(length: 100, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     #[Group(["group_pro","group_user"])]
     private ?string $nom = null;
 
-    #[ORM\Column(length: 100, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     #[Group(["group_pro","group_user"])]
     private ?string $prenoms = null;
 
-    #[ORM\Column(length: 100, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $telephone = null;
 
-    #[ORM\Column(length: 100, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $email = null;
 
-    #[ORM\Column(length: 100, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $bp = null;
 
-    #[ORM\Column(length: 100, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $typeSociete = null;
 
-    #[ORM\Column(length: 100, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     #[Group(["group_pro","group_user"])]
     private ?string $denomination = null;
 
-    #[ORM\Column(length: 100, nullable: true)]
+    #[ORM\Column(length: 500, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $adresse = null;
 
-    #[ORM\Column(length: 100, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $nomRepresentant = null;
 
@@ -77,17 +77,18 @@ class Etablissement extends Entite
     #[Group(["group_pro"])]
     private ?\DateTimeInterface $dateExamenRapport = null;
 
-    #[ORM\Column(length: 100, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $emailAutre = null;
 
     #[ORM\ManyToOne(inversedBy: 'etablissements')]
+    #[Group(["group_pro"])]
     private ?NiveauIntervention $niveauIntervention = null;
 
     #[ORM\ManyToOne(inversedBy: 'etablissements')]
     private ?User $imputation = null;
 
-    #[ORM\Column(length: 100, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $code = null;
 
@@ -240,7 +241,7 @@ class Etablissement extends Entite
     #[Group(["group_pro"])]
     private ?Civilite $responsableCivilite = null;
 
-    #[ORM\Column(length: 100, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $responsableNom = null;
 
@@ -248,7 +249,7 @@ class Etablissement extends Entite
     #[Group(["group_pro"])]
     private ?ResponsabiliteMedicolegale $responsabiliteMedicolegale = null;
 
-    #[ORM\Column(length: 100, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $responsableProfession = null;
 
@@ -336,9 +337,65 @@ class Etablissement extends Entite
     #[Group(["group_pro"])]
     private ?CertificationQualite $certificationQualite = null;
 
-    #[ORM\Column(length: 100, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     #[Group(["group_pro"])]
     private ?string $autresCertification = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Group(["group_pro", "group_user"])]
+    private ?string $numeroDossier = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Group(["group_pro", "group_user"])]
+    private ?string $arreteAutorisation = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Group(["group_pro", "group_user"])]
+    private ?string $numeroArrete = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    #[Group(["group_pro", "group_user"])]
+    private ?\DateTimeInterface $dateSignatureArrete = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    #[Group(["group_pro", "group_user"])]
+    private ?\DateTimeInterface $dateExpirationArrete = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Group(["group_pro", "group_user"])]
+    private ?string $immatriculation = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Group(["group_pro", "group_user"])]
+    private ?string $codeIdentifiant = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Group(["group_pro"])]
+    private ?string $qualitePromoteur = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Group(["group_pro"])]
+    private ?string $promoteurProprietaire = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Group(["group_pro"])]
+    private ?string $responsableTechniqueSante = null;
+
+    #[ORM\Column(length: 30, nullable: true)]
+    #[Group(["group_pro"])]
+    private ?string $responsableSexe = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Group(["group_pro"])]
+    private ?bool $responsableEstResident = null;
+
+    #[ORM\Column(length: 150, nullable: true)]
+    #[Group(["group_pro", "group_user"])]
+    private ?string $lieuGeolocalisation = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    #[Group(["group_pro", "group_user"])]
+    private ?string $precisionGeolocalisation = null;
 
     /**
      * @var Collection<int, Service>
@@ -1372,6 +1429,174 @@ class Etablissement extends Entite
     public function removeService(Service $service): static
     {
         $this->services->removeElement($service);
+
+        return $this;
+    }
+
+    public function getNumeroDossier(): ?string
+    {
+        return $this->numeroDossier;
+    }
+
+    public function setNumeroDossier(?string $numeroDossier): static
+    {
+        $this->numeroDossier = $numeroDossier;
+
+        return $this;
+    }
+
+    public function getArreteAutorisation(): ?string
+    {
+        return $this->arreteAutorisation;
+    }
+
+    public function setArreteAutorisation(?string $arreteAutorisation): static
+    {
+        $this->arreteAutorisation = $arreteAutorisation;
+
+        return $this;
+    }
+
+    public function getNumeroArrete(): ?string
+    {
+        return $this->numeroArrete;
+    }
+
+    public function setNumeroArrete(?string $numeroArrete): static
+    {
+        $this->numeroArrete = $numeroArrete;
+
+        return $this;
+    }
+
+    public function getDateSignatureArrete(): ?\DateTimeInterface
+    {
+        return $this->dateSignatureArrete;
+    }
+
+    public function setDateSignatureArrete(?\DateTimeInterface $dateSignatureArrete): static
+    {
+        $this->dateSignatureArrete = $dateSignatureArrete;
+
+        return $this;
+    }
+
+    public function getDateExpirationArrete(): ?\DateTimeInterface
+    {
+        return $this->dateExpirationArrete;
+    }
+
+    public function setDateExpirationArrete(?\DateTimeInterface $dateExpirationArrete): static
+    {
+        $this->dateExpirationArrete = $dateExpirationArrete;
+
+        return $this;
+    }
+
+    public function getImmatriculation(): ?string
+    {
+        return $this->immatriculation;
+    }
+
+    public function setImmatriculation(?string $immatriculation): static
+    {
+        $this->immatriculation = $immatriculation;
+
+        return $this;
+    }
+
+    public function getCodeIdentifiant(): ?string
+    {
+        return $this->codeIdentifiant;
+    }
+
+    public function setCodeIdentifiant(?string $codeIdentifiant): static
+    {
+        $this->codeIdentifiant = $codeIdentifiant;
+
+        return $this;
+    }
+
+    public function getQualitePromoteur(): ?string
+    {
+        return $this->qualitePromoteur;
+    }
+
+    public function setQualitePromoteur(?string $qualitePromoteur): static
+    {
+        $this->qualitePromoteur = $qualitePromoteur;
+
+        return $this;
+    }
+
+    public function getPromoteurProprietaire(): ?string
+    {
+        return $this->promoteurProprietaire;
+    }
+
+    public function setPromoteurProprietaire(?string $promoteurProprietaire): static
+    {
+        $this->promoteurProprietaire = $promoteurProprietaire;
+
+        return $this;
+    }
+
+    public function getResponsableTechniqueSante(): ?string
+    {
+        return $this->responsableTechniqueSante;
+    }
+
+    public function setResponsableTechniqueSante(?string $responsableTechniqueSante): static
+    {
+        $this->responsableTechniqueSante = $responsableTechniqueSante;
+
+        return $this;
+    }
+
+    public function getResponsableSexe(): ?string
+    {
+        return $this->responsableSexe;
+    }
+
+    public function setResponsableSexe(?string $responsableSexe): static
+    {
+        $this->responsableSexe = $responsableSexe;
+
+        return $this;
+    }
+
+    public function isResponsableEstResident(): ?bool
+    {
+        return $this->responsableEstResident;
+    }
+
+    public function setResponsableEstResident(?bool $responsableEstResident): static
+    {
+        $this->responsableEstResident = $responsableEstResident;
+
+        return $this;
+    }
+
+    public function getLieuGeolocalisation(): ?string
+    {
+        return $this->lieuGeolocalisation;
+    }
+
+    public function setLieuGeolocalisation(?string $lieuGeolocalisation): static
+    {
+        $this->lieuGeolocalisation = $lieuGeolocalisation;
+
+        return $this;
+    }
+
+    public function getPrecisionGeolocalisation(): ?string
+    {
+        return $this->precisionGeolocalisation;
+    }
+
+    public function setPrecisionGeolocalisation(?string $precisionGeolocalisation): static
+    {
+        $this->precisionGeolocalisation = $precisionGeolocalisation;
 
         return $this;
     }

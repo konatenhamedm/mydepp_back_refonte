@@ -288,7 +288,7 @@ class ApiInterface extends AbstractController
             if ($search) {
                 if (is_array($data)) {
                     $data = array_values(array_filter($data, function ($item) use ($search) {
-                        $fields = ['libelle', 'code', 'nom', 'prenoms', 'email', 'message', 'title', 'titre', 'text', 'name'];
+                        $fields = ['libelle', 'code', 'nom', 'prenoms', 'email', 'message', 'title', 'titre', 'text', 'name', 'denomination', 'nomRepresentant', 'numeroDossier', 'numeroEnregistrement', 'immatriculation', 'adresse', 'telephone', 'arreteAutorisation', 'commune', 'villeVillage'];
                         if (is_array($item)) {
                             foreach ($fields as $field) {
                                 if (isset($item[$field]) && $item[$field] !== null && stripos((string)$item[$field], $search) !== false) {
@@ -322,7 +322,7 @@ class ApiInterface extends AbstractController
                         $metadata = $data->getEntityManager()->getClassMetadata($data->getRootEntities()[0]);
                         $orX = $data->expr()->orX();
                         $hasSearchable = false;
-                        $fields = ['libelle', 'code', 'nom', 'prenoms', 'email', 'message', 'title', 'titre', 'text', 'name'];
+                        $fields = ['libelle', 'code', 'nom', 'prenoms', 'email', 'message', 'title', 'titre', 'text', 'name', 'denomination', 'nomRepresentant', 'numeroDossier', 'numeroEnregistrement', 'immatriculation', 'adresse', 'telephone', 'arreteAutorisation', 'commune', 'villeVillage'];
                         foreach ($fields as $field) {
                             if ($metadata->hasField($field)) {
                                 $orX->add($data->expr()->like($alias . '.' . $field, ':search'));

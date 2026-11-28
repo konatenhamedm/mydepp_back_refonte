@@ -105,23 +105,24 @@ class RenouvellementService
             ->getResult();
 
         foreach ($etablissements as $etab) {
-           
             $user = $this->userRepository->findOneBy(['personne' => $etab->getId()]);
 
-            if (!$user) {
-                continue;
+            $dateExp = $etab->getDateExpirationArrete() ?? $etab->getDateValiditeAccord();
+            if ($dateExp !== null) {
+                $isExpired = $dateExp < $now;
+            } else {
+                $dateTransaction = $etab->getDateValidation();
+                $diff = $dateTransaction->diff($now);
+                $isExpired = $diff->y >= 1;
             }
 
-            $dateTransaction = $etab->getDateValidation();
-            $diff = $dateTransaction->diff($now);
+            if ($isExpired) {
+                $etab->setStatus('renouvellement');
+                $this->entityManager->persist($etab);
 
-     
-                if ($diff->y >= 1) {
-                    $etab->setStatus('renouvellement');
-                    $this->entityManager->persist($etab);
-
+                if ($user && filter_var($user->getEmail(), FILTER_VALIDATE_EMAIL)) {
                     $user_message = [
-                        'message' => "Bonjour " . $user->getEmail() . ",\n\nNous vous informons que votre abonnement est arrivé à expiration.\n\nAfin de régulariser votre situation, nous vous invitons à procéder à son renouvellement. Vous pouvez effectuer cette démarche directement depuis votre tableau de bord en ligne, ou en vous rendant dans nos locaux.\n\nCordialement,",
+                        'message' => "Bonjour " . $user->getEmail() . ",\n\nNous vous informons que votre autorisation / abonnement est arrivé à expiration.\n\nAfin de régulariser votre situation, nous vous invitons à procéder à son renouvellement. Vous pouvez effectuer cette démarche directement depuis votre tableau de bord en ligne, ou en vous rendant dans nos locaux.\n\nCordialement,",
                     ];
 
                     $context = compact('user_message');
@@ -133,10 +134,10 @@ class RenouvellementService
                         'renew_mail',
                         $context
                     );
-
-                    $compteur++;
                 }
-          
+
+                $compteur++;
+            }
         }
 
         $this->entityManager->flush();
